@@ -19,11 +19,11 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallback, Camera.PreviewCallback
-{
+public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
     // parameters for MTLib demo
     private static final long LOCAL_DEVICE_ID = 0x04000009;
     private static final int LOCAL_UDP_PORT = 5004;
@@ -40,9 +40,9 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     // === color format mapping table: Raw <--> Encode
     private static final int[] RAW_IMAGE_COLOR_TABLE = {ImageFormat.YUY2, ImageFormat.NV21, ImageFormat.YV12};
     private static final int[] RAW_IMAGE_BITS_TABLE = {16, 12, 12};
-    private static final int[] ENCODE_INPUT_COLOR_TABLE = { MediaCodecInfo.CodecCapabilities.COLOR_FormatYCbYCr,
-                                                            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-                                                            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar};
+    private static final int[] ENCODE_INPUT_COLOR_TABLE = {MediaCodecInfo.CodecCapabilities.COLOR_FormatYCbYCr,
+            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
+            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar};
     // === current raw-format
     private int m_iColorFormatIndex = -1;
 
@@ -79,8 +79,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     private SurfaceView m_surfaceDecoderShow = null;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -88,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         m_txtLog = (TextView) findViewById(R.id.txtLog);
         m_btnStart = (Button) findViewById(R.id.btnStart);
         m_btnStop = (Button) findViewById(R.id.btnStop);
-        m_editText = (EditText)findViewById(R.id.editText);
+        m_editText = (EditText) findViewById(R.id.editText);
         m_btnSendOnePacket = (Button) findViewById(R.id.btnSendOnePacket);
         m_surfaceCameraPreview = (SurfaceView) findViewById(R.id.surfaceCameraPreview);
         m_surfaceDecoderShow = (SurfaceView) findViewById(R.id.surfaceDecoderShow);
@@ -101,53 +100,62 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         showLog("MT demo");
 
         // listen buttons click event
-        m_btnStart.setOnClickListener(new Button.OnClickListener()
-        {
+        m_btnStart.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 onClickBtnStart();
             }
         });
-        m_btnStop.setOnClickListener(new Button.OnClickListener()
-        {
+        m_btnStop.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 onClickBtnStop();
             }
         });
-        m_btnSendOnePacket.setOnClickListener(new Button.OnClickListener()
-        {
+        m_btnSendOnePacket.setOnClickListener(new Button.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 onClickBtnSendOnePacket();
             }
         });
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
-            Log.i("TEST","获取到摄像头的使用.");
+            Log.e("TEST", "获取到摄像头的使用.");
             //init(barcodeScannerView, getIntent(), null);
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAPTURE_AUDIO_OUTPUT)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.e("TEST", "获取到CAPTURE_AUDIO_OUTPUT的使用.");
+            //init(barcodeScannerView, getIntent(), null);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAPTURE_AUDIO_OUTPUT}, 1);//1 can be another integer
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAPTURE_VIDEO_OUTPUT)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.e("TEST", "获取到CAPTURE_VIDEO_OUTPUT的使用.");
+            //init(barcodeScannerView, getIntent(), null);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAPTURE_VIDEO_OUTPUT}, 1);//1 can be another integer
+        }
     }
 
     @Override
-    protected void onDestroy()
-    {
+    protected void onDestroy() {
         onClickBtnStop();
         super.onDestroy();
     }
 
     // show the string on UI 'txtLog' viewer
-    private void showLog(String sz)
-    {
-        if (m_txtLog != null)
-        {
+    private void showLog(String sz) {
+        if (m_txtLog != null) {
             Time currTime = new Time();
             currTime.setToNow();
             String szShow = currTime.format("[%H:%M:%S] ");
@@ -157,23 +165,17 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     // btnStart onClick event
-    private void onClickBtnStart()
-    {
+    private void onClickBtnStart() {
         REMOTE_DEVICE_IP = m_editText.getText().toString();
         // MTLib start
-        if (!m_mtLib.isWorking())
-        {
+        if (!m_mtLib.isWorking()) {
             m_mtLib.installCallback(this);
-            try
-            {
-                if (!m_mtLib.start(LOCAL_DEVICE_ID, LOCAL_UDP_PORT, 1024 * 1024, 0, 1, 1, ""))
-                {
+            try {
+                if (!m_mtLib.start(LOCAL_DEVICE_ID, LOCAL_UDP_PORT, 1024 * 1024, 0, 1, 1, "")) {
                     showLog("MTLib.start() failed !");
                     return;
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 showLog("MTLib.start() error: " + e.getMessage());
                 return;
             }
@@ -181,15 +183,13 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         // open camera
-        if (!cameraStart())
-        {
+        if (!cameraStart()) {
             onClickBtnStop();
             return;
         }
 
         // open encoder
-        if (!encoderStart())
-        {
+        if (!encoderStart()) {
             onClickBtnStop();
             return;
         }
@@ -201,8 +201,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     // btnStop onClick event
-    private void onClickBtnStop()
-    {
+    private void onClickBtnStop() {
         // close decoder
         decoderStop();
 
@@ -213,14 +212,10 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         cameraStop();
 
         // MTLib stop
-        if (m_mtLib.isWorking())
-        {
-            try
-            {
+        if (m_mtLib.isWorking()) {
+            try {
                 m_mtLib.stop();
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 showLog("MTLib.stop() error: " + e.getMessage());
                 return;
             }
@@ -233,10 +228,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     // btnSendOnPacket onClick event
-    private void onClickBtnSendOnePacket()
-    {
-        if (m_mtLib.isWorking())
-        {
+    private void onClickBtnSendOnePacket() {
+        if (m_mtLib.isWorking()) {
             String szSend = "MTLib-Android Test Send One UDP Packet.\n";
             byte[] dataBuffer = szSend.getBytes();
             long sendResult = m_mtLib.sendUdpPacketToDevice(900, 0, REMOTE_DEVICE_ID, REMOTE_DEVICE_IP, dataBuffer, dataBuffer.length);
@@ -246,39 +239,32 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     // camera start preview & capture
-    private boolean cameraStart()
-    {
-        if (m_cam != null)
-        {
+    private boolean cameraStart() {
+        if (m_cam != null) {
             // already opened
             return true;
         }
 
         // check system camera number
         final int iCamNumber = Camera.getNumberOfCameras();
-        if (iCamNumber <= 0)
-        {
+        if (iCamNumber <= 0) {
             showLog("Can not found camera !");
             return false;
         }
 
         // open first front camera
-        try
-        {
+        try {
             // find front camera
             int iCamIndex = -1;
             Camera.CameraInfo ci = new Camera.CameraInfo();
-            for (int i = 0; i < iCamNumber; i++)
-            {
+            for (int i = 0; i < iCamNumber; i++) {
                 Camera.getCameraInfo(i, ci);
-                if (Camera.CameraInfo.CAMERA_FACING_FRONT == ci.facing)
-                {
+                if (Camera.CameraInfo.CAMERA_FACING_FRONT == ci.facing) {
                     iCamIndex = i;
                     break;
                 }
             }
-            if (iCamIndex < 0)
-            {
+            if (iCamIndex < 0) {
                 showLog("Can not find front-camera !");
                 return false;
             }
@@ -286,16 +272,12 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
             // open camera
             m_cam = Camera.open(iCamIndex);
-            if (m_cam == null)
-            {
+            if (m_cam == null) {
                 showLog("Failed to open camera #" + iCamIndex);
                 return false;
             }
-        }
-        catch (Exception e)
-        {
-            if (m_cam != null)
-            {
+        } catch (Exception e) {
+            if (m_cam != null) {
                 m_cam.release();
                 m_cam = null;
             }
@@ -304,17 +286,14 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         // set camera options
-        try
-        {
+        try {
             Camera.Parameters camParams = m_cam.getParameters();
             // enum all preview size, and set to VGA or D1
             List<Camera.Size> previewSizes = camParams.getSupportedPreviewSizes();
-            for (int i = 0; i < previewSizes.size(); i++)
-            {
+            for (int i = 0; i < previewSizes.size(); i++) {
                 Camera.Size s = previewSizes.get(i);
                 if (s.width >= RAW_IMAGE_WIDTH_MIN && s.width <= RAW_IMAGE_WIDTH_MAX &&
-                    s.height >= RAW_IMAGE_HEIGHT_MIN && s.height <= RAW_IMAGE_HEIGHT_MAX)
-                {
+                        s.height >= RAW_IMAGE_HEIGHT_MIN && s.height <= RAW_IMAGE_HEIGHT_MAX) {
                     camParams.setPreviewSize(s.width, s.height);
                     camParams.setPictureSize(s.width, s.height);
                     break;
@@ -322,24 +301,19 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             }
             // enum all preview format, and set to RAW_IMAGE_COLOR_TABLE (yuy2,nv21,yv12)
             List<Integer> previewFormats = camParams.getSupportedPreviewFormats();
-            if(previewFormats.size() > 0)
-            {
+            if (previewFormats.size() > 0) {
                 m_iColorFormatIndex = -1;
-                for (int r = 0; r < RAW_IMAGE_COLOR_TABLE.length && m_iColorFormatIndex < 0; r++)
-                {
-                    for (int i = 0; i < previewFormats.size(); i++)
-                    {
+                for (int r = 0; r < RAW_IMAGE_COLOR_TABLE.length && m_iColorFormatIndex < 0; r++) {
+                    for (int i = 0; i < previewFormats.size(); i++) {
                         Integer iFormat = previewFormats.get(i);
-                        if (iFormat == RAW_IMAGE_COLOR_TABLE[r])
-                        {
+                        if (iFormat == RAW_IMAGE_COLOR_TABLE[r]) {
                             m_iColorFormatIndex = r;
                             camParams.setPreviewFormat(iFormat);
                             break;
                         }
                     }
                 }
-                if(m_iColorFormatIndex < 0)
-                {
+                if (m_iColorFormatIndex < 0) {
                     showLog("Camera NOT support YUV color!");
                     m_cam.release();
                     m_cam = null;
@@ -361,9 +335,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             m_iRawHeight = res.height;
             // malloc buffer
             m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 4 + 4096];
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             m_cam.release();
             m_cam = null;
             showLog("Camera set param failed: " + e.getMessage());
@@ -371,12 +343,10 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         // start preview & capture
-        try
-        {
+        try {
             // bind to viewer
             SurfaceHolder rawSurfaceHolder = m_surfaceCameraPreview.getHolder();
-            if (rawSurfaceHolder != null)
-            {
+            if (rawSurfaceHolder != null) {
                 //rawSurfaceHolder.addCallback(this); // if call on onCreate(), add this line and implements SurfaceHolder.Callback
                 //rawSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
                 m_cam.setPreviewDisplay(rawSurfaceHolder);
@@ -387,9 +357,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             m_cam.setPreviewCallbackWithBuffer(this);
             // start preview
             m_cam.startPreview();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             m_cam.release();
             m_cam = null;
             showLog("Preview failed: " + e.getMessage());
@@ -399,10 +367,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     // camera stop preview & capture
-    private void cameraStop()
-    {
-        if (m_cam != null)
-        {
+    private void cameraStop() {
+        if (m_cam != null) {
             m_cam.setPreviewCallbackWithBuffer(null);
             m_cam.stopPreview();
             m_cam.release();
@@ -411,68 +377,59 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     }
 
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera)
-    {
+    public void onPreviewFrame(byte[] data, Camera camera) {
         //
         // callback from Camera: YUV raw data
         //
 
         // YUV raw data bytes
         final int iInputSize = (m_iRawWidth * m_iRawHeight * RAW_IMAGE_BITS_TABLE[m_iColorFormatIndex] / 8);
-        if (data.length < iInputSize || iInputSize <= 0)
-        {
+        if (data.length < iInputSize || iInputSize <= 0) {
             return;
         }
 
         // encode to H264
-        if (m_encoder != null && !m_encoderPauseSend)
-        {
+        if (m_encoder != null && !m_encoderPauseSend) {
             // input to encoder
-            try
-            {
+            try {
                 ByteBuffer[] inputBuffers = m_encoder.getInputBuffers();
                 int inputBufferIndex = m_encoder.dequeueInputBuffer(-1);
-                if (inputBufferIndex >= 0)
-                {
+                Log.e("mtapp", "1: inputBufferIndex -> " + inputBufferIndex);
+                if (inputBufferIndex >= 0) {
                     ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
                     inputBuffer.clear();
-                    if (inputBuffer.remaining() < iInputSize)
-                    {
+                    Log.e("mtapp", "2: iInputSize -> " + iInputSize);
+                    if (inputBuffer.remaining() < iInputSize) {
                         showLog("Encode input: " + iInputSize + ", remain: " + inputBuffer.remaining());
                         return;
-                    }
-                    else
-                    {
+                    } else {
                         // if camera is NV12, and encoder is YUV420SP, need swap U & V color
                         if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
-                            ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar)
-                        {
+                                ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                             NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
                         }
                         inputBuffer.put(data, 0, iInputSize);
+                        Log.e("mtapp",  "3: Encode input -> " + iInputSize + ", remain: " + inputBuffer.remaining());
                         m_encoder.queueInputBuffer(inputBufferIndex, 0, iInputSize, 0, 0);
                     }
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
+                Log.e("mtapp",  "E1: Encode input failed: "  + e.getMessage());
                 showLog("Encode input failed: " + e.getMessage());
             }
 
             // get encoder output
-            try
-            {
+            try {
                 ByteBuffer[] outputBuffers = m_encoder.getOutputBuffers();
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                 int outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, 0);
-                while (outputBufferIndex >= 0)
-                {
+                Log.e("mtapp", "4: outputBufferIndex -> " + outputBufferIndex);
+                while (outputBufferIndex >= 0) {
                     final int iEncodeFrameSize = bufferInfo.size;
                     //showLog("enc len " + iEncodeFrameSize);
 
                     // copy to buffer
-                    if (m_encodeFrameBuffer == null || m_encodeFrameBuffer.length < iEncodeFrameSize)
-                    {
+                    if (m_encodeFrameBuffer == null || m_encodeFrameBuffer.length < iEncodeFrameSize) {
                         m_encodeFrameBuffer = new byte[(iEncodeFrameSize + 0xFFF) & (~0xFFF)];
                     }
                     outputBuffers[outputBufferIndex].get(m_encodeFrameBuffer);
@@ -482,46 +439,36 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
                     outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, 0);
 
                     // send to network
-                    if (m_mtLib.isWorking())
-                    {
+                    if (m_mtLib.isWorking()) {
                         m_mtLib.sendOneFrameToDevice(0, REMOTE_DEVICE_ID, 0, REMOTE_DEVICE_IP, MTLib.CODEC_VIDEO_H264,
-                            m_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
+                                m_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
                     }
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
+                Log.e("mtapp",  "E2: Encode input failed: "  + e.getMessage());
                 showLog("Encode output failed: " + e.getMessage());
             }
         }
 
         // start next callback
-        if (m_cam != camera)
-        {
-            if (m_cam != null)
-            {
+        if (m_cam != camera) {
+            if (m_cam != null) {
                 m_cam.release();
                 m_cam = null;
             }
             m_cam = camera;
         }
-        if (m_cam != null && m_rawBuffer != null)
-        {
+        if (m_cam != null && m_rawBuffer != null) {
             m_cam.addCallbackBuffer(m_rawBuffer);
         }
     }
 
-    private boolean encoderStart()
-    {
+    private boolean encoderStart() {
         // create encoder
-        try
-        {
+        try {
             m_encoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
-        }
-        catch (Exception e)
-        {
-            if (m_encoder != null)
-            {
+        } catch (Exception e) {
+            if (m_encoder != null) {
                 m_encoder = null;
             }
             showLog("Encoder create error: " + e.getMessage());
@@ -529,11 +476,9 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         // setting encode parameters
-        try
-        {
+        try {
             int iFrameRate = m_cam.getParameters().getPreviewFrameRate();
-            if (iFrameRate <= 0)
-            {
+            if (iFrameRate <= 0) {
                 iFrameRate = 30;
             }
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
@@ -544,11 +489,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             //mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
             m_encoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             m_encoder.start();
-        }
-        catch (Exception e)
-        {
-            if (m_encoder != null)
-            {
+        } catch (Exception e) {
+            if (m_encoder != null) {
                 m_encoder = null;
             }
             showLog("Encoder config error: " + e.getMessage());
@@ -558,56 +500,42 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         return true;
     }
 
-    private void encoderStop()
-    {
-        if (m_encoder != null)
-        {
+    private void encoderStop() {
+        if (m_encoder != null) {
             m_encoder.release();
             m_encoder = null;
         }
-        if (m_encodeFrameBuffer != null)
-        {
+        if (m_encodeFrameBuffer != null) {
             m_encodeFrameBuffer = null;
         }
     }
 
-    private boolean decoderStart(String codecName, int width, int height)
-    {
-        if (m_decoder != null)
-        {
+    private boolean decoderStart(String codecName, int width, int height) {
+        if (m_decoder != null) {
             return false;
         }
 
         // get surface & holder
-        if (m_surfaceDecoderShow == null)
-        {
+        if (m_surfaceDecoderShow == null) {
             return false;
         }
         SurfaceHolder holder;
-        try
-        {
+        try {
             holder = m_surfaceDecoderShow.getHolder();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("decoderStart", "Get holder error: " + e.getMessage());
             return false;
         }
-        if (holder == null)
-        {
+        if (holder == null) {
             Log.e("decoderStart", "Get holder failed.");
             return false;
         }
 
         // create decoder
-        try
-        {
+        try {
             m_decoder = MediaCodec.createDecoderByType(codecName);
-        }
-        catch (Exception e)
-        {
-            if (m_decoder != null)
-            {
+        } catch (Exception e) {
+            if (m_decoder != null) {
                 m_decoder = null;
             }
             Log.e("decoderStart", "Decoder create error: " + e.getMessage());
@@ -615,14 +543,11 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         // bind to surface, and start
-        try
-        {
+        try {
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
             m_decoder.configure(mediaFormat, holder.getSurface(), null, 0);
             m_decoder.start();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("decoderStart", "surfaceCreated(decoder) error: " + e.getMessage());
             return false;
         }
@@ -635,12 +560,10 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         return true;
     }
 
-    private void decoderStop()
-    {
+    private void decoderStop() {
         m_decoderCreateFailed = true;
         m_decoderValid = false;
-        if (m_decoder != null)
-        {
+        if (m_decoder != null) {
             m_decoder.stop();
             m_decoder.release();
             m_decoder = null;
@@ -648,59 +571,47 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         m_decoderCreateFailed = false;
     }
 
-    private boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType)
-    {
+    private boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         // if no decoder, create it
-        if (m_decoder == null)
-        {
+        if (m_decoder == null) {
             // only try one to create decoder
-            if (m_decoderCreateFailed)
-            {
+            if (m_decoderCreateFailed) {
                 return false;
             }
-            if (!decoderStart(codecName, width, height))
-            {
+            if (!decoderStart(codecName, width, height)) {
                 m_decoderCreateFailed = true;
                 return false;
             }
             m_decoderCreateFailed = false;
         }
-        if (!m_decoderValid)
-        {
+        if (!m_decoderValid) {
             return false;
         }
 
         // if codec or image-resolution changed, NOT process it
         // maybe, you can test: decoderStop() then decoderStart()
-        if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_decoderWidth != width || m_decoderHeight != height)
-        {
+        if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_decoderWidth != width || m_decoderHeight != height) {
             return false;
         }
 
         // wait key-frame at first
-        if (m_decodeWaitKeyFrame)
-        {
+        if (m_decodeWaitKeyFrame) {
             if (0 != frameType) //0- I frame, 1- P frame
             {
                 return true;
-            }
-            else
-            {
+            } else {
                 m_decodeWaitKeyFrame = false;
             }
         }
 
         // decode frame
-        try
-        {
+        try {
             ByteBuffer[] decodeInputBuffers = m_decoder.getInputBuffers();
             int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(-1);
-            if (decodeInputBufferIndex >= 0)
-            {
+            if (decodeInputBufferIndex >= 0) {
                 ByteBuffer inputBuffer = decodeInputBuffers[decodeInputBufferIndex];
                 inputBuffer.clear();
-                if (inputBuffer.remaining() < dataSize)
-                {
+                if (inputBuffer.remaining() < dataSize) {
                     Log.e("decoderStart", "Decode input: " + dataSize + ", remain: " + inputBuffer.remaining());
                     return false;
                 }
@@ -710,14 +621,11 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
             MediaCodec.BufferInfo decodeOutBufferInfo = new MediaCodec.BufferInfo();
             int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
-            while (decodeOutputBufferIndex >= 0)
-            {
+            while (decodeOutputBufferIndex >= 0) {
                 m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
                 decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
             }
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("decoderStart", "Decode failed: " + e.getMessage());
             return false;
         }
@@ -727,13 +635,12 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
     @Override
     public long onReceivedUdpPacket(
-        long localDeviceId,
-        String remoteDeviceIpPort,
-        long remoteDeviceId,
-        long packetCommandType,
-        byte[] packetBuffer,
-        int packetBytes)
-    {
+            long localDeviceId,
+            String remoteDeviceIpPort,
+            long remoteDeviceId,
+            long packetCommandType,
+            byte[] packetBuffer,
+            int packetBytes) {
         //
         // callback from MTLib: on received one udp packet
         //
@@ -744,15 +651,14 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
     @Override
     public long onReceivedAudioFrame(
-        long localDeviceId,
-        String remoteDeviceIpPort,
-        long remoteDeviceId,
-        int remoteEncoderChannelIndex,
-        int localDecoderChannelIndex,
-        String audioCodec,
-        byte[] frameBuffer,
-        int frameSize)
-    {
+            long localDeviceId,
+            String remoteDeviceIpPort,
+            long remoteDeviceId,
+            int remoteEncoderChannelIndex,
+            int localDecoderChannelIndex,
+            String audioCodec,
+            byte[] frameBuffer,
+            int frameSize) {
         //
         // callback from MTLib: on received one audio frame
         //
@@ -763,19 +669,18 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
     @Override
     public long onReceivedVideoFrame(
-        long localDeviceId,
-        String remoteDeviceIpPort,
-        long remoteDeviceId,
-        int remoteEncoderChannelIndex,
-        int localDecoderChannelIndex,
-        long frameType,
-        String videoCodec,
-        int imageResolution,
-        int width,
-        int height,
-        byte[] frameBuffer,
-        int frameSize)
-    {
+            long localDeviceId,
+            String remoteDeviceIpPort,
+            long remoteDeviceId,
+            int remoteEncoderChannelIndex,
+            int localDecoderChannelIndex,
+            long frameType,
+            String videoCodec,
+            int imageResolution,
+            int width,
+            int height,
+            byte[] frameBuffer,
+            int frameSize) {
         //
         // callback from MTLib: on received one video frame
         //
@@ -783,13 +688,11 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         return 1;
     }
 
-    protected void NV21_to_YUV420SP(byte[] image, int width, int height)
-    {
+    protected void NV21_to_YUV420SP(byte[] image, int width, int height) {
         byte tmp = 0;
         int uvBegin = width * height;
         int uvBytes = width * height / 2;
-        for (int i = 0; i < uvBytes; i += 2)
-        {
+        for (int i = 0; i < uvBytes; i += 2) {
             tmp = image[uvBegin + i];
             image[uvBegin + i] = image[uvBegin + i + 1];
             image[uvBegin + i + 1] = tmp;
