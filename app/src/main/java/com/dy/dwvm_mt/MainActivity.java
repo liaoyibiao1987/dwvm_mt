@@ -393,7 +393,9 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             // input to encoder
             try {
                 ByteBuffer[] inputBuffers = m_encoder.getInputBuffers();
-                int inputBufferIndex = m_encoder.dequeueInputBuffer(-1);
+                //dequeueInputBuffer 的参数表示等待的时间（毫秒），-1表示一直等，0表示不等。按常理传-1就行，但实际上在很多机子上会挂掉，没办法，还是传0吧，丢帧总比挂掉好。当然也可以传一个具体的毫秒数，不过没什么大意思吧
+                //https://blog.csdn.net/halleyzhang3/article/details/11473961
+                int inputBufferIndex = m_encoder.dequeueInputBuffer(0);
                 Log.e("mtapp", "1: inputBufferIndex -> " + inputBufferIndex);
                 if (inputBufferIndex >= 0) {
                     ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
