@@ -4,11 +4,15 @@ import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.Time;
 import android.util.Log;
+import android.util.Printer;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -19,9 +23,11 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.widget.Toast;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 
 public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
     // parameters for MTLib demo
@@ -77,6 +83,11 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     private Button m_btnSendOnePacket = null;
     private SurfaceView m_surfaceCameraPreview = null;
     private SurfaceView m_surfaceDecoderShow = null;
+
+    private static Object yuvlocker = new Object();
+    private static int yuvqueuesize = 10;
+    public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize);
+    private PlayerThread mPlayer = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -145,6 +156,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAPTURE_VIDEO_OUTPUT}, 1);//1 can be another integer
         }
+
     }
 
     @Override
@@ -191,9 +203,15 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         // open encoder
         if (!encoderStart()) {
             onClickBtnStop();
+            Log.e("MT 编码：", "打开编码失败");
+            Toast.makeText(this, "打开编码失败", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        if (mPlayer == null) {
+            mPlayer = new PlayerThread();
+            mPlayer.start();
+        }
         // update UI
         m_btnStart.setEnabled(false);
         m_btnStop.setEnabled(true);
@@ -376,12 +394,38 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
     }
 
+    public void putYUVData(byte[] buffer) {
+        if (YUVQueue.size() >= 10) {
+            YUVQueue.poll();
+        }
+        synchronized (yuvlocker) {
+            YUVQueue.add(buffer);
+        }
+    }
+
+    private void savaPreviewFrame(byte[] data, Camera camera) {
+        putYUVData(data);
+        if (m_cam != camera) {
+            if (m_cam != null) {
+                m_cam.release();
+                m_cam = null;
+            }
+            m_cam = camera;
+        }
+        if (m_cam != null && m_rawBuffer != null) {
+            m_cam.addCallbackBuffer(m_rawBuffer);
+        }
+    }
+
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
+        savaPreviewFrame(data, camera);
+        return;
+
+        /*
         //
         // callback from Camera: YUV raw data
         //
-
         // YUV raw data bytes
         final int iInputSize = (m_iRawWidth * m_iRawHeight * RAW_IMAGE_BITS_TABLE[m_iColorFormatIndex] / 8);
         if (data.length < iInputSize || iInputSize <= 0) {
@@ -395,7 +439,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
                 ByteBuffer[] inputBuffers = m_encoder.getInputBuffers();
                 //dequeueInputBuffer 的参数表示等待的时间（毫秒），-1表示一直等，0表示不等。按常理传-1就行，但实际上在很多机子上会挂掉，没办法，还是传0吧，丢帧总比挂掉好。当然也可以传一个具体的毫秒数，不过没什么大意思吧
                 //https://blog.csdn.net/halleyzhang3/article/details/11473961
-                int inputBufferIndex = m_encoder.dequeueInputBuffer(0);
+                int inputBufferIndex = m_encoder.dequeueInputBuffer(1000000);
                 Log.e("mtapp", "1: inputBufferIndex -> " + inputBufferIndex);
                 if (inputBufferIndex >= 0) {
                     ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
@@ -411,12 +455,12 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
                             NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
                         }
                         inputBuffer.put(data, 0, iInputSize);
-                        Log.e("mtapp",  "3: Encode input -> " + iInputSize + ", remain: " + inputBuffer.remaining());
+                        Log.e("mtapp", "3: Encode input -> " + iInputSize + ", remain: " + inputBuffer.remaining());
                         m_encoder.queueInputBuffer(inputBufferIndex, 0, iInputSize, 0, 0);
                     }
                 }
             } catch (Exception e) {
-                Log.e("mtapp",  "E1: Encode input failed: "  + e.getMessage());
+                Log.e("mtapp", "E1: Encode input failed: " + e.getMessage());
                 showLog("Encode input failed: " + e.getMessage());
             }
 
@@ -424,7 +468,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             try {
                 ByteBuffer[] outputBuffers = m_encoder.getOutputBuffers();
                 MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                int outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, 0);
+                int outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, 1000);
                 Log.e("mtapp", "4: outputBufferIndex -> " + outputBufferIndex);
                 while (outputBufferIndex >= 0) {
                     final int iEncodeFrameSize = bufferInfo.size;
@@ -438,8 +482,9 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
 
                     // unlock
                     m_encoder.releaseOutputBuffer(outputBufferIndex, false);
-                    outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, 0);
+                    outputBufferIndex = m_encoder.dequeueOutputBuffer(bufferInfo, -1);
 
+                    Log.e("开始编码：", "" + m_encodeFrameBuffer.length);
                     // send to network
                     if (m_mtLib.isWorking()) {
                         m_mtLib.sendOneFrameToDevice(0, REMOTE_DEVICE_ID, 0, REMOTE_DEVICE_IP, MTLib.CODEC_VIDEO_H264,
@@ -447,7 +492,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
                     }
                 }
             } catch (Exception e) {
-                Log.e("mtapp",  "E2: Encode input failed: "  + e.toString());
+                Log.e("mtapp", "E2: Encode input failed: " + e.toString());
                 showLog("Encode output failed: " + e.toString());
             }
         }
@@ -463,6 +508,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         if (m_cam != null && m_rawBuffer != null) {
             m_cam.addCallbackBuffer(m_rawBuffer);
         }
+
+        */
     }
 
     private boolean encoderStart() {
@@ -488,7 +535,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, iFrameRate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
-            //mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
+            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
+
             m_encoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             m_encoder.start();
         } catch (Exception e) {
@@ -698,6 +746,195 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             tmp = image[uvBegin + i];
             image[uvBegin + i] = image[uvBegin + i + 1];
             image[uvBegin + i + 1] = tmp;
+        }
+    }
+
+
+    private static final String SAMPLE = Environment.getExternalStorageDirectory() + "/video.mp4";
+
+    private class PlayerThread extends Thread {
+        private MediaCodec decoder;
+        private boolean isRuning = true;
+        private byte[] input = null;
+        private long pts = 0;
+        private long generateIndex = 0;
+        private int m_framerate = 30;
+        private int TIMEOUT_USEC = 12000;
+
+
+        public PlayerThread() {
+        }
+
+        private void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
+            if (nv21 == null || nv12 == null) return;
+            int framesize = width * height;
+            int i = 0, j = 0;
+            System.arraycopy(nv21, 0, nv12, 0, framesize);
+            for (i = 0; i < framesize; i++) {
+                nv12[i] = nv21[i];
+            }
+            for (j = 0; j < framesize / 2; j += 2) {
+                nv12[framesize + j - 1] = nv21[j + framesize];
+            }
+            for (j = 0; j < framesize / 2; j += 2) {
+                nv12[framesize + j] = nv21[j + framesize - 1];
+            }
+        }
+
+        /**
+         * Generates the presentation time for frame N, in microseconds.
+         */
+        private long computePresentationTime(long frameIndex) {
+            return 132 + frameIndex * 1000000 / m_framerate;
+        }
+
+        @Override
+        public void run() {
+            try {
+                decoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
+                MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
+                mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 512000); // 512 kbps
+                mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
+                mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
+                mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+                mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 180);
+
+                decoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            } catch (Exception e) {
+                if (decoder != null) {
+                    decoder = null;
+                }
+                Log.e("PlayerThread", "Encoder create error: " + e.getMessage());
+            }
+
+            if (decoder == null) {
+                Log.e("DecodeActivity", "Can't find video info!");
+                return;
+            }
+            decoder.start();
+
+
+            while (isRuning) {
+                if (MainActivity.YUVQueue.size() > 0) {
+                    input = MainActivity.YUVQueue.poll();
+                    byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
+                    NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
+                    input = yuv420sp;
+                }
+                if (input != null) {
+                    try {
+                        long startMs = System.currentTimeMillis();
+                        ByteBuffer[] inputBuffers = decoder.getInputBuffers();
+                        ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
+                        int inputBufferIndex = decoder.dequeueInputBuffer(-1);
+                        if (inputBufferIndex >= 0) {
+                            pts = computePresentationTime(generateIndex);
+                            ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+                            inputBuffer.clear();
+                            inputBuffer.put(input);
+                            decoder.queueInputBuffer(inputBufferIndex, 0, input.length, pts, 0);
+                            generateIndex += 1;
+                        }
+
+                        MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                        int outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
+                        while (outputBufferIndex >= 0) {
+                            //Log.i("AvcEncoder", "Get H264 Buffer Success! flag = "+bufferInfo.flags+",pts = "+bufferInfo.presentationTimeUs+"");
+                            final int iEncodeFrameSize = bufferInfo.size;
+                            ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
+                            byte[] tmp_encodeFrameBuffer = new byte[bufferInfo.size];
+                            outputBuffer.get(tmp_encodeFrameBuffer);
+
+
+                            decoder.releaseOutputBuffer(outputBufferIndex, false);
+                            outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
+                            Log.e("开始编码：", "" + tmp_encodeFrameBuffer.length);
+                            // send to network
+                            if (m_mtLib.isWorking()) {
+                                m_mtLib.sendOneFrameToDevice(0, REMOTE_DEVICE_ID, 0, REMOTE_DEVICE_IP, MTLib.CODEC_VIDEO_H264,
+                                        tmp_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
+                            }
+                        }
+
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                } else {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+
+/*
+            ByteBuffer[] inputBuffers = decoder.getInputBuffers();
+            ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+            boolean isEOS = false;
+            long startMs = System.currentTimeMillis();
+            while (!Thread.interrupted()) {
+                if (!isEOS) {
+                    int inIndex = decoder.dequeueInputBuffer(10000);
+                    if (inIndex >= 0) {
+                        ByteBuffer buffer = inputBuffers[inIndex];
+                        int sampleSize = extractor.readSampleData(buffer, 0);
+                        if (sampleSize < 0) {
+                            // We shouldn't stop the playback at this point, just pass the EOS
+                            // flag to decoder, we will get it again from the
+                            // dequeueOutputBuffer
+                            Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
+                            decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            isEOS = true;
+                        } else {
+                            decoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
+                            extractor.advance();
+                        }
+                    }
+                }
+
+                int outIndex = decoder.dequeueOutputBuffer(info, 10000);
+                switch (outIndex) {
+                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
+                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
+                        outputBuffers = decoder.getOutputBuffers();
+                        break;
+                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
+                        Log.d("DecodeActivity", "New format " + decoder.getOutputFormat());
+                        break;
+                    case MediaCodec.INFO_TRY_AGAIN_LATER:
+                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
+                        break;
+                    default:
+                        ByteBuffer buffer = outputBuffers[outIndex];
+                        Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + buffer);
+
+                        // We use a very simple clock to keep the video FPS, or the video
+                        // playback will be too fast
+                        while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
+                            try {
+                                sleep(10);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                                break;
+                            }
+                        }
+                        decoder.releaseOutputBuffer(outIndex, true);
+                        break;
+                }
+
+                // All decoded frames have been rendered, we can stop playing now
+                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
+                    break;
+                }
+            }
+            */
+
+            decoder.stop();
+            decoder.release();
         }
     }
 }
