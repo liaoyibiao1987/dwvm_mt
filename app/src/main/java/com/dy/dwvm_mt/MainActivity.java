@@ -445,8 +445,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
                     }
                 }
             } catch (Exception e) {
-                Log.e("mtapp",  "E2: Encode input failed: "  + e.getMessage());
-                showLog("Encode output failed: " + e.getMessage());
+                Log.e("mtapp",  "E2: Encode input failed: "  + e.toString());
+                showLog("Encode output failed: " + e.toString());
             }
         }
 
