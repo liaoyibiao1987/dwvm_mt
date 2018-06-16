@@ -109,7 +109,7 @@ public class EncodeVideoThread extends Thread {
         try {
             decoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 2048000); // 512 kbps
+            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 1024000); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
             //mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);

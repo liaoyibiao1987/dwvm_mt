@@ -405,10 +405,6 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        savaPreviewFrame(data, camera);
-        return;
-
-        /*
         //
         // callback from Camera: YUV raw data
         //
@@ -417,7 +413,18 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
         if (data.length < iInputSize || iInputSize <= 0) {
             return;
         }
+        else {
+            // if camera is NV12, and encoder is YUV420SP, need swap U & V color
+            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
+                    ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
+            }
+            savaPreviewFrame(data, camera);
+        }
 
+
+
+    /*
         // encode to H264
         if (m_encoder != null && !m_encoderPauseSend) {
             // input to encoder
