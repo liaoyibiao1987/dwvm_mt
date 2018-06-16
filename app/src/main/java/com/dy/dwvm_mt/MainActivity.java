@@ -4,15 +4,11 @@ import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
-import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.Time;
 import android.util.Log;
-import android.util.Printer;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -25,11 +21,14 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 
+import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
+public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
     // parameters for MTLib demo
     private static final long LOCAL_DEVICE_ID = 0x04000009;
     private static final int LOCAL_UDP_PORT = 5004;
@@ -37,6 +36,11 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     private static final long REMOTE_DEVICE_ID = 0x04000000;
     private String REMOTE_DEVICE_IP = "";
 
+    /*非公有的变量前面要加上小写m，
+        静态变量前面加上小写s，
+        其它变量以小写字母开头，
+        静态变量全大写。
+        除了protected外，其它的带有m的变量在子类中是无法访问的。*/
     // parameters for camera preview, capture, encode
     // === raw image resolution range: 640x360 ~ 720x576
     private static final int RAW_IMAGE_WIDTH_MIN = 640;
@@ -84,10 +88,10 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
     private SurfaceView m_surfaceCameraPreview = null;
     private SurfaceView m_surfaceDecoderShow = null;
 
-    private static Object yuvlocker = new Object();
-    private static int yuvqueuesize = 10;
-    public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(yuvqueuesize);
-    private PlayerThread mPlayer = null;
+    private static Object m_yuvlocker = new Object();
+    private static int m_yuvqueuesize = 10;
+    public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(m_yuvqueuesize);
+    private EncodeVideoThread mPlayer = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,25 +142,6 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAPTURE_AUDIO_OUTPUT)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.e("TEST", "获取到CAPTURE_AUDIO_OUTPUT的使用.");
-            //init(barcodeScannerView, getIntent(), null);
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAPTURE_AUDIO_OUTPUT}, 1);//1 can be another integer
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAPTURE_VIDEO_OUTPUT)
-                == PackageManager.PERMISSION_GRANTED) {
-            Log.e("TEST", "获取到CAPTURE_VIDEO_OUTPUT的使用.");
-            //init(barcodeScannerView, getIntent(), null);
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAPTURE_VIDEO_OUTPUT}, 1);//1 can be another integer
-        }
-
     }
 
     @Override
@@ -209,7 +194,8 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         }
 
         if (mPlayer == null) {
-            mPlayer = new PlayerThread();
+            mPlayer = new EncodeVideoThread(m_mtLib, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            mPlayer.ChangeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             mPlayer.start();
         }
         // update UI
@@ -398,7 +384,7 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
         if (YUVQueue.size() >= 10) {
             YUVQueue.poll();
         }
-        synchronized (yuvlocker) {
+        synchronized (m_yuvlocker) {
             YUVQueue.add(buffer);
         }
     }
@@ -746,195 +732,6 @@ public class MainActivity extends AppCompatActivity implements MTLib.MTLibCallba
             tmp = image[uvBegin + i];
             image[uvBegin + i] = image[uvBegin + i + 1];
             image[uvBegin + i + 1] = tmp;
-        }
-    }
-
-
-    private static final String SAMPLE = Environment.getExternalStorageDirectory() + "/video.mp4";
-
-    private class PlayerThread extends Thread {
-        private MediaCodec decoder;
-        private boolean isRuning = true;
-        private byte[] input = null;
-        private long pts = 0;
-        private long generateIndex = 0;
-        private int m_framerate = 30;
-        private int TIMEOUT_USEC = 12000;
-
-
-        public PlayerThread() {
-        }
-
-        private void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
-            if (nv21 == null || nv12 == null) return;
-            int framesize = width * height;
-            int i = 0, j = 0;
-            System.arraycopy(nv21, 0, nv12, 0, framesize);
-            for (i = 0; i < framesize; i++) {
-                nv12[i] = nv21[i];
-            }
-            for (j = 0; j < framesize / 2; j += 2) {
-                nv12[framesize + j - 1] = nv21[j + framesize];
-            }
-            for (j = 0; j < framesize / 2; j += 2) {
-                nv12[framesize + j] = nv21[j + framesize - 1];
-            }
-        }
-
-        /**
-         * Generates the presentation time for frame N, in microseconds.
-         */
-        private long computePresentationTime(long frameIndex) {
-            return 132 + frameIndex * 1000000 / m_framerate;
-        }
-
-        @Override
-        public void run() {
-            try {
-                decoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
-                MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-                mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 2048000); // 512 kbps
-                mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
-                mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
-                mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
-                mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 180);
-
-                decoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            } catch (Exception e) {
-                if (decoder != null) {
-                    decoder = null;
-                }
-                Log.e("PlayerThread", "Encoder create error: " + e.getMessage());
-            }
-
-            if (decoder == null) {
-                Log.e("DecodeActivity", "Can't find video info!");
-                return;
-            }
-            decoder.start();
-
-
-            while (isRuning) {
-                if (MainActivity.YUVQueue.size() > 0) {
-                    input = MainActivity.YUVQueue.poll();
-                    byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
-                    NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
-                    input = yuv420sp;
-                }
-                if (input != null) {
-                    try {
-                        long startMs = System.currentTimeMillis();
-                        ByteBuffer[] inputBuffers = decoder.getInputBuffers();
-                        ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
-                        int inputBufferIndex = decoder.dequeueInputBuffer(-1);
-                        if (inputBufferIndex >= 0) {
-                            pts = computePresentationTime(generateIndex);
-                            ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                            inputBuffer.clear();
-                            inputBuffer.put(input);
-                            decoder.queueInputBuffer(inputBufferIndex, 0, input.length, pts, 0);
-                            generateIndex += 1;
-                        }
-
-                        MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                        int outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
-                        while (outputBufferIndex >= 0) {
-                            //Log.i("AvcEncoder", "Get H264 Buffer Success! flag = "+bufferInfo.flags+",pts = "+bufferInfo.presentationTimeUs+"");
-                            final int iEncodeFrameSize = bufferInfo.size;
-                            ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
-                            byte[] tmp_encodeFrameBuffer = new byte[bufferInfo.size];
-                            outputBuffer.get(tmp_encodeFrameBuffer);
-
-
-                            decoder.releaseOutputBuffer(outputBufferIndex, false);
-                            outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
-                            Log.e("开始编码：", "" + tmp_encodeFrameBuffer.length);
-                            // send to network
-                            if (m_mtLib.isWorking()) {
-                                m_mtLib.sendOneFrameToDevice(0, REMOTE_DEVICE_ID, 0, REMOTE_DEVICE_IP, MTLib.CODEC_VIDEO_H264,
-                                        tmp_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
-                            }
-                        }
-
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                } else {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-
-/*
-            ByteBuffer[] inputBuffers = decoder.getInputBuffers();
-            ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            boolean isEOS = false;
-            long startMs = System.currentTimeMillis();
-            while (!Thread.interrupted()) {
-                if (!isEOS) {
-                    int inIndex = decoder.dequeueInputBuffer(10000);
-                    if (inIndex >= 0) {
-                        ByteBuffer buffer = inputBuffers[inIndex];
-                        int sampleSize = extractor.readSampleData(buffer, 0);
-                        if (sampleSize < 0) {
-                            // We shouldn't stop the playback at this point, just pass the EOS
-                            // flag to decoder, we will get it again from the
-                            // dequeueOutputBuffer
-                            Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                            decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            isEOS = true;
-                        } else {
-                            decoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
-                            extractor.advance();
-                        }
-                    }
-                }
-
-                int outIndex = decoder.dequeueOutputBuffer(info, 10000);
-                switch (outIndex) {
-                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
-                        outputBuffers = decoder.getOutputBuffers();
-                        break;
-                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        Log.d("DecodeActivity", "New format " + decoder.getOutputFormat());
-                        break;
-                    case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
-                        break;
-                    default:
-                        ByteBuffer buffer = outputBuffers[outIndex];
-                        Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + buffer);
-
-                        // We use a very simple clock to keep the video FPS, or the video
-                        // playback will be too fast
-                        while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
-                            try {
-                                sleep(10);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                                break;
-                            }
-                        }
-                        decoder.releaseOutputBuffer(outIndex, true);
-                        break;
-                }
-
-                // All decoded frames have been rendered, we can stop playing now
-                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    break;
-                }
-            }
-            */
-
-            decoder.stop();
-            decoder.release();
         }
     }
 }
