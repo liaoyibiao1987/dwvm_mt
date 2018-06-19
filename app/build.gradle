@@ -6,6 +6,9 @@ android {
     aaptOptions {
         cruncherEnabled = false
     }
+    lintOptions {
+        disable 'PrivateResource'
+    }
     defaultConfig {
         applicationId "com.dy.dwvm_mt"
         minSdkVersion 17
