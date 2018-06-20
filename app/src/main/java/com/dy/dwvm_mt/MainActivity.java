@@ -28,6 +28,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
     // parameters for MTLib demo
     private static final long LOCAL_DEVICE_ID = 0x04000009;
@@ -84,6 +87,8 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     private TextView m_txtLog = null;
     private Button m_btnStart = null;
     private Button m_btnStop = null;
+
+    @Bind(R.id.nav_view)
     private Button m_btnSendOnePacket = null;
     private SurfaceView m_surfaceCameraPreview = null;
     private SurfaceView m_surfaceDecoderShow = null;
@@ -97,7 +102,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        ButterKnife.bind(this);
         // get UI controls
         m_txtLog = (TextView) findViewById(R.id.txtLog);
         m_btnStart = (Button) findViewById(R.id.btnStart);
