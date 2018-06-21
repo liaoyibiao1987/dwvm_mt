@@ -88,7 +88,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     private Button m_btnStart = null;
     private Button m_btnStop = null;
 
-    @Bind(R.id.nav_view)
+
     private Button m_btnSendOnePacket = null;
     private SurfaceView m_surfaceCameraPreview = null;
     private SurfaceView m_surfaceDecoderShow = null;

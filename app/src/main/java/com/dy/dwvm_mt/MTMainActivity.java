@@ -2,32 +2,54 @@ package com.dy.dwvm_mt;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.view.View;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.FrameLayout;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.fragments.HomeFragment;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 public class MTMainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+
+    FragmentManager fragmentManager;
+
+    @BindView(R.id.toolbar)
+    Toolbar toolbar;
+    @BindView(R.id.content_frame)
+    FrameLayout contentFrame;
+    @BindView(R.id.fab)
+    FloatingActionButton fab;
+    @BindView(R.id.nav_view)
+    NavigationView navigationView;
+    @BindView(R.id.drawer_layout)
+    DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mtmain);
+        ButterKnife.bind(this);
+        fragmentManager = getSupportFragmentManager();
+
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         //android 从 API 26 之后，使用findViewById 可以直接写为 tv = findViewById(R.id.textView) ;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -36,13 +58,11 @@ public class MTMainActivity extends BaseActivity
             }
         });
 
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
     }
 
@@ -83,8 +103,9 @@ public class MTMainActivity extends BaseActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
+        Class fragmentClass = null;
         if (id == R.id.nav_camera) {
+            fragmentClass = HomeFragment.class;
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
 
@@ -97,8 +118,15 @@ public class MTMainActivity extends BaseActivity
         } else if (id == R.id.nav_send) {
 
         }
-
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        try {
+            Fragment fragment = (Fragment) fragmentClass.newInstance();
+            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        item.setChecked(true);
+        setTitle(item.getTitle());
+        drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
