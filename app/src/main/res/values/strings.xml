@@ -10,4 +10,5 @@
     <string name="title_activity_mtmain">MTMainActivity</string>
 
     <string name="nav_title_makingcalls">拨打电话</string>
+    <string name="f_btn_show">这是按钮</string>
 </resources>
