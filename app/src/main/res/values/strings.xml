@@ -11,4 +11,5 @@
 
     <string name="nav_title_makingcalls">拨打电话</string>
     <string name="f_btn_show">这是按钮</string>
+    <string name="btn_str_clickme">点我试试</string>
 </resources>

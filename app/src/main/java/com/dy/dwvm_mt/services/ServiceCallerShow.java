@@ -12,8 +12,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dy.dwvm_mt.R;
+import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.util.HashMap;
 
@@ -38,11 +40,13 @@ public class ServiceCallerShow extends Service {
     @Override
 
     public void onCreate() {
+        android.os.Debug.waitForDebugger();
         super.onCreate();
         if (context != null) {
+            Toast.makeText(context,"ServiceCallerShow.onCreate()",Toast.LENGTH_LONG);
             if (phoneNumBerStr != null && !phoneNumBerStr.equals("")) {
                 //将来电号码的详细信息赋给悬浮窗中的对应UI
-                createFloatView();
+                //createFloatView();
             }
         }
     }
@@ -148,6 +152,7 @@ public class ServiceCallerShow extends Service {
     {
         // TODO Auto-generated method stub
 
+        LogUtils.e(context, "ServiceCallerShow.onDestroy()");
         super.onDestroy();
         if (mFloatLayout != null) {
             mWindowManager.removeView(mFloatLayout);

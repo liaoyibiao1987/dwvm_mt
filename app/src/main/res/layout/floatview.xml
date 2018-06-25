@@ -53,5 +53,5 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="125dp"
         android:layout_marginTop="48dp"
-        android:text="TextView" />
+        android:text="@string/btn_str_clickme" />
 </LinearLayout>
