@@ -22,6 +22,7 @@ public class ReceiverCaller extends BroadcastReceiver {
         String action = intent.getAction();
         //呼入电话
         if (action.equals(B_PHONE_STATE)) {
+            LogUtils.e(context, "ReceiverCaller.B_PHONE_STATE()");
             //将需要的信息赋给Service中的两个静态成员
             ServiceCallerShow.context = context;
             ServiceCallerShow.phoneNumBerStr = phoneNumber;

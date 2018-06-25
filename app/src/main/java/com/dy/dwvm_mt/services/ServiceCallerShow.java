@@ -30,7 +30,7 @@ public class ServiceCallerShow extends Service {
     //创建浮动窗口设置布局参数的对象
 
     private WindowManager mWindowManager;
-    private Button mFloatView;
+    private Button mFloatButton;
     private TextView tvName;
     private TextView tvBm;
     private TextView tvGh;
@@ -40,13 +40,13 @@ public class ServiceCallerShow extends Service {
     @Override
 
     public void onCreate() {
-        android.os.Debug.waitForDebugger();
+        //android.os.Debug.waitForDebugger();
         super.onCreate();
         if (context != null) {
             Toast.makeText(context,"ServiceCallerShow.onCreate()",Toast.LENGTH_LONG);
             if (phoneNumBerStr != null && !phoneNumBerStr.equals("")) {
                 //将来电号码的详细信息赋给悬浮窗中的对应UI
-                //createFloatView();
+                createFloatView();
             }
         }
     }
@@ -73,9 +73,10 @@ public class ServiceCallerShow extends Service {
         wmParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         //调整悬浮窗显示的停靠位置为顶部水平居中
         wmParams.gravity = Gravity.CENTER_HORIZONTAL | Gravity.TOP;
+
         // 以屏幕左上角为原点，设置x、y初始值
         wmParams.x = 0;
-        wmParams.y = 0;
+        wmParams.y = 200;
         /*// 设置悬浮窗口长宽数据
         wmParams.width = 200;
         wmParams.height = 80;*/
@@ -91,7 +92,7 @@ public class ServiceCallerShow extends Service {
         //添加mFloatLayout
         mWindowManager.addView(mFloatLayout, wmParams);
         //浮动窗口按钮
-        mFloatView = (Button) mFloatLayout.findViewById(R.id.float_id);
+        mFloatButton = (Button) mFloatLayout.findViewById(R.id.float_id);
         //【详细信息赋值 给UI 】++++++++++++
         tvName = (TextView) mFloatLayout.findViewById(R.id.tv_name);
         tvBm = (TextView) mFloatLayout.findViewById(R.id.tv_ssbm);
@@ -138,7 +139,7 @@ public class ServiceCallerShow extends Service {
                 .makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
 
 
-        mFloatView.setOnClickListener(new View.OnClickListener() {
+        mFloatButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stopService(new Intent(v.getContext(), ServiceCallerShow.class));

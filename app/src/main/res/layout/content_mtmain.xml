@@ -6,10 +6,8 @@
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".MTMainActivity"
-    android:background="#ffff0000"
     tools:showIn="@layout/app_bar_mtmain">
     <FrameLayout
-        android:background="#ffffff00"
         android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
