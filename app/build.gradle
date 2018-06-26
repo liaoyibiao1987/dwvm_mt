@@ -5,9 +5,21 @@ def listSubFile = {
     def files = file(resFolder).listFiles()
     def folders = []
     files.each {
-        item -> folders.add(item.absolutePath)
+        item -> folders.add(item.absolutePath)//; println(item.absolutePath)
     }
     folders.add(file(resFolder).parentFile.absolutePath)
+    return folders
+}
+
+def listSubFile2 = {
+    def dir = new File("src/main/res/layout")
+    def folders = []
+    dir.eachDir {
+        item ->folders.add(item.absolutePath)
+    }
+    folders.add(dir.absolutePath)
+    //folders.add(file(dir).parentFile.absolutePath)
+    println folders
     return folders
 }
 
@@ -18,14 +30,14 @@ android {
         cruncherEnabled = false
     }
 
-    sourceSets{
-        main{
-            /*res.srcDirs  =[
+    sourceSets {
+        main {
+            res.srcDirs = [
                     'src/main/res/layout/dialTabs',
                     'src/main/res/layout',
                     'src/main/res',
-            ]*/
-            res.srcDirs = listSubFile()
+            ]
+            /*res.srcDirs = listSubFile2()*/
         }
     }
     //apply plugin: 'android-apt'
@@ -57,7 +69,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "LOG_DEBUG", "true")
+        }
         release {
+            buildConfigField("boolean", "LOG_DEBUG", "false")
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

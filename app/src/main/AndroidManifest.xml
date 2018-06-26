@@ -17,14 +17,12 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.FLASHLIGHT" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
     <!-- 调用硬件相机权限 -->
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.media" />
-
 
     <application
         android:allowBackup="true"
@@ -47,11 +45,10 @@
         <activity
             android:name=".MTMainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar" />
 
-        </activity>
-
-        <!--<receiver android:name=".broadcasts.PhoneStateReceiver">
+        <!--
+        <receiver android:name=".broadcasts.PhoneStateReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
@@ -66,7 +63,8 @@
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <action android:name="dwvm_mt.autostart_action" />
             </intent-filter>
-        </receiver>-->
+        </receiver>
+        -->
 
         <service
             android:name=".services.ServiceCallerShow"
@@ -80,8 +78,12 @@
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
-
         </receiver>
+
+        <activity
+            android:name=".Main2Activity"
+            android:label="@string/title_activity_main2"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

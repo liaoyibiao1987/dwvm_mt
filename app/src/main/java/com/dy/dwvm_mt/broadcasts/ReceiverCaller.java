@@ -45,16 +45,16 @@ public class ReceiverCaller extends BroadcastReceiver {
         int state = telephony.getCallState();
         switch (state) {
             case TelephonyManager.CALL_STATE_RINGING://等待接电话
-                SystemClock.sleep(500);// 睡0.5秒是为了让悬浮窗显示在360或别的悬浮窗口的上方
+                SystemClock.sleep(2000);// 睡2秒是为了让悬浮窗显示在360或别的悬浮窗口的上方
                 intent2 = new Intent(context, ServiceCallerShow.class);
                 context.startService(intent2);//打开Service
                 break;
             case TelephonyManager.CALL_STATE_IDLE://电话挂断
-                context.stopService(intent2);//关闭Service中的悬浮窗口【关闭来电显示】
+                //context.stopService(intent2);//关闭Service中的悬浮窗口【关闭来电显示】
                 //貌似用mWindowManager.removeView(mFloatLayout);比stopService快？但是还没测试过
                 break;
             case TelephonyManager.CALL_STATE_OFFHOOK://通话中
-                context.stopService(intent2);
+                //context.stopService(intent2);
                 break;
 
         }
