@@ -138,7 +138,25 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceName
 
     return JNI_TRUE;
 }
+/*
+ * Class:     com_dy_dwvm_mt_MTLib
+ * Method:    setDeviceName
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_resetDeviceID
+        (JNIEnv *env, jobject, jlong jlong1DeviceID)
+{
+    if (g_lib == NULL)
+    {
+        return JNI_FALSE;
+    }
+    if (!g_lib->ResetDeviceID(jlong1DeviceID))
+    {
+        return JNI_FALSE;
+    }
 
+    return JNI_TRUE;
+}
 /*
  * Class:     com_dy_dwvm_mt_MTLib
  * Method:    dataEncrypt

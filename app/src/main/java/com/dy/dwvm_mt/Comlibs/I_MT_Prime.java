@@ -34,6 +34,8 @@ public interface I_MT_Prime {
 
     boolean setDeviceName(String deviceName);
 
+    boolean resetDeviceID(long deviceName);
+
     int dataEncrypt(byte[] srcData, int srcSize, byte[] destData);
 
     int dataDecrypt(byte[] srcData, int srcSize, byte[] destData);

@@ -191,6 +191,9 @@ BOOL CMTLibInstance::SetDeviceName(const char *szDeviceName)
     return TRUE;
 }
 
+bool CMTLibInstance::ResetDeviceID(DWORD dwLocalDeviceId){
+    m_dwLocalDeviceId = dwLocalDeviceId;
+}
 int CMTLibInstance::SendUdpPacketToDevice(
     DWORD dwPacketType,
     DWORD dwNeedReplay,

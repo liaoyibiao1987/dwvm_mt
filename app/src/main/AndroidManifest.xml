@@ -79,11 +79,6 @@
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
-
-        <activity
-            android:name=".Main2Activity"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>
