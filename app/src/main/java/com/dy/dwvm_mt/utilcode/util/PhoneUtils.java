@@ -5,10 +5,16 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.IBinder;
 import android.support.annotation.RequiresPermission;
+import android.telecom.TelecomManager;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
+import android.view.KeyEvent;
 
+import com.android.internal.telephony.ITelephony;
+
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static android.Manifest.permission.CALL_PHONE;
@@ -265,6 +271,55 @@ public final class PhoneUtils {
             }
         } else {
             smsManager.sendTextMessage(phoneNumber, null, content, sentIntent, null);
+        }
+    }
+
+    public static final com.android.internal.telephony.ITelephony getITelephony() throws Exception {
+        Class clazz = Class.forName("android.os.ServiceManager");
+        Method getServiceMethod = clazz.getMethod("getService", String.class);
+        IBinder iBinder = (IBinder) getServiceMethod.invoke(null, Context.TELEPHONY_SERVICE);
+        ITelephony iTelephony = ITelephony.Stub.asInterface(iBinder);
+        return ITelephony.Stub.asInterface(iBinder);
+    }
+
+    /**
+     * 接听电话
+     *
+     * @param context
+     */
+    public static final void answerRingingCall(Context context) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                TelecomManager telecomManager = (TelecomManager) context.getSystemService(context.TELECOM_SERVICE);
+                Method method = Class.forName("android.telecom.TelecomManager").getMethod("acceptRingingCall");
+                method.invoke(telecomManager);
+            } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.GINGERBREAD) {// android 2.3以上
+                try {
+                    getITelephony().answerRingingCall();
+                    Intent buttonUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    buttonUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_HEADSETHOOK));
+                    context.sendOrderedBroadcast(buttonUp, "android.permission.CALL_PRIVILEGED");
+                } catch (Exception e) {
+                    Intent buttonUp = new Intent(Intent.ACTION_MEDIA_BUTTON);
+                    buttonUp.putExtra(Intent.EXTRA_KEY_EVENT, new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_HEADSETHOOK));
+                    context.sendOrderedBroadcast(buttonUp, null);
+                }
+            } else {
+                getITelephony().answerRingingCall();
+            }
+        } catch (Exception e) {
+            LogUtils.e(e);
+        }
+    }
+
+    /**
+     * 挂机
+     */
+    public static final void endRingingCall() {
+        try {
+            getITelephony().endCall();
+        } catch (Exception e) {
+            LogUtils.e(e);
         }
     }
 }

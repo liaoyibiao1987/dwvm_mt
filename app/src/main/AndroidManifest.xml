@@ -66,19 +66,38 @@
         </receiver>
         -->
 
-        <service
-            android:name=".services.ServiceCallerShow"
-            android:enabled="true">
-            <intent-filter android:priority="1000">
-                <action android:name=".service.CallShowService" />
-            </intent-filter>
-        </service>
+        <!-- <service
+             android:name=".services.ServiceCallerShow"
+             android:enabled="true">
+             <intent-filter android:priority="1000">
+                 <action android:name=".service.CallShowService" />
+             </intent-filter>
+         </service>
 
-        <receiver android:name=".broadcasts.ReceiverCaller">
+         <receiver android:name=".broadcasts.ReceiverCaller">
+             <intent-filter android:priority="1000">
+                 <action android:name="android.intent.action.PHONE_STATE" />
+             </intent-filter>
+         </receiver>-->
+        <receiver android:name=".broadcasts.AutoStartReceiver">
             <intent-filter android:priority="1000">
-                <action android:name="android.intent.action.PHONE_STATE" />
+                <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="dwvm_mt.autostart_action" />
             </intent-filter>
         </receiver>
+        <receiver android:name=".broadcasts.PhoneStateReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name=".services.CallShowService" android:enabled="true">
+            <intent-filter android:priority="1000">
+                <action android:name=".services.CallShowService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

@@ -12,7 +12,7 @@ public class AutoStartReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        LogUtils.d("AutoStartReceiver");
+        LogUtils.d("开启自动加载服务");
 
         if(!CallShowService.isRunning)
             startCallShowService(context, intent);
