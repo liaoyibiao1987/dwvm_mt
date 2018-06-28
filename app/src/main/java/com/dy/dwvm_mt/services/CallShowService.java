@@ -51,8 +51,6 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                 initFloatView();
                 StartMTLib();
                 Thread.sleep(1000);
-                String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
-                commandUtils.sendLoginData("L_MT10", "123", "13411415574", "0756", ddnsIPAndPort);
             } catch (Exception es) {
                 LogUtils.e("CallShowService onCreate error " + es.toString());
                 isRunning = false;
@@ -160,6 +158,9 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             isCalling = false;
                             phoneNumber = incomingNumber;
+                            String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
+                            commandUtils.sendLoginData("L_MT10", "123", "13411415574", "0756", ddnsIPAndPort);
+
                             LogUtils.d("CALL_STATE_RINGING : incomingNumber ->" + incomingNumber);//来电号码
                             callShow();//显示来电秀
                             break;
@@ -209,11 +210,16 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     private void StartMTLib() {
         try {
             m_mtLib = new MTLib();
-            m_mtLib.installCallback(this);
-            if (!m_mtLib.start(0, commandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
-                LogUtils.d("MTLib.start() failed !");
-                return;
+            if (m_mtLib.isWorking() == false) {
+                m_mtLib.installCallback(this);
+                if (!m_mtLib.start(0x04000009, commandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
+                    LogUtils.e("MTLib.start() failed !");
+                    return;
+                }
+            }else {
+                LogUtils.d("MTLib is already started !");
             }
+
         } catch (Exception e) {
             LogUtils.e("MTLib.start() error: " + e.getMessage());
             return;

@@ -1,5 +1,6 @@
 package com.dy.dwvm_mt.messagestructs;
 
+import com.dy.javastruct.ForceLength;
 import com.dy.javastruct.StructClass;
 import com.dy.javastruct.StructField;
 
@@ -37,35 +38,35 @@ public class s_loginDDNS {
         this.szPasswordEncrypt = szPasswordEncrypt;
     }
 
-    public char[] getSzTelphoneZone() {
+    public byte[] getSzTelphoneZone() {
         return szTelphoneZone;
     }
 
-    public void setSzTelphoneZone(char[] szTelphoneZone) {
+    public void setSzTelphoneZone(byte[] szTelphoneZone) {
         this.szTelphoneZone = szTelphoneZone;
     }
 
-    public char[] getSzTelphoneCode() {
+    public byte[] getSzTelphoneCode() {
         return szTelphoneCode;
     }
 
-    public void setSzTelphoneCode(char[] szTelphoneCode) {
+    public void setSzTelphoneCode(byte[] szTelphoneCode) {
         this.szTelphoneCode = szTelphoneCode;
     }
 
-    public char[] getSzDeviceVersion() {
+    public byte[] getSzDeviceVersion() {
         return szDeviceVersion;
     }
 
-    public void setSzDeviceVersion(char[] szDeviceVersion) {
+    public void setSzDeviceVersion(byte[] szDeviceVersion) {
         this.szDeviceVersion = szDeviceVersion;
     }
 
-    public char[] getSzDeviceName() {
+    public byte[] getSzDeviceName() {
         return szDeviceName;
     }
 
-    public void setSzDeviceName(char[] szDeviceName) {
+    public void setSzDeviceName(byte[] szDeviceName) {
         this.szDeviceName = szDeviceName;
     }
 
@@ -101,6 +102,14 @@ public class s_loginDDNS {
         LoginType = loginType;
     }
 
+    public byte[] getLanIPAddr() {
+        return LanIPAddr;
+    }
+
+    public void setLanIPAddr(byte[] lanIPAddr) {
+        LanIPAddr = lanIPAddr;
+    }
+
     /// <summary>
     /// 本结构的长度（不包括扩展信息）
     /// </summary>
@@ -117,37 +126,43 @@ public class s_loginDDNS {
     /// 登录用户名，密文
     /// </summary>
     @StructField(order = 2)
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_USERNAME_LEN)
     public byte[] szUsernameEncrypt = new byte[s_messageBase.WVM_MAX_USERNAME_LEN];
 
     /// <summary>
     /// 登录密码，密文
     /// </summary>
     @StructField(order = 3)
-    public byte[] szPasswordEncrypt = new byte[s_messageBase.WVM_MAX_USERNAME_LEN];
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_PASSWORD_LEN)
+    public byte[] szPasswordEncrypt = new byte[s_messageBase.WVM_MAX_PASSWORD_LEN];
 
     /// <summary>
     /// 设备对应的电话区号
     /// </summary>
     @StructField(order = 4)
-    public char[] szTelphoneZone = new char[s_messageBase.WVM_MAX_TELPHONE_CODE_LEN];
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_TELPHONE_CODE_LEN)
+    public byte[] szTelphoneZone = new byte[s_messageBase.WVM_MAX_TELPHONE_CODE_LEN];
 
     /// <summary>
     /// 设备对应的电话号码
     /// </summary>
     @StructField(order = 5)
-    public char[] szTelphoneCode = new char[s_messageBase.WVM_MAX_TELPHONE_CODE_LEN];
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_TELPHONE_CODE_LEN)
+    public byte[] szTelphoneCode = new byte[s_messageBase.WVM_MAX_TELPHONE_CODE_LEN];
 
     /// <summary>
     /// 设备版本号
     /// </summary>
     @StructField(order = 6)
-    public char[] szDeviceVersion = new char[s_messageBase.WVM_MAX_DEVICE_VERSION_LEN];
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_DEVICE_VERSION_LEN)
+    public byte[] szDeviceVersion = new byte[s_messageBase.WVM_MAX_DEVICE_VERSION_LEN];
 
     /// <summary>
     /// 设备名称
     /// </summary>
     @StructField(order = 7)
-    public char[] szDeviceName = new char[s_messageBase.WVM_MAX_DEVICE_NAME_LEN];
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_DEVICE_NAME_LEN)
+    public byte[] szDeviceName = new byte[s_messageBase.WVM_MAX_DEVICE_NAME_LEN];
 
     /// <summary>
     /// 编码通道数量。仅对MT,MP,LSS有效
@@ -170,7 +185,14 @@ public class s_loginDDNS {
     /// <summary>
     /// 登录类型 0为人工登录 1为自动登录
     /// </summary>
-    @StructField(order = 12)
+    @StructField(order = 11)
     public int LoginType;
+
+    /// <summary>
+    /// 登录类型 0为人工登录 1为自动登录
+    /// </summary>
+    @StructField(order = 12)
+    @ForceLength(forceLen = s_messageBase.WVM_MAX_IP_PORT_LEN)
+    public byte[] LanIPAddr;
 
 }

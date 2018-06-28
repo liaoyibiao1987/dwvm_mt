@@ -2,6 +2,7 @@ package com.dy.dwvm_mt.commandmanager;
 
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
+import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.javastruct.JavaStruct;
 
@@ -16,6 +17,7 @@ public class commandUtils {
     public static final int MTPORT = 5007;
     public static final String DDNSIP = "112.91.151.187";
     public static final String DDNSPORT = "4998";
+    public  static final int DDNSDEVICEID=16777217;
 
     public static final int WVM_CMD_POLLING = 1;
     public static final int WVM_CMD_REPLY = 2;
@@ -37,7 +39,7 @@ public class commandUtils {
     private static I_MT_Prime mt_prime;
 
     public static void initSetupAdapter(I_MT_Prime adapter) {
-        if (mt_prime != null) {
+        if (mt_prime == null) {
             mt_prime = adapter;
         }
     }
@@ -48,19 +50,25 @@ public class commandUtils {
         loginstruct.setDwDeviceId(0);
         loginstruct.setLoginType(0);
         loginstruct.setDwDecoderChannelNumber(2);
-        loginstruct.setSzDeviceName("MT".toCharArray());
-        loginstruct.setSzDeviceVersion("1.0.1".toCharArray());
+        loginstruct.setSzDeviceName("MT".getBytes());
+        loginstruct.setSzDeviceVersion("1.0.1".getBytes());
 
-        loginstruct.setSzUsernameEncrypt(loginID.getBytes());
-        loginstruct.setSzPasswordEncrypt(loginPw.getBytes());
-        loginstruct.setSzTelphoneCode(telNumber.toCharArray());
-        loginstruct.setSzTelphoneZone(telZone.toCharArray());
+        byte[] e_loginid =new byte[s_messageBase.WVM_MAX_USERNAME_LEN];
+        mt_prime.dataEncrypt(loginID.getBytes(),loginID.length(),e_loginid);
+
+        byte[] e_loginpw =new byte[s_messageBase.WVM_MAX_PASSWORD_LEN];
+        mt_prime.dataEncrypt(loginPw.getBytes(),loginPw.length(),e_loginpw);
+
+        loginstruct.setSzUsernameEncrypt(e_loginid);
+        loginstruct.setSzPasswordEncrypt(e_loginpw);
+        loginstruct.setSzTelphoneCode(telNumber.getBytes());
+        loginstruct.setSzTelphoneZone(telZone.getBytes());
+        loginstruct.setLanIPAddr("172.16.100.56:5007".getBytes());
 
         try {
-            byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.LITTLE_ENDIAN);
-            int datasize = databuff.length;
-            LogUtils.d("sendLoginData : databuff" + databuff + " \r\n " + "datasize:" + datasize);
-            mt_prime.sendUdpPacketToDevice(WVM_CMD_DDNS_LOGIN, 0, 0, ddnsIPAndPort, databuff, datasize);
+            byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.BIG_ENDIAN);
+            LogUtils.d("sendLoginData : databuff" + databuff + " \r\n " + "datasize:" + databuff.length);
+            mt_prime.sendUdpPacketToDevice(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
         }

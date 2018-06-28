@@ -37,6 +37,33 @@ public final class ConvertUtils {
     private static final char hexDigits[] =
             {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+    public static byte[] int2byte(int res) {
+        byte[] targets = new byte[4];
+        targets[0] = (byte) (res & 0xff);// 最低位
+        targets[1] = (byte) ((res >> 8) & 0xff);// 次低位
+        targets[2] = (byte) ((res >> 16) & 0xff);// 次高位
+        targets[3] = (byte) (res >>> 24);// 最高位,无符号右移。
+        return targets;
+    }
+
+    public static int byte2int(byte[] res) {
+        // 一个byte数据左移24位变成0x??000000，再右移8位变成0x00??0000
+        int targets = (res[0] & 0xff) | ((res[1] << 8) & 0xff00) // | 表示安位或
+                | ((res[2] << 24) >>> 8) | (res[3] << 24);
+        return targets;
+    }
+
+
+    public static int byte2int(byte[] buffer, int i) {
+        if (buffer.length > 4 && buffer.length > i + 4) {
+            byte[] byteint = new byte[4];
+            System.arraycopy(byteint, 0, buffer, i, 4);
+            return byte2int(byteint);
+        } else {
+            return -1;
+        }
+    }
+
     /**
      * Bytes to bits.
      *

@@ -7,5 +7,5 @@ import com.dy.dwvm_mt.MTLib;
 
 public class BaseActivity extends AppCompatActivity {
     // MT Library
-    protected final I_MT_Prime m_mtLib = new MTLib();
+    protected static I_MT_Prime m_mtLib = new MTLib();
 }

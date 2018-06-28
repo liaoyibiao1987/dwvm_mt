@@ -10,6 +10,7 @@ public class StructFieldData {
 	private Method setter;
 	private boolean arrayLengthMarker = false;
 	private Constants.Primitive type;
+	private int forceLength = -1;
 	
 	public StructFieldData(Field field, boolean requiresGetterSetter,
 			Method getter, Method setter, Constants.Primitive type,
@@ -64,6 +65,14 @@ public class StructFieldData {
 
 	public void setArrayLengthMarker(boolean arrayLengthMarker) {
 		this.arrayLengthMarker = arrayLengthMarker;
+	}
+
+	public int getForceLength() {
+		return forceLength;
+	}
+
+	public void setForceLength(int focrceLength) {
+		this.forceLength = focrceLength;
 	}
 
 	public Constants.Primitive getType() {
