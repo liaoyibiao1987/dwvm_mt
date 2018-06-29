@@ -16,7 +16,9 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.DY_VideoPhoneActivity;
 import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
@@ -49,7 +51,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                 isRunning = true;
                 initPhoneStateListener();
                 initFloatView();
-                StartMTLib();
+                //StartMTLib();
                 Thread.sleep(1000);
             } catch (Exception es) {
                 LogUtils.e("CallShowService onCreate error " + es.toString());
@@ -147,22 +149,35 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                 if (isEnable) {//启用
                     switch (state) {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
-                            LogUtils.d("CALL_STATE_IDLE");
+                            LogUtils.d("CallShowService -> PhoneStateListener: CALL_STATE_IDLE");
                             isCalling = false;
-                            dismiss();//关闭来电秀
+                            //dismiss();//关闭来电秀
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
-                            LogUtils.d("CALL_STATE_OFFHOOK");
-                            callShow();//显示来电秀
+                            try {
+                                Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class);
+                                dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                dialogIntent.putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+                                Thread.sleep(3000);
+                                getApplication().startActivity(dialogIntent);
+                                //callShow();//显示来电秀
+                                LogUtils.d("CallShowService -> PhoneStateListener: CALL_STATE_OFFHOOK");
+                            } catch (Exception es) {
+                                LogUtils.e("CallShowService -> PhoneStateListener: CALL_STATE_OFFHOOK error" + es);
+                            }
+
                             break;
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             isCalling = false;
                             phoneNumber = incomingNumber;
-                            String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
-                            commandUtils.sendLoginData("L_MT10", "123", "13411415574", "0756", ddnsIPAndPort);
-
-                            LogUtils.d("CALL_STATE_RINGING : incomingNumber ->" + incomingNumber);//来电号码
-                            callShow();//显示来电秀
+                            try {
+                                String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
+                                commandUtils.sendLoginData("L_MT10", "123", "13411415574", "0756", ddnsIPAndPort);
+                                LogUtils.d("CallShowService -> PhoneStateListener: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
+                            } catch (Exception es) {
+                                LogUtils.e("CallShowService -> PhoneStateListener: .CALL_STATE_RINGING" + es);
+                            }
+                            //callShow();//显示来电秀
                             break;
                         default:
                             break;
@@ -216,7 +231,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                     LogUtils.e("MTLib.start() failed !");
                     return;
                 }
-            }else {
+            } else {
                 LogUtils.d("MTLib is already started !");
             }
 

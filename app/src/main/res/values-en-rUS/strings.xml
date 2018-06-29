@@ -11,4 +11,6 @@
 
     <string name="nav_title_makingcalls">Make Call</string>
     <string name="f_btn_show">这是按钮</string>
+
+    <string name="txt_btn_testperview">测试打开视频通话</string>
 </resources>

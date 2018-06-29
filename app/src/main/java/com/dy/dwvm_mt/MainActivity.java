@@ -5,7 +5,6 @@ import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.os.Environment;
 import android.os.Bundle;
 import android.text.format.Time;
 import android.util.Log;
@@ -28,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, Camera.PreviewCallback {
@@ -200,7 +198,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
 
         if (mPlayer == null) {
             mPlayer = new EncodeVideoThread(m_mtLib, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
-            mPlayer.ChangeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
+            mPlayer.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             mPlayer.start();
         }
         // update UI

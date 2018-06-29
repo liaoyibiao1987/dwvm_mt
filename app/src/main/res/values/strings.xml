@@ -14,4 +14,5 @@
     <string name="btn_str_clickme">点我试试</string>
 
     <string name="txt_btn_testlogin">测试登录</string>
+    <string name="txt_btn_testperview">测试打开视频通话</string>
 </resources>
