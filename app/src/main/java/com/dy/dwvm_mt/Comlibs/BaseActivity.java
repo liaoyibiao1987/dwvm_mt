@@ -12,6 +12,8 @@ public class BaseActivity extends AppCompatActivity {
     public static final String MT_VP_PAGE_OPENTYPE  = "dy.dymt.VP_PAGE_OPENTYPE";
     public static final int MT_VIDEOPHONE_STARTUPTYPE_CALLING  = 1;
     public static final int MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK =2;
+
+    public static final int REQUESTCODE = 1;
     // MT Library
     private static I_MT_Prime m_mtLib = null;
 

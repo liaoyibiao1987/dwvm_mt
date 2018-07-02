@@ -1,0 +1,1 @@
+PackageManager(是权限大户) , Intent(是action大户)，Manifest（程序本身自定义的权限，需要gradle自动生成）
