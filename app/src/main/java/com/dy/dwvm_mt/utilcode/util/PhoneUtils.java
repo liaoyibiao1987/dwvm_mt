@@ -322,4 +322,30 @@ public final class PhoneUtils {
             LogUtils.e(e);
         }
     }
+
+    public static final void telcomInvok(Context context, String type) {
+        try {
+            TelephonyManager tm = (TelephonyManager) context.getSystemService(context.TELEPHONY_SERVICE);
+            Method m1 = tm.getClass().getDeclaredMethod("getITelephony");
+            m1.setAccessible(true);
+            Object iTelephony = m1.invoke(tm);
+            switch (type) {
+                case "endCall":
+                    Method m2 = iTelephony.getClass().getDeclaredMethod("endCall");
+                    m2.invoke(iTelephony);
+                    break;
+                case "answerRingingCall":
+                    Method m3 = iTelephony.getClass().getDeclaredMethod("answerRingingCall");
+                    m3.invoke(iTelephony);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception es) {
+            LogUtils.e("ITelcomInvok error" + es);
+        }
+
+    }
+
+
 }

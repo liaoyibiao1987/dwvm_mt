@@ -49,6 +49,7 @@ public class DY_VideoPhoneActivity extends BaseActivity {
             Manifest.permission.ACCESS_NETWORK_STATE,
             "Manifest.permission.RECEIVE_USER_PRESENT",
             Manifest.permission.CAMERA,
+            Manifest.permission.MODIFY_PHONE_STATE,
             Manifest.permission.MEDIA_CONTENT_CONTROL};
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();

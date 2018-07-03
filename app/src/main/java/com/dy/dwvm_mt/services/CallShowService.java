@@ -1,13 +1,17 @@
 package com.dy.dwvm_mt.services;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.NotificationCompat;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
@@ -20,6 +24,7 @@ import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
 import com.dy.dwvm_mt.MTLib;
+import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
 import com.dy.dwvm_mt.commandmanager.commandUtils;
@@ -27,6 +32,7 @@ import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 public class CallShowService extends Service implements I_MT_Prime.MTLibCallback {
+    private static final int FOREGROUND_ID = 1;
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
     public static boolean isRunning = false;//是否正在运行
@@ -42,6 +48,10 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     private Button mFloatButton;
 
     private I_MT_Prime m_mtLib;
+
+
+    private static int NOTIFKEEPERIID = 1;
+
 
     @Override
     public void onCreate() {
@@ -82,7 +92,30 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
             LogUtils.d("Calling..." + phoneNumber);
             isCalling = true;
         }
+        NotificationWhenCommand();
         return super.onStartCommand(intent, START_STICKY, startId);
+    }
+
+    //手机休眠一段时间后（1-2小时），后台运行的服务被强行kill掉
+    //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级。
+    private void NotificationWhenCommand() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("电话提醒")
+                .setContentText("点击打开视频界面.")
+                .setContentInfo("东耀企业")
+                .setWhen(System.currentTimeMillis());
+        Intent activityIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.setContentIntent(pendingIntent);
+        Notification notification = builder.build();
+        //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级
+        if (Build.VERSION.SDK_INT < 18) {
+            startForeground(NOTIFKEEPERIID, notification);
+        } else {
+            startForeground(NOTIFKEEPERIID, notification);
+            startService(new Intent(this, InnerServer.class));
+        }
     }
 
     @Nullable
@@ -158,7 +191,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                                 Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class);
                                 dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 dialogIntent.putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-                                Thread.sleep(3000);
+                                Thread.sleep(5000);
                                 getApplication().startActivity(dialogIntent);
                                 //callShow();//显示来电秀
                                 LogUtils.d("CallShowService -> PhoneStateListener: CALL_STATE_OFFHOOK");
@@ -172,7 +205,15 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                             phoneNumber = incomingNumber;
                             try {
                                 String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
-                                commandUtils.sendLoginData("L_MT10", "123", "13411415574", "0756", ddnsIPAndPort);
+                                //commandUtils.sendLoginData("L_MT10", "123", "13411415574", "860756", ddnsIPAndPort);
+
+                                PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
+                                Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class);
+                                dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                dialogIntent.putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+                                Thread.sleep(5000);
+                                getApplication().startActivity(dialogIntent);
+                                //callShow();//显示来电秀
                                 LogUtils.d("CallShowService -> PhoneStateListener: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
                             } catch (Exception es) {
                                 LogUtils.e("CallShowService -> PhoneStateListener: .CALL_STATE_RINGING" + es);
@@ -221,6 +262,29 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
         telephonyManager.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
+    private static class InnerServer extends Service {
+        @Override
+        public void onCreate() {
+            super.onCreate();
+            try {
+                startForeground(CallShowService.NOTIFKEEPERIID, new Notification());
+            } catch (Exception es) {
+                LogUtils.e("InnerServer -> onCreate: " + es);
+            }
+        }
+
+        @Override
+        public void onDestroy() {
+            stopForeground(true);
+            super.onDestroy();
+        }
+
+        @Nullable
+        @Override
+        public IBinder onBind(Intent intent) {
+            return null;
+        }
+    }
 
     private void StartMTLib() {
         try {
