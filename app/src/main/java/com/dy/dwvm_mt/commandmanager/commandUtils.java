@@ -68,7 +68,7 @@ public class commandUtils {
         try {
             byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.BIG_ENDIAN);
             LogUtils.d("sendLoginData : databuff" + databuff + " \r\n " + "datasize:" + databuff.length);
-            mt_prime.sendUdpPacketToDevice(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
+            mt_prime.sendUdpPacketToDevice2(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
         }

@@ -205,7 +205,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                             phoneNumber = incomingNumber;
                             try {
                                 String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
-                                //commandUtils.sendLoginData("L_MT10", "123", "13411415574", "860756", ddnsIPAndPort);
+                                commandUtils.sendLoginData("L_MT10", "123", "13411415574", "860756", ddnsIPAndPort);
 
                                 PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                 Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class);

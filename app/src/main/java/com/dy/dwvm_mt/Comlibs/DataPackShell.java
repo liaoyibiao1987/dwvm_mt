@@ -2,6 +2,7 @@ package com.dy.dwvm_mt.Comlibs;
 
 import com.dy.dwvm_mt.utilcode.constant.TimeConstants;
 import com.dy.dwvm_mt.utilcode.util.ConvertUtils;
+import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
 import java.util.ArrayList;
@@ -15,27 +16,29 @@ import java.util.Random;
  * PS: Not easy to write code, please indicate.
  */
 public class DataPackShell {
+
     public interface OnReciveFullPacketListener {
         void onReviced(ReceivedPackEntity databuff);
     }
-    /**
-     完整包事件代理
 
-     @param entity
-     */
+
     /**
      * 收到一个完整包事件
      */
-    private static ArrayList<CachData> listCachData = new ArrayList<CachData>();
-
-    private static Random rd = new Random(100);
-
     private static OnReciveFullPacketListener receiveFullPacketHandler;
 
+    /**
+     * 完整包事件代理
+     *
+     * @param listener
+     */
     public static void setOnReceiveFullPacket(OnReciveFullPacketListener listener) {
         receiveFullPacketHandler = listener;
     }
 
+
+    private static ArrayList<CachData> listCachData = new ArrayList<CachData>();
+    private static Random rd = new Random(100);
     public static Object listlocker = new Object();
 
     /**
@@ -44,8 +47,8 @@ public class DataPackShell {
      * @param buffer
      * @return
      */
-    public static final ArrayList<Byte[]> GetSendBuff(byte[] buffer) {
-        ArrayList<Byte[]> list = new ArrayList<Byte[]>();
+    public static final ArrayList<byte[]> GetSendBuff(byte[] buffer) {
+        ArrayList<byte[]> list = new ArrayList<byte[]>();
         int UniqueID = GetUniqueID();
 //            拆成1024个字节
 //             * UniqueID 4
@@ -64,7 +67,7 @@ public class DataPackShell {
             if (i == packcount - 1) {
                 int datalen = buffer.length % 1024;
                 //最后一个包
-                Byte[] sendbuff = new Byte[datalen + 16];
+                byte[] sendbuff = new byte[datalen + 16];
                 System.arraycopy(ConvertUtils.int2byte(UniqueID), 0, sendbuff, 0, 4);
                 System.arraycopy(ConvertUtils.int2byte(packcount), 0, sendbuff, 4, 4);
                 System.arraycopy(ConvertUtils.int2byte(i), 0, sendbuff, 8, 4);
@@ -73,7 +76,7 @@ public class DataPackShell {
                 System.arraycopy(buffer, i * 1024, sendbuff, 16, datalen);
                 list.add(sendbuff);
             } else {
-                Byte[] sendbuff = new Byte[1024 + 16];
+                byte[] sendbuff = new byte[1024 + 16];
 
                 System.arraycopy(ConvertUtils.int2byte(UniqueID), 0, sendbuff, 0, 4);
                 System.arraycopy(ConvertUtils.int2byte(packcount), 0, sendbuff, 4, 4);
@@ -126,80 +129,80 @@ public class DataPackShell {
                 if (receiveFullPacketHandler != null) {
                     receiveFullPacketHandler.onReviced(reEntity);
                 }
-                return;
-            }
-
-            Byte[] rdata = new Byte[DataLength];
-            System.arraycopy(bufferWithNohead, 16, rdata, 0, DataLength);
-            synchronized (listlocker) {
-                CachData entity = null;
-                for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
-                    CachData data = ite.next();
-                    if (data.getUniqueID() == UniqueID) {
-                        entity = data;
-                        break;
-                    }
-                }
-                if (entity == null) {
+            } else {
+                Byte[] rdata = new Byte[DataLength];
+                System.arraycopy(bufferWithNohead, 16, rdata, 0, DataLength);
+                synchronized (listlocker) {
+                    CachData entity = null;
                     for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
                         CachData data = ite.next();
-                        if (TimeUtils.getTimeSpan(new Date(), data.getR_times(), TimeConstants.MIN) > 1) {
-                            ite.remove();
+                        if (data.getUniqueID() == UniqueID) {
+                            entity = data;
+                            break;
                         }
                     }
-                    entity = new CachData();
-                    entity.setUniqueID(UniqueID);
-                    entity.setReceivePackageCount(1);
-                    entity.setReceiveDataLength(DataLength);
-                    entity.setR_times(new Date());
-                    entity.setDataList(new ArrayList<Byte[]>());
-                    for (int i = 0; i < PackCount; i++) {
-                        entity.getDataList().add(new Byte[1024]);
-                    }
-                    entity.getDataList().set(PackIndex, rdata);
-                    entity.setbagType(bagType);
-                    entity.setszSrcIpPort(szSrcIpPort);
-                    listCachData.add(entity);
-
-                } else {
-                    entity.setReceivePackageCount(entity.getReceivePackageCount() + 1);
-                    entity.setReceiveDataLength(entity.getReceiveDataLength() + DataLength);
-                    entity.getDataList().set(PackIndex, rdata);
-                }
-
-                if (entity.getReceivePackageCount() == PackCount) {
-                    //收到完整包
-                    byte[] ReData = new byte[entity.getReceiveDataLength() + 44];
-                    System.arraycopy(newbuff, 0, ReData, 0, 44);
-
-                    for (int i = 0; i < entity.getDataList().size(); i++) {
-                        if (i == entity.getDataList().size() - 1) {
-                            int len = entity.getReceiveDataLength() % 1024;
-                            //最后一个包长度可能不是1024的
-                            System.arraycopy(entity.getDataList().get(i), 0, ReData, i * 1024 + 44, len);
-                        } else {
-                            //1024个字节
-                            System.arraycopy(entity.getDataList().get(i), 0, ReData, i * 1024 + 44, 1024);
+                    if (entity == null) {
+                        for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
+                            CachData data = ite.next();
+                            if (TimeUtils.getTimeSpan(new Date(), data.getR_times(), TimeConstants.MIN) > 1) {
+                                ite.remove();
+                            }
                         }
+                        entity = new CachData();
+                        entity.setUniqueID(UniqueID);
+                        entity.setReceivePackageCount(1);
+                        entity.setReceiveDataLength(DataLength);
+                        entity.setR_times(new Date());
+                        entity.setDataList(new ArrayList<Byte[]>());
+                        for (int i = 0; i < PackCount; i++) {
+                            entity.getDataList().add(new Byte[1024]);
+                        }
+                        entity.getDataList().set(PackIndex, rdata);
+                        entity.setbagType(bagType);
+                        entity.setszSrcIpPort(szSrcIpPort);
+                        listCachData.add(entity);
+
+                    } else {
+                        entity.setReceivePackageCount(entity.getReceivePackageCount() + 1);
+                        entity.setReceiveDataLength(entity.getReceiveDataLength() + DataLength);
+                        entity.getDataList().set(PackIndex, rdata);
                     }
-                    ReceivedPackEntity reEntity = new ReceivedPackEntity();
-                    reEntity.setbagBuffer(ReData);
-                    reEntity.setbagSize(entity.getReceiveDataLength() + 44);
-                    reEntity.setbagType(entity.getbagType());
-                    reEntity.setszSrcIpPort(entity.getszSrcIpPort());
-                    if (receiveFullPacketHandler != null) {
-                        receiveFullPacketHandler.onReviced(reEntity);
-                    }
-                    for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
-                        CachData data = ite.next();
-                        if (data.getUniqueID() == entity.getUniqueID()) {
-                            ite.remove();
+
+                    if (entity.getReceivePackageCount() == PackCount) {
+                        //收到完整包
+                        byte[] ReData = new byte[entity.getReceiveDataLength() + 44];
+                        System.arraycopy(newbuff, 0, ReData, 0, 44);
+
+                        for (int i = 0; i < entity.getDataList().size(); i++) {
+                            if (i == entity.getDataList().size() - 1) {
+                                int len = entity.getReceiveDataLength() % 1024;
+                                //最后一个包长度可能不是1024的
+                                System.arraycopy(entity.getDataList().get(i), 0, ReData, i * 1024 + 44, len);
+                            } else {
+                                //1024个字节
+                                System.arraycopy(entity.getDataList().get(i), 0, ReData, i * 1024 + 44, 1024);
+                            }
+                        }
+                        ReceivedPackEntity reEntity = new ReceivedPackEntity();
+                        reEntity.setbagBuffer(ReData);
+                        reEntity.setbagSize(entity.getReceiveDataLength() + 44);
+                        reEntity.setbagType(entity.getbagType());
+                        reEntity.setszSrcIpPort(entity.getszSrcIpPort());
+                        if (receiveFullPacketHandler != null) {
+                            receiveFullPacketHandler.onReviced(reEntity);
+                        }
+                        for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
+                                CachData data = ite.next();
+                                if (data.getUniqueID() == entity.getUniqueID()) {
+                                    ite.remove();
+                                }
                         }
                     }
                 }
             }
+
         } catch (java.lang.Exception e) {
-
+            LogUtils.e("receiver error :" + e);
         }
     }
 

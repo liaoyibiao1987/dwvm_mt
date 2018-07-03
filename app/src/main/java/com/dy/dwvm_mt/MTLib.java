@@ -1,15 +1,26 @@
 package com.dy.dwvm_mt;
 
+import com.dy.dwvm_mt.Comlibs.DataPackShell;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created on 2016.1.22
  * MT NDK Library
  */
 public class MTLib implements I_MT_Prime {
-    static
-    {
+    static {
         System.loadLibrary("DwvmMTLib");
+
+        DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
+            @Override
+            public void onReviced(DataPackShell.ReceivedPackEntity databuff) {
+                //MTLib.this.m_callbackInstance.onReceivedUdpPacket(databuff.)
+            }
+        });
     }
 
     public static final String CODEC_VIDEO_H264 = "video/avc";
@@ -22,8 +33,7 @@ public class MTLib implements I_MT_Prime {
     private MTLibCallback m_callbackInstance = null;
 
     @Override
-    public void installCallback(MTLibCallback instance)
-    {
+    public void installCallback(MTLibCallback instance) {
         m_callbackInstance = instance;
     }
 
@@ -41,48 +51,41 @@ public class MTLib implements I_MT_Prime {
             String codecName,
             int imageResolution,
             int width,
-            int height)
-    {
+            int height) {
         // callback by JNI-MTLib, and dispatch to main app
-        if (m_callbackInstance != null)
-        {
-            if (funcName.equalsIgnoreCase("onReceivedUdpPacket"))
-            {
+        if (m_callbackInstance != null) {
+            if (funcName.equalsIgnoreCase("onReceivedUdpPacket")) {
                 return m_callbackInstance.onReceivedUdpPacket(
-                    localDeviceId,
-                    remoteDeviceIpPort,
-                    remoteDeviceId,
-                    dataType,
-                    dataBuffer,
-                    dataBytes);
-            }
-            else if (funcName.equalsIgnoreCase("onReceivedVideoFrame"))
-            {
+                        localDeviceId,
+                        remoteDeviceIpPort,
+                        remoteDeviceId,
+                        dataType,
+                        dataBuffer,
+                        dataBytes);
+            } else if (funcName.equalsIgnoreCase("onReceivedVideoFrame")) {
                 return m_callbackInstance.onReceivedVideoFrame(
-                    localDeviceId,
-                    remoteDeviceIpPort,
-                    remoteDeviceId,
-                    remoteEncoderChannelIndex,
-                    localDecoderChannelIndex,
-                    dataType,
-                    codecName,
-                    imageResolution,
-                    width,
-                    height,
-                    dataBuffer,
-                    dataBytes);
-            }
-            else if (funcName.equalsIgnoreCase("onReceivedAudioFrame"))
-            {
+                        localDeviceId,
+                        remoteDeviceIpPort,
+                        remoteDeviceId,
+                        remoteEncoderChannelIndex,
+                        localDecoderChannelIndex,
+                        dataType,
+                        codecName,
+                        imageResolution,
+                        width,
+                        height,
+                        dataBuffer,
+                        dataBytes);
+            } else if (funcName.equalsIgnoreCase("onReceivedAudioFrame")) {
                 return m_callbackInstance.onReceivedAudioFrame(
-                    localDeviceId,
-                    remoteDeviceIpPort,
-                    remoteDeviceId,
-                    remoteEncoderChannelIndex,
-                    localDecoderChannelIndex,
-                    codecName,
-                    dataBuffer,
-                    dataBytes);
+                        localDeviceId,
+                        remoteDeviceIpPort,
+                        remoteDeviceId,
+                        remoteEncoderChannelIndex,
+                        localDecoderChannelIndex,
+                        codecName,
+                        dataBuffer,
+                        dataBytes);
             }
         }
         return 0;
@@ -132,6 +135,25 @@ public class MTLib implements I_MT_Prime {
             byte[] dataBuffer,
             int dataSize
     );
+
+    public int sendUdpPacketToDevice2(long packetType,
+                                      long needReplay,
+                                      long destDeviceId,
+                                      String destDeviceIpPort,
+                                      byte[] dataBuffer,
+                                      int dataSize
+    ) {
+        List<byte[]> datas = DataPackShell.GetSendBuff(dataBuffer);
+        int ret = 0;
+        if (datas.size() > 0) {
+            for (byte[] x : datas) {
+                //byte[] v_x = new byte[x.length];
+                //System.arraycopy(v_x, 0, x, 0, x.length);
+                ret += sendUdpPacketToDevice(packetType, needReplay, destDeviceId, destDeviceIpPort, x, x.length);
+            }
+        }
+        return ret;
+    }
 
     @Override
     public native int sendOneFrameToDevice(

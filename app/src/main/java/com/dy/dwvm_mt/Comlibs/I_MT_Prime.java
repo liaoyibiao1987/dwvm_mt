@@ -44,6 +44,8 @@ public interface I_MT_Prime {
 
     String stringDecrypt(String srcText);
 
+    @Deprecated()
+    @SuppressWarnings({"deprecation", "removal"})
     int sendUdpPacketToDevice(
             long packetType,
             long needReplay,
@@ -52,6 +54,16 @@ public interface I_MT_Prime {
             byte[] dataBuffer,
             int dataSize
     );
+
+    int sendUdpPacketToDevice2(
+            long packetType,
+            long needReplay,
+            long destDeviceId,
+            String destDeviceIpPort,
+            byte[] dataBuffer,
+            int dataSize
+    );
+
 
     int sendOneFrameToDevice(
             int localEncoderChannelIndex,
