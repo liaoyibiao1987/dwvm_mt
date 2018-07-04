@@ -21,6 +21,7 @@ import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.util.HashMap;
 
+@Deprecated
 public class ServiceCallerShow extends Service {
     public static Context context = null;
     public static String phoneNumBerStr = null;

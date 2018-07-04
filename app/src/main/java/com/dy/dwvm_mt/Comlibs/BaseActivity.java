@@ -4,6 +4,7 @@ package com.dy.dwvm_mt.Comlibs;
 import android.support.v7.app.AppCompatActivity;
 
 import com.dy.dwvm_mt.MTLib;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 public class BaseActivity extends AppCompatActivity {
@@ -23,10 +24,17 @@ public class BaseActivity extends AppCompatActivity {
 
     static {
         if (BaseActivity.m_mtLib == null) {
-            BaseActivity.m_mtLib = new MTLib();
+            try {
+                BaseActivity.m_mtLib = new MTLib();
+
+            } catch (Exception e) {
+                LogUtils.e("MTLib.start() error: " + e.getMessage());
+            }
+            //m_mtLib.setDeviceName(LOCAL_DEVICE_NAME);
         } else {
             LogUtils.e("主件已经初始化过了.");
         }
+
     }
 
 }

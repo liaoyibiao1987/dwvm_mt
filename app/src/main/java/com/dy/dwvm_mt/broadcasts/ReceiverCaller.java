@@ -10,6 +10,7 @@ import android.widget.Toast;
 import com.dy.dwvm_mt.services.ServiceCallerShow;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
+@Deprecated
 public class ReceiverCaller extends BroadcastReceiver {
 
     private Intent intent2 = null;

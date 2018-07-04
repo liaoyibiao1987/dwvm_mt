@@ -27,7 +27,11 @@ import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
+import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
+import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
@@ -55,19 +59,29 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
 
     @Override
     public void onCreate() {
-        //android.os.Debug.waitForDebugger();
+        android.os.Debug.waitForDebugger();
         if (isRunning == false) {
             try {
                 isRunning = true;
-                initPhoneStateListener();
+                setupMTLib();
                 initFloatView();
-                //StartMTLib();
+                initPhoneStateListener();
                 Thread.sleep(1000);
             } catch (Exception es) {
                 LogUtils.e("CallShowService onCreate error " + es.toString());
                 isRunning = false;
             }
         }
+
+        AnalysingUtils.setupMTLib(m_mtLib);
+        AnalysingUtils.startReviceData();
+        AnalysingUtils.addRecvedCommandListeners(new NWCommandEventHandler() {
+            @Override
+            public void doHandler(NWCommandEventArg arg) {
+                NetWorkCommand command = arg.getEventArg();
+                LogUtils.e("收到回应包了：" + command);
+            }
+        });
         super.onCreate();
     }
 
@@ -286,9 +300,9 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
         }
     }
 
-    private void StartMTLib() {
+    private void setupMTLib() {
         try {
-            m_mtLib = new MTLib();
+            m_mtLib = BaseActivity.getM_mtLib();
             if (m_mtLib.isWorking() == false) {
                 m_mtLib.installCallback(this);
                 if (!m_mtLib.start(0x04000009, CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
