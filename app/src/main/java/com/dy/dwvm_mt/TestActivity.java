@@ -1,14 +1,17 @@
 package com.dy.dwvm_mt;
 
-import android.app.Activity;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.view.View;
 import android.widget.Button;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.Comlibs.DataPackShell;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.commandmanager.commandUtils;
+import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
+import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import butterknife.BindView;
@@ -30,12 +33,20 @@ public class TestActivity extends BaseActivity implements I_MT_Prime.MTLibCallba
         setContentView(R.layout.activity_test);
         ButterKnife.bind(this);
         StartMTLib();
-
+        AnalysingUtils.setupMTLib(m_mtLib);
+        AnalysingUtils.startReviceData();
+        AnalysingUtils.addRecvedCommandListeners(new NWCommandEventHandler() {
+            @Override
+            public void doHandler(NWCommandEventArg arg) {
+                NetWorkCommand command = arg.getEventArg();
+                LogUtils.e("收到回应包了：" + command);
+            }
+        });
         btn_testlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String ddnsIPAndPort = commandUtils.DDNSIP + ":" + commandUtils.DDNSPORT;
-                commandUtils.sendLoginData("L_MT6", "123", "3850203", "860756", ddnsIPAndPort);
+                String ddnsIPAndPort = CommandUtils.DDNSIP + ":" + CommandUtils.DDNSPORT;
+                CommandUtils.sendLoginData("L_MT6", "123", "3850203", "860756", ddnsIPAndPort);
             }
         });
     }
@@ -45,7 +56,7 @@ public class TestActivity extends BaseActivity implements I_MT_Prime.MTLibCallba
             m_mtLib = getM_mtLib();
             if (m_mtLib.isWorking() == false) {
                 m_mtLib.installCallback(this);
-                if (!m_mtLib.start(0x04000009, commandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
+                if (!m_mtLib.start(0x04000009, CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
                     LogUtils.e("MTLib.start() failed !");
                     return;
                 }
@@ -53,7 +64,7 @@ public class TestActivity extends BaseActivity implements I_MT_Prime.MTLibCallba
             } else {
                 LogUtils.d("MTLib is already started !");
             }
-            commandUtils.initSetupAdapter(m_mtLib);
+            CommandUtils.initSetupAdapter(m_mtLib);
 
         } catch (Exception e) {
             LogUtils.e("MTLib.start() error: " + e.getMessage());
@@ -64,6 +75,7 @@ public class TestActivity extends BaseActivity implements I_MT_Prime.MTLibCallba
 
     @Override
     public long onReceivedUdpPacket(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, long packetCommandType, byte[] packetBuffer, int packetBytes) {
+        DataPackShell.ParseBuff(packetBuffer, (int) packetCommandType, remoteDeviceIpPort);
         return 0;
     }
 

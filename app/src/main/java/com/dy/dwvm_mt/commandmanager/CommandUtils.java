@@ -13,7 +13,7 @@ import java.sql.Struct;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/27.
  * PS: Not easy to write code, please indicate.
  */
-public class commandUtils {
+public class CommandUtils {
     public static final int MTPORT = 5007;
     public static final String DDNSIP = "112.91.151.187";
     public static final String DDNSPORT = "4998";

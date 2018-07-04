@@ -27,7 +27,7 @@ import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
-import com.dy.dwvm_mt.commandmanager.commandUtils;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
@@ -204,8 +204,8 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                             isCalling = false;
                             phoneNumber = incomingNumber;
                             try {
-                                String ddnsIPAndPort = commandUtils.DDNSIP + commandUtils.DDNSPORT;
-                                commandUtils.sendLoginData("L_MT10", "123", "13411415574", "860756", ddnsIPAndPort);
+                                String ddnsIPAndPort = CommandUtils.DDNSIP + CommandUtils.DDNSPORT;
+                                CommandUtils.sendLoginData("L_MT10", "123", "13411415574", "860756", ddnsIPAndPort);
 
                                 PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                 Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class);
@@ -291,7 +291,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
             m_mtLib = new MTLib();
             if (m_mtLib.isWorking() == false) {
                 m_mtLib.installCallback(this);
-                if (!m_mtLib.start(0x04000009, commandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
+                if (!m_mtLib.start(0x04000009, CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
                     LogUtils.e("MTLib.start() failed !");
                     return;
                 }

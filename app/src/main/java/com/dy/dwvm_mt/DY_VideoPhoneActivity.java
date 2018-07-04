@@ -171,7 +171,7 @@ public class DY_VideoPhoneActivity extends BaseActivity {
         if (requestCode == REQUESTCODE) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!shouldShowRequestPermissionRationale(Manifest.permission.PROCESS_OUTGOING_CALLS)) {
-                    //AskForPermission();
+                    AskForPermission();
                 }
             }
         }

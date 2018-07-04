@@ -38,7 +38,7 @@ public class DataPackShell {
 
 
     private static ArrayList<CachData> listCachData = new ArrayList<CachData>();
-    private static Random rd = new Random(100);
+    private static Random rd = new Random(Integer.MAX_VALUE);
     public static Object listlocker = new Object();
 
     /**
@@ -192,10 +192,10 @@ public class DataPackShell {
                             receiveFullPacketHandler.onReviced(reEntity);
                         }
                         for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {
-                                CachData data = ite.next();
-                                if (data.getUniqueID() == entity.getUniqueID()) {
-                                    ite.remove();
-                                }
+                            CachData data = ite.next();
+                            if (data.getUniqueID() == entity.getUniqueID()) {
+                                ite.remove();
+                            }
                         }
                     }
                 }
@@ -215,13 +215,13 @@ public class DataPackShell {
         /**
          * 收到的数据
          */
-        private Object privatebagBuffer;
+        private byte[] privatebagBuffer;
 
-        public final Object getbagBuffer() {
+        public final byte[] getbagBuffer() {
             return privatebagBuffer;
         }
 
-        public final void setbagBuffer(Object value) {
+        public final void setbagBuffer(byte[] value) {
             privatebagBuffer = value;
         }
 
