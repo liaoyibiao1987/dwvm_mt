@@ -1,4 +1,4 @@
-package com.dy.dwvm_mt;
+package com.dy.dwvm_mt.dyencoder;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,6 +12,7 @@ import android.media.MediaFormat;
 import android.os.Environment;
 import android.util.Log;
 
+import com.dy.dwvm_mt.MainActivity;
 
 
 public class AvcEncoder

@@ -53,7 +53,7 @@ public class TestActivity extends BaseActivity implements I_MT_Prime.MTLibCallba
 
     private void StartMTLib() {
         try {
-            m_mtLib = getM_mtLib();
+            m_mtLib = getBaseMTLib();
             if (m_mtLib.isWorking() == false) {
                 m_mtLib.installCallback(this);
                 if (!m_mtLib.start(0x04000009, CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {

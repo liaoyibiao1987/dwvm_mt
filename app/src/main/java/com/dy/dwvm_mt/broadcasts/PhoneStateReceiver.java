@@ -15,14 +15,14 @@ public class PhoneStateReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
-        if (action.equals(PHONE_STATE)) {
+        if (action.equals(PHONE_STATE) == true) {
             //String phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
             LogUtils.d(context, "PhoneStateReceiver 收到消息.");
             intentService = new Intent(context, CallShowService.class);
             context.startService(intentService);
 
             /*if (intent.getAction().equals("android.media.AUDIO_BECOMING_NOISY")) {
-                *//* 服务开机自启动 *//*
+             *//* 服务开机自启动 *//*
                 Intent service = new Intent(context, CallShowService.class);
                 context.startService(service);
             } else {

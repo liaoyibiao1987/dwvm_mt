@@ -91,13 +91,21 @@ public class MTMainActivity extends BaseActivity
                         .setAction("Action", null).show();
             }
         });
-
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (!Settings.canDrawOverlays(this)) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivityForResult(intent, 1);
+            } else {
+                //TODO do something you need
+            }
+        }
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        m_mt_Lib = getM_mtLib();
+        m_mt_Lib = getBaseMTLib();
         navigationView.setNavigationItemSelectedListener(this);
     }
 
@@ -167,7 +175,7 @@ public class MTMainActivity extends BaseActivity
     }
 
     private void requestMyPermission() {
-        String[] permissionsArray2 = PermissionConstants.getPermissions(PermissionConstants.PHONE);
+        String[] permissionsArray2 = PermissionConstants.getPermissions(PermissionConstants.DY_PHONE);
         String[] allpermiss = new String[permissionsArray2.length + permissionsArray.length];
         System.arraycopy(permissionsArray, 0, allpermiss, 0, permissionsArray.length);
         System.arraycopy(permissionsArray2, 0, allpermiss, permissionsArray.length, permissionsArray2.length);

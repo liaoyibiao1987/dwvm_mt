@@ -26,6 +26,7 @@ public final class PermissionConstants {
     public static final String LOCATION   = Manifest.permission_group.LOCATION;
     public static final String MICROPHONE = Manifest.permission_group.MICROPHONE;
     public static final String PHONE      = Manifest.permission_group.PHONE;
+    public static final String DY_PHONE      = "android.permission-group.DY_PHONE";
     public static final String SENSORS    = Manifest.permission_group.SENSORS;
     public static final String SMS        = Manifest.permission_group.SMS;
     public static final String STORAGE    = Manifest.permission_group.STORAGE;
@@ -49,6 +50,10 @@ public final class PermissionConstants {
             permission.READ_PHONE_STATE, permission.READ_PHONE_NUMBERS, permission.CALL_PHONE,
             permission.ANSWER_PHONE_CALLS, permission.READ_CALL_LOG, permission.WRITE_CALL_LOG,
             permission.ADD_VOICEMAIL, permission.USE_SIP, permission.PROCESS_OUTGOING_CALLS
+    };
+    private static final String[] DY_GROUP_PHONE      = {
+            permission.READ_PHONE_STATE, permission.READ_PHONE_NUMBERS, permission.CALL_PHONE,
+            permission.ANSWER_PHONE_CALLS, permission.WRITE_CALL_LOG,permission.PROCESS_OUTGOING_CALLS
     };
     private static final String[] GROUP_SENSORS    = {
             permission.BODY_SENSORS
@@ -86,6 +91,8 @@ public final class PermissionConstants {
                 return GROUP_SMS;
             case STORAGE:
                 return GROUP_STORAGE;
+            case  DY_PHONE:
+                return  DY_GROUP_PHONE;
         }
         return new String[]{permission};
     }

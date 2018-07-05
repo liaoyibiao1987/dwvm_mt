@@ -15,7 +15,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.MotionEvent;
-import android.widget.Button;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
@@ -61,8 +60,8 @@ public class DY_VideoPhoneActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videophone);
         ButterKnife.bind(this);
-        requestMyPermission();
-        m_mt_Lib = getM_mtLib();
+        //requestMyPermission();
+        m_mt_Lib = getBaseMTLib();
         try{
             m_pageOpenType = getIntent().getExtras().getInt(MT_VP_PAGE_OPENTYPE);
         }catch (Exception e){

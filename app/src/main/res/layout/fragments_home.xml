@@ -37,7 +37,7 @@
 
     <SurfaceView
         android:id="@+id/surfaceCameraPreview"
-        android:layout_width="129dp"
+        android:layout_width="111dp"
         android:layout_height="163dp"
         android:layout_marginStart="8dp"
         app:layout_constraintEnd_toEndOf="parent"

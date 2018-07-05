@@ -23,8 +23,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
-import android.widget.Switch;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
@@ -133,7 +131,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
         tabsAdapter.addFragment(new DialTabFragment(2), "Favorite 2");
         viewPager.setAdapter(tabsAdapter);
         tabLayout.setupWithViewPager(viewPager);*/
-        m_mtoperator = BaseActivity.getM_mtLib();
+        m_mtoperator = BaseActivity.getBaseMTLib();
 
         if (getArguments() != null) {
             m_pageOpenType = getArguments().getInt(MT_VP_PAGE_OPENTYPE);
