@@ -29,6 +29,7 @@ import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.R;
+import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.nio.ByteBuffer;
@@ -131,7 +132,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
         tabsAdapter.addFragment(new DialTabFragment(2), "Favorite 2");
         viewPager.setAdapter(tabsAdapter);
         tabLayout.setupWithViewPager(viewPager);*/
-        m_mtoperator = BaseActivity.getBaseMTLib();
+        m_mtoperator = MTLibUtils.getBaseMTLib();
 
         if (getArguments() != null) {
             m_pageOpenType = getArguments().getInt(MT_VP_PAGE_OPENTYPE);

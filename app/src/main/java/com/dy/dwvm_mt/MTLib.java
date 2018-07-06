@@ -14,13 +14,6 @@ import java.util.List;
 public class MTLib implements I_MT_Prime {
     static {
         System.loadLibrary("DwvmMTLib");
-
-        DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
-            @Override
-            public void onReviced(DataPackShell.ReceivedPackEntity databuff) {
-                //MTLib.this.m_callbackInstance.onReceivedUdpPacket(databuff.)
-            }
-        });
     }
 
     public static final String CODEC_VIDEO_H264 = "video/avc";
@@ -62,7 +55,7 @@ public class MTLib implements I_MT_Prime {
                         dataType,
                         dataBuffer,
                         dataBytes);
-               /*return DataPackShell.ParseBuff(dataBuffer,(int)dataType, remoteDeviceIpPort);*/
+                /*return DataPackShell.ParseBuff(dataBuffer,(int)dataType, remoteDeviceIpPort);*/
             } else if (funcName.equalsIgnoreCase("onReceivedVideoFrame")) {
                 return m_callbackInstance.onReceivedVideoFrame(
                         localDeviceId,
@@ -136,6 +129,7 @@ public class MTLib implements I_MT_Prime {
             byte[] dataBuffer,
             int dataSize
     );
+
     @Override
     public int sendUdpPacketToDevice2(long packetType,
                                       long needReplay,

@@ -48,7 +48,7 @@ public class DataPackShell {
      * @return
      */
     public static final ArrayList<byte[]> GetSendBuff(byte[] buffer) {
-        ArrayList<byte[]> list = new ArrayList<byte[]>();
+        ArrayList<byte[]> list = new ArrayList();
         int UniqueID = GetUniqueID();
 //            拆成1024个字节
 //             * UniqueID 4
@@ -112,7 +112,6 @@ public class DataPackShell {
 
             byte[] bufferWithNohead = new byte[1040];
             System.arraycopy(newbuff, 44, bufferWithNohead, 0, 1040);
-            Arrays.copyOfRange(bufferWithNohead, 0, 7);
             int UniqueID = ConvertUtils.byte2int(bufferWithNohead, 0);
             int PackCount = ConvertUtils.byte2int(bufferWithNohead, 4);
             int PackIndex = ConvertUtils.byte2int(bufferWithNohead, 8);
@@ -122,7 +121,7 @@ public class DataPackShell {
                 //polling
                 ReceivedPackEntity reEntity = new ReceivedPackEntity();
                 reEntity.setbagBuffer(new byte[44]);
-                System.arraycopy(buffer, 0, (byte[]) reEntity.getbagBuffer(), 0, 44);
+                System.arraycopy(buffer, 0, reEntity.getbagBuffer(), 0, 44);
                 reEntity.setbagSize(44);
                 reEntity.setbagType(bagType);
                 reEntity.setszSrcIpPort(szSrcIpPort);
@@ -130,7 +129,7 @@ public class DataPackShell {
                     receiveFullPacketHandler.onReviced(reEntity);
                 }
             } else {
-                Byte[] rdata = new Byte[DataLength];
+                byte[] rdata = new byte[DataLength];
                 System.arraycopy(bufferWithNohead, 16, rdata, 0, DataLength);
                 synchronized (listlocker) {
                     CachData entity = null;
@@ -153,9 +152,9 @@ public class DataPackShell {
                         entity.setReceivePackageCount(1);
                         entity.setReceiveDataLength(DataLength);
                         entity.setR_times(new Date());
-                        entity.setDataList(new ArrayList<Byte[]>());
+                        entity.setDataList(new ArrayList<byte[]>());
                         for (int i = 0; i < PackCount; i++) {
-                            entity.getDataList().add(new Byte[1024]);
+                            entity.getDataList().add(new byte[1024]);
                         }
                         entity.getDataList().set(PackIndex, rdata);
                         entity.setbagType(bagType);
@@ -306,13 +305,13 @@ public class DataPackShell {
             privateReceiveDataLength = value;
         }
 
-        private ArrayList<Byte[]> privateDataList;
+        private ArrayList<byte[]> privateDataList;
 
-        public final ArrayList<Byte[]> getDataList() {
+        public final ArrayList<byte[]> getDataList() {
             return privateDataList;
         }
 
-        public final void setDataList(ArrayList<Byte[]> value) {
+        public final void setDataList(ArrayList<byte[]> value) {
             privateDataList = value;
         }
 

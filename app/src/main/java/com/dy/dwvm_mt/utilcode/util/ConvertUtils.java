@@ -57,7 +57,7 @@ public final class ConvertUtils {
     public static int byte2int(byte[] buffer, int i) {
         if (buffer.length > 4 && buffer.length > i + 4) {
             byte[] byteint = new byte[4];
-            System.arraycopy(byteint, 0, buffer, i, 4);
+            System.arraycopy(buffer, i, byteint, 0, 4);
             return byte2int(byteint);
         } else {
             return -1;

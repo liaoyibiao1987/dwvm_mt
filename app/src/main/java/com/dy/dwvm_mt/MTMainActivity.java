@@ -28,6 +28,7 @@ import android.widget.FrameLayout;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.fragments.HomeFragment;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -105,7 +106,7 @@ public class MTMainActivity extends BaseActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        m_mt_Lib = getBaseMTLib();
+        m_mt_Lib = MTLibUtils.getBaseMTLib();
         navigationView.setNavigationItemSelectedListener(this);
     }
 

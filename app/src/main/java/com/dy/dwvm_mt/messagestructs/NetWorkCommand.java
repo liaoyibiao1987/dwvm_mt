@@ -79,13 +79,8 @@ public class NetWorkCommand {
         IPPort = packEntity.getSzSrcIpPort();
         SubCmd = ConvertUtils.byte2int(packEntity.getBagBuffer(), 44);
         Data = packEntity.getBagBuffer();
+        Header = packEntity.getHeadPack();
         //SubCmd = BitConverter.ToInt32((byte[])packEntity.getBagBuffer(), 44);
-        try {
-            Header = new s_headPack();
-            JavaStruct.unpack(Header, packEntity.getBagBuffer());
-        } catch (Exception es) {
-            LogUtils.e("NetWorkCommand initialize error :" + es);
-        }
     }
 
     /// <summary>
@@ -99,7 +94,9 @@ public class NetWorkCommand {
             boolean isAnnotation = tClass.isAnnotationPresent(com.dy.javastruct.StructClass.class);//判断stu是不是使用了我们刚才定义的注解接口if(isEmpty)
             if (isAnnotation == true) {
                 try {
-                    JavaStruct.unpack(instance, Data);//获取二级命令包
+                    byte[] buff = new byte[Data.length - 44];
+                    System.arraycopy(Data, 44, buff, 0, buff.length);
+                    JavaStruct.unpack(instance, buff);//获取二级命令包
                 } catch (Exception es) {
                     LogUtils.e(" Param(Class<T> tClass) :" + es);
                 }
@@ -115,6 +112,6 @@ public class NetWorkCommand {
     public String toString() {
         //return super.toString();
         String ret = String.format(" Data: %s \r\n IPPort: %s  Cmd: %s SubCmd: %s", Arrays.toString(getData()), getIPPort(), getCmd(), getSubCmd());
-        return  ret;
+        return ret;
     }
 }

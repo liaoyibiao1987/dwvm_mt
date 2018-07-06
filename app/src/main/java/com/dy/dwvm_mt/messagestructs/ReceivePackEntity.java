@@ -1,5 +1,10 @@
 package com.dy.dwvm_mt.messagestructs;
 
+import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.javastruct.JavaStruct;
+
+import java.util.Arrays;
+
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/4.
  * PS: Not easy to write code, please indicate.
@@ -37,15 +42,29 @@ public class ReceivePackEntity {
         this.szSrcIpPort = szSrcIpPort;
     }
 
-    public ReceivePackEntity(){
+    public s_headPack getHeadPack() {
+        s_headPack header = new s_headPack();
+        byte[] data = new byte[44];
+        System.arraycopy(getBagBuffer(), 0, data, 0, 44);
+        try {
+            JavaStruct.unpack(header, data);
+        } catch (Exception es) {
+            LogUtils.e("ReceivePackEntity getHeadPack error :" + es);
+        }
+        return header;
+    }
+
+    public ReceivePackEntity() {
 
     }
-    public ReceivePackEntity(byte[] bagbuffer ,int bagsize,int bagtype,String szsrcIPPort){
+
+    public ReceivePackEntity(byte[] bagbuffer, int bagsize, int bagtype, String szsrcIPPort) {
         bagBuffer = bagbuffer;
         bagSize = bagsize;
         bagType = bagtype;
         szSrcIpPort = szsrcIPPort;
     }
+
     /// <summary>
     /// 收到的数据
     /// </summary>

@@ -53,35 +53,12 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     private WindowManager.LayoutParams wmParams;
     private WindowManager mWindowManager;
     private Button mFloatButton;
-
-    private I_MT_Prime m_mtLib;
-
-    private void setupMTLib() {
-        try {
-            m_mtLib = BaseActivity.getBaseMTLib();
-            if (m_mtLib.isWorking() == false) {
-                m_mtLib.installCallback(this);
-                if (!m_mtLib.start(0x04000009, CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
-                    LogUtils.e("MTLib.start() failed !");
-                    return;
-                }
-            } else {
-                LogUtils.d("MTLib is already started !");
-            }
-        } catch (Exception e) {
-            LogUtils.e("MTLib.start() error: " + e.getMessage());
-            return;
-        }
-        //m_mtLib.setDeviceName(LOCAL_DEVICE_NAME);
-    }
-
     @Override
     public void onCreate() {
         //android.os.Debug.waitForDebugger();
-        if (isRunning == false) {
+        /*if (isRunning == false) {
             try {
                 isRunning = true;
-                setupMTLib();
                 initFloatView();
                 initPhoneStateListener();
                 Thread.sleep(1000);
@@ -91,15 +68,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                 return;
             }
         }
-        AnalysingUtils.setupMTLib(m_mtLib);
-        AnalysingUtils.startReviceData();
-        AnalysingUtils.addRecvedCommandListeners(new NWCommandEventHandler() {
-            @Override
-            public void doHandler(NWCommandEventArg arg) {
-                NetWorkCommand command = arg.getEventArg();
-                LogUtils.e("收到回应包了：" + command);
-            }
-        });
+*/
         super.onCreate();
     }
 
@@ -258,9 +227,8 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                         //浮动窗口按钮
                         mFloatButton = mFloatLayout.findViewById(R.id.float_id);
                         //有值就赋上，没值就不显示该UI
-                        mFloatLayout.measure(View.MeasureSpec.makeMeasureSpec(0,
-                                View.MeasureSpec.UNSPECIFIED), View.MeasureSpec
-                                .makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                        mFloatLayout.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
 
                         mFloatButton.setOnClickListener(new View.OnClickListener() {
                             @Override
@@ -288,7 +256,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
 
             private void dismiss() {
                 try {
-                    if (isFloatShown == true){
+                    if (isFloatShown == true) {
                         mWindowManager.removeView(mFloatLayout);
                     }
                     isFloatShown = false;
