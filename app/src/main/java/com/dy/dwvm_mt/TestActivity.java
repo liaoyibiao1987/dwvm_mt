@@ -54,8 +54,6 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
 
     @Override
     public void doHandler(NWCommandEventArg arg) {
-        LogUtils.e("TestActivity" + Arrays.toString(arg.getEventArg().getData()));
-
         if (arg != null && arg.getEventArg() != null) {
             int cmd = arg.getEventArg().getCmd();
             switch (cmd) {

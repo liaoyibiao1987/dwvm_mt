@@ -22,16 +22,18 @@ public class StructUnpacker extends StructInput {
 	DataInput dataInput;
 
 	protected void init( InputStream inStream, ByteOrder order) {
-		if ( order == ByteOrder.LITTLE_ENDIAN){
-			dataInput = new LEDataInputStream(inStream);
-		}
-		else {
+		if ( order == ByteOrder.BIG_ENDIAN){
 			dataInput = new DataInputStream( inStream );
 		}
+		else {
+			dataInput = new LEDataInputStream(inStream);
+		}
 	}
-	  
+	/**
+	 * DDNS发来的数据是小端模式，这里默认用小端模式
+	 */
     public StructUnpacker(byte[] bufferToUnpack){
-        this(new ByteArrayInputStream(bufferToUnpack), ByteOrder.BIG_ENDIAN);
+        this(new ByteArrayInputStream(bufferToUnpack), ByteOrder.LITTLE_ENDIAN);
     }
     
     public StructUnpacker(byte[] bufferToUnpack, ByteOrder order){

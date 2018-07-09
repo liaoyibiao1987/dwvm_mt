@@ -15,4 +15,17 @@
 
     <string name="txt_btn_testlogin">测试登录</string>
     <string name="txt_btn_testperview">测试打开视频通话</string>
+
+
+    <string name="txt_lab_login">登录名</string>
+    <string name="txt_lab_password">密 码</string>
+
+    <string name="lb_auto_login">自动登录</string>
+    <string name="lb_remember_password">记住密码</string>
+
+    <string name="txt_login_id">登陆名</string>
+    <string name="txt_login_password">密 码</string>
+
+    <string name="txt_btn_login">登陆</string>
+
 </resources>

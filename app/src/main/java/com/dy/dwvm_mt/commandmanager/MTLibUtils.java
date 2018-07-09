@@ -5,6 +5,7 @@ import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.StringUtils;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -31,6 +32,7 @@ public class MTLibUtils {
         setupMTLib();
         try {
             Thread.sleep(1000);
+            //收到完整的数据包再给这里的事件去处置，此时数据包无封装无解析。
             DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
                 @Override
                 public void onReviced(DataPackShell.ReceivedPackEntity entity) {
@@ -43,11 +45,13 @@ public class MTLibUtils {
             });
             AnalysingUtils.setupMTLib(m_mtLib);
             AnalysingUtils.startReviceData();
+            //此处只是全局注册后的全局打印收到的 DDNS 包
             AnalysingUtils.addRecvedCommandListeners(new NWCommandEventHandler() {
                 @Override
                 public void doHandler(NWCommandEventArg arg) {
                     NetWorkCommand command = arg.getEventArg();
-                    LogUtils.e("收到回应包了：" + command);
+                    System.out.print("MT-SEND DATA LEN : "+ command.getData().length+" \r\n DATA: " + StringUtils.toHexBinary(command.getData()));
+                    //LogUtils.e("收到回应包了：" + command);
                 }
             });
             CommandUtils.initSetupAdapter(m_mtLib);
@@ -107,11 +111,19 @@ public class MTLibUtils {
         }
     }
 
-    public static void addRecvedCommandListeners(DY_onReceivedPackEventHandler handler) {
+    /**
+     * 处理组装好，但是没解析过的事件监听
+     * @param handler DY_onReceivedPackEventHandler 组装的数据包，视频包，音频包
+     */
+    public static void addRecvedUdpListeners(DY_onReceivedPackEventHandler handler) {
         eventListeners.add(handler);
     }
 
-    public static void removeRecvedCommandListeners(DY_onReceivedPackEventHandler handler) {
+    /**
+     * 取消处理组装好，但是没解析过的事件监听
+     * @param handler DY_onReceivedPackEventHandler 组装的数据包，视频包，音频包
+     */
+    public static void removeRecvedUdpListeners(DY_onReceivedPackEventHandler handler) {
         eventListeners.remove(handler);
     }
 

@@ -3,6 +3,7 @@ package com.dy.dwvm_mt.Comlibs;
 import com.dy.dwvm_mt.utilcode.constant.TimeConstants;
 import com.dy.dwvm_mt.utilcode.util.ConvertUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.Random;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/28.
- * PS: Not easy to write code, please indicate.
+ * PS: 收发数据包的加壳，解壳程序 (DDNS用了一套超大数据包的加壳解壳流程)
  */
 public class DataPackShell {
 
@@ -28,7 +29,7 @@ public class DataPackShell {
     private static OnReciveFullPacketListener receiveFullPacketHandler;
 
     /**
-     * 完整包事件代理
+     * 完整包事件代理(包没有解析过，是只单纯的完整包数据 不同于 AnalysingUtils <CommandListeners>)
      *
      * @param listener
      */
@@ -99,6 +100,7 @@ public class DataPackShell {
      */
     public static final void ParseBuff(byte[] buffer, int bagType, String szSrcIpPort) {
         try {
+            //LogUtils.d("收到包" + StringUtils.toHexBinary(buffer), " datasize :" + buffer.length);
             byte[] newbuff = new byte[1084];
             if (buffer.length != 1084) {
                 if (buffer.length < 16) {
@@ -188,6 +190,7 @@ public class DataPackShell {
                         reEntity.setbagType(entity.getbagType());
                         reEntity.setszSrcIpPort(entity.getszSrcIpPort());
                         if (receiveFullPacketHandler != null) {
+                            //LogUtils.d("收到包2" + StringUtils.toHexBinary(reEntity.getbagBuffer()), " getbagBuffer size :" + reEntity.getbagBuffer());
                             receiveFullPacketHandler.onReviced(reEntity);
                         }
                         for (Iterator<CachData> ite = listCachData.iterator(); ite.hasNext(); ) {

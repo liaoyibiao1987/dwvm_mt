@@ -4,6 +4,7 @@ import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import com.dy.javastruct.JavaStruct;
 
 import java.nio.ByteOrder;
@@ -67,7 +68,7 @@ public class CommandUtils {
 
         try {
             byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.BIG_ENDIAN);
-            LogUtils.d("sendLoginData : databuff" + databuff + " \r\n " + "datasize:" + databuff.length);
+            System.out.print("MT-SEND DATA LEN : "+ databuff.length+" \r\n DATA: " + StringUtils.toHexBinary(databuff));
             mt_prime.sendUdpPacketToDevice2(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());

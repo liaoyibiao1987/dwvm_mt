@@ -21,8 +21,4 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         MTLibUtils.Initialisation();
     }
-
-    public BaseActivity() {
-
-    }
 }

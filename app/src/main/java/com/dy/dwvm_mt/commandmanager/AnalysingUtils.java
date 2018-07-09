@@ -55,6 +55,10 @@ public class AnalysingUtils {
 
     }
 
+    /**
+     * 封装好并解析过的数据包提供给应用程序使用
+     * @param handler NWCommandEvent Handler
+     */
     public static void addRecvedCommandListeners(NWCommandEventHandler handler) {
         eventListeners.add(handler);
     }

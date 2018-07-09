@@ -11,4 +11,8 @@
     <color name="secondary_text">#727272</color>
     <color name="divider">#B6B6B6</color>
     <color name="gray">#E0E0E0</color>
+
+    <color name="login_button">#44beff</color>
+    <color name="login_Edit_Text">#E0E0E0</color>
+    <color name="login_text">#E0E0E0</color>
 </resources>
