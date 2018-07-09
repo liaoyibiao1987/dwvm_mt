@@ -20,7 +20,7 @@ public class JavaStruct {
 	}
 	
 	public static final void unpack(Object o, byte[] buffer) throws StructException{
-		unpack(o, buffer, ByteOrder.BIG_ENDIAN);
+		unpack(o, buffer, ByteOrder.LITTLE_ENDIAN);
 	}
 
 	public static final void unpack(Object o, byte[] buffer, ByteOrder order) throws StructException{

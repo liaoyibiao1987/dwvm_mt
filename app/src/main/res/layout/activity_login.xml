@@ -27,13 +27,14 @@
         android:layout_height="80dp">
 
         <EditText
-            android:id="@+id/login_id"
+            android:id="@+id/txt_login_id"
             android:layout_width="320dp"
             android:layout_height="42dp"
             android:layout_gravity="center_horizontal"
             android:background="@color/login_Edit_Text"
             android:hint="@string/txt_login_id"
-            android:paddingLeft="10dp" />
+            android:paddingLeft="10dp"
+            android:text="L_MT5" />
 
     </android.support.design.widget.TextInputLayout>
 
@@ -44,13 +45,14 @@
         android:layout_height="74dp">
 
         <EditText
-            android:id="@+id/login_password"
+            android:id="@+id/txt_login_password"
             android:layout_width="320dp"
             android:layout_height="42dp"
             android:layout_gravity="center_horizontal"
             android:background="@color/login_Edit_Text"
             android:hint="@string/txt_login_password"
-            android:paddingLeft="10dp" />
+            android:paddingLeft="10dp"
+            android:text="123" />
     </android.support.design.widget.TextInputLayout>
 
     <RelativeLayout
@@ -74,7 +76,7 @@
     </RelativeLayout>
 
     <Button
-        android:id="@+id/login_button"
+        android:id="@+id/btn_login"
         android:layout_width="320dp"
         android:layout_height="60dp"
         android:layout_gravity="center_horizontal"

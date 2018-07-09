@@ -112,7 +112,18 @@ public final class PhoneUtils {
                 (TelephonyManager) Utils.getApp().getSystemService(Context.TELEPHONY_SERVICE);
         return tm != null ? tm.getSubscriberId() : "";
     }
-
+    /**
+     * Return the sim number.
+     *  <p>Must hold
+     *  {@code <uses-permission android:name="android.permission.READ_PHONE_STATE" />}</p>
+     *
+     * @return the sim number
+     */
+    public static String getLine1Number() {
+        TelephonyManager tm =
+                (TelephonyManager) Utils.getApp().getSystemService(Context.TELEPHONY_SERVICE);
+        return tm != null ? tm.getLine1Number() : "";
+    }
     /**
      * Returns the current phone type.
      *

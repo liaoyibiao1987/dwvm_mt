@@ -30,16 +30,16 @@ android {
         cruncherEnabled = false
     }
 
-    sourceSets {
+   /* sourceSets {
         main {
             res.srcDirs = [
                     'src/main/res/layout/dialTabs',
                     'src/main/res/layout',
                     'src/main/res',
             ]
-            /*res.srcDirs = listSubFile2()*/
+            *//*res.srcDirs = listSubFile2()*//*
         }
-    }
+    }*/
     //apply plugin: 'android-apt'
     lintOptions {
         disable 'PrivateResource'
