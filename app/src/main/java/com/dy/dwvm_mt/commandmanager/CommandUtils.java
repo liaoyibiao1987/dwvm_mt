@@ -15,10 +15,50 @@ import java.sql.Struct;
  * PS: Not easy to write code, please indicate.
  */
 public class CommandUtils {
-    public static final int MTPORT = 5007;
-    public static final String DDNSIP = "112.91.151.187";
-    public static final String DDNSPORT = "4998";
-    public  static final int DDNSDEVICEID=16777217;
+    public static int MTPORT = 5007;
+    private static String DDNSIP = "112.91.151.187";
+    private static String DDNSPORT = "4998";
+    private static int DDNSDEVICEID = 16777217;
+
+    public static String getDDNSIP() {
+        return DDNSIP;
+    }
+
+    public static void setDDNSIP(String DDNSIP) {
+        CommandUtils.DDNSIP = DDNSIP;
+    }
+
+    public static String getDDNSPORT() {
+        return DDNSPORT;
+    }
+
+    public static void setDDNSPORT(String DDNSPORT) {
+        CommandUtils.DDNSPORT = DDNSPORT;
+    }
+
+    public static int getDDNSDEVICEID() {
+        return DDNSDEVICEID;
+    }
+
+    public static String getDDNSIPPort() {
+        if (StringUtils.isTrimEmpty(DDNSIP) == false && StringUtils.isTrimEmpty(DDNSPORT) == false) {
+            return DDNSIP + ":" + DDNSPORT;
+        } else {
+            return "0.0.0.0:4998";
+        }
+    }
+
+    public static void setDDNSIPPort(String IPPORT) {
+        String[] ipport = IPPORT.split(":");
+        if (ipport != null && ipport.length > 1) {
+            setDDNSIP(ipport[0]);
+            setDDNSPORT(ipport[1]);
+        }
+    }
+
+    public static void setDDNSDEVICEID(int ddnsdeviceid) {
+        CommandUtils.DDNSDEVICEID = ddnsdeviceid;
+    }
 
     public static final int WVM_CMD_POLLING = 1;
     public static final int WVM_CMD_REPLY = 2;
@@ -54,11 +94,11 @@ public class CommandUtils {
         loginstruct.setSzDeviceName("MT".getBytes());
         loginstruct.setSzDeviceVersion("1.0.1".getBytes());
 
-        byte[] e_loginid =new byte[s_messageBase.WVM_MAX_USERNAME_LEN];
-        mt_prime.dataEncrypt(loginID.getBytes(),loginID.length(),e_loginid);
+        byte[] e_loginid = new byte[s_messageBase.WVM_MAX_USERNAME_LEN];
+        mt_prime.dataEncrypt(loginID.getBytes(), loginID.length(), e_loginid);
 
-        byte[] e_loginpw =new byte[s_messageBase.WVM_MAX_PASSWORD_LEN];
-        mt_prime.dataEncrypt(loginPw.getBytes(),loginPw.length(),e_loginpw);
+        byte[] e_loginpw = new byte[s_messageBase.WVM_MAX_PASSWORD_LEN];
+        mt_prime.dataEncrypt(loginPw.getBytes(), loginPw.length(), e_loginpw);
 
         loginstruct.setSzUsernameEncrypt(e_loginid);
         loginstruct.setSzPasswordEncrypt(e_loginpw);
@@ -68,7 +108,7 @@ public class CommandUtils {
 
         try {
             byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.BIG_ENDIAN);
-            System.out.print("MT-SEND DATA LEN : "+ databuff.length+" \r\n DATA: " + StringUtils.toHexBinary(databuff));
+            System.out.print("MT-SEND DATA LEN : " + databuff.length + " \r\n DATA: " + StringUtils.toHexBinary(databuff));
             mt_prime.sendUdpPacketToDevice2(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());

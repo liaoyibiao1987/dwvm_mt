@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -19,13 +20,19 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.Comlibs.LocalWarehouse;
+import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
+import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
+import com.dy.dwvm_mt.utilcode.util.AppUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
@@ -57,13 +64,16 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
             android.Manifest.permission.WAKE_LOCK,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.CALL_PHONE,
+            //Manifest.permission.ANSWER_PHONE_CALLS,
+            //Manifest.permission.PROCESS_OUTGOING_CALLS,
             android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
             android.Manifest.permission.ACCESS_NETWORK_STATE,
-            "Manifest.permission.RECEIVE_USER_PRESENT",
+            //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.MODIFY_PHONE_STATE,
-            Manifest.permission.READ_SMS,
-            Manifest.permission.MEDIA_CONTENT_CONTROL};
+            // android.Manifest.permission.MODIFY_PHONE_STATE,
+            Manifest.permission.READ_SMS};
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();
     //申请权限后的返回码
@@ -77,6 +87,9 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         AnalysingUtils.addRecvedCommandListeners(this);
         requestMyPermission();
 
+        EtLoginID.setSelection(EtLoginID.getText().length());
+        EtLoginPsw.setSelection(EtLoginPsw.getText().length());
+
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -89,13 +102,11 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         String loginid = EtLoginID.getText().toString();
         String psw = EtLoginPsw.getText().toString();
         String phonenumber = PhoneUtils.getLine1Number();
-        if(StringUtils.isTrimEmpty(phonenumber) == false && phonenumber.startsWith("+86")){
+        if (StringUtils.isTrimEmpty(phonenumber) == false && phonenumber.startsWith("+86")) {
             phonenumber = phonenumber.substring(3);
         }
-        String ddnsIPAndPort = CommandUtils.DDNSIP + ":" + CommandUtils.DDNSPORT;
-
+        String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
         CommandUtils.sendLoginData(loginid, psw, phonenumber, "", ddnsIPAndPort);
-
     }
 
     @Override
@@ -109,7 +120,20 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                         LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
                         if (loginResult.getDwErrorCode() == 0) {
                             ToastUtils.showShort("登录成功");
+
+                            int ddnsID = arg.getEventArg().getHeader().dwSrcId;
+                            String ddnsIP = arg.getEventArg().getIPPort();
+                            LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
+
+                            ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
+
+                            Intent intent = new Intent();
+                            intent.setClass(this, MTMainActivity.class);
+                            ActivityUtils.startActivity(intent);
+
+                            finish();
                         } else {
+                            LocalWarehouse.ResetInformation();
                             ToastUtils.showShort("登录失败");
                         }
                     } catch (Exception es) {
@@ -121,15 +145,28 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         }
     }
 
+    private void ReWriteInformation(final int ddnsID, final String ddnsIP, final LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
+        try {
+            final int localDeviceID = loginExtMessage.getDeviceId();
+            this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CommandUtils.setDDNSDEVICEID(ddnsID);
+                    CommandUtils.setDDNSIPPort(ddnsIP);
+                    I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
+                    mtlib.resetDeviceID(localDeviceID);
+                }
+            });
+
+            LocalWarehouse.SetInformationByLoginResult(loginExtMessage);
+        } catch (Exception es) {
+            LogUtils.e("ReWriteInformation error:" + es);
+        }
+    }
 
 
     private void requestMyPermission() {
-        String[] permissionsArray2 = PermissionConstants.getPermissions(PermissionConstants.DY_PHONE);
-        String[] allpermiss = new String[permissionsArray2.length + permissionsArray.length];
-        System.arraycopy(permissionsArray, 0, allpermiss, 0, permissionsArray.length);
-        System.arraycopy(permissionsArray2, 0, allpermiss, permissionsArray.length, permissionsArray2.length);
-
-        for (String permission : allpermiss) {
+        for (String permission : permissionsArray) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.PROCESS_OUTGOING_CALLS)) {
@@ -148,7 +185,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         if (permissionsList.size() > 0) {
             ActivityCompat.requestPermissions(this, permissionsList.toArray(new String[permissionsList.size()]), REQUEST_CODE_ASK_PERMISSIONS);
         } else {
-            LogUtils.e("已经获得过了全部认证");
+            LogUtils.d("已经获得过了全部认证");
         }
     }
 
@@ -184,6 +221,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         });
         builder.create().show();
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();

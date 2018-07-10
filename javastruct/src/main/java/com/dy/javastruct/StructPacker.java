@@ -22,7 +22,7 @@ public class StructPacker extends StructOutput {
     }
 
     public StructPacker() {
-        this(new ByteArrayOutputStream(), ByteOrder.BIG_ENDIAN);
+        this(new ByteArrayOutputStream(), ByteOrder.LITTLE_ENDIAN);
     }
 
     public StructPacker(ByteOrder order) {

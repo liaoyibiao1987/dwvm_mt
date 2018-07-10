@@ -46,7 +46,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
         btn_testlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String ddnsIPAndPort = CommandUtils.DDNSIP + ":" + CommandUtils.DDNSPORT;
+                String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
                 CommandUtils.sendLoginData("L_MT6", "123", "3850203", "860756", ddnsIPAndPort);
             }
         });
@@ -59,7 +59,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
             switch (cmd) {
                 case s_messageBase.DeviceCMD.WVM_CMD_DDNS_LOGIN_RESULT:
                     try {
-                        s_loginResultDDNS loginResult =  arg.getEventArg().Param(s_loginResultDDNS.class);
+                        s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
                         LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
                     } catch (Exception es) {
                         LogUtils.e("TestActivity : Analytic package error :" + es);

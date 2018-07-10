@@ -53,6 +53,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     private WindowManager.LayoutParams wmParams;
     private WindowManager mWindowManager;
     private Button mFloatButton;
+
     @Override
     public void onCreate() {
         //android.os.Debug.waitForDebugger();
@@ -203,7 +204,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             phoneNumber = incomingNumber;
                             try {
-                                String ddnsIPAndPort = CommandUtils.DDNSIP + CommandUtils.DDNSPORT;
+                                String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
                                 CommandUtils.sendLoginData("L_MT6", "123", "13411415574", "860756", ddnsIPAndPort);
                                 callShow();//显示来电秀
                                 LogUtils.d("initPhoneStateListener -> onCallStateChanged: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码

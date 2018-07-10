@@ -114,6 +114,7 @@ public class AnalysingUtils {
 
                         }*/
                     }
+                    LogUtils.d("收到网络报：bagType -> " + e.getbagType());
                     ReceivePackEntity rp = new ReceivePackEntity(e.getbagBuffer(), e.getbagSize(), e.getbagType(), srcIpPort);
                     if (e.getbagType() != s_messageBase.DeviceCMD.WVM_CMD_REPLY) {              //不是回应包
                         if (e.getbagType() != 207) {
@@ -124,7 +125,7 @@ public class AnalysingUtils {
                         s_headPack s_head = new s_headPack();
                         JavaStruct.unpack(s_head, rp.getBagBuffer());
                         int SrcID = s_head.dwSrcId;//来源ID
-                        int dwReplyContext = s_head.dwReplyContext;//发送给设备的对应ID
+                        int dwReplyContext = s_head.dwReplyContext;//发送到设备的对方ID
                         int dwSeq = s_head.dwSeq;
 
                         if (dwReplyContext != 0) {
@@ -137,8 +138,8 @@ public class AnalysingUtils {
                         try {
                             JavaStruct.unpack(s_reply, e.getbagBuffer());//获取到登录包结构数据
                             if (s_reply.getDwSrcCmd() != s_messageBase.DeviceCMD.WVM_CMD_POLLING) {
-                                NetWorkCommand peercommand = new NetWorkCommand(rp);
-                                addCommand(peercommand);
+                                    NetWorkCommand peercommand = new NetWorkCommand(rp);
+                                    addCommand(peercommand);
 
                                 /*  移除多次发送的命令    m_devices.Lock(() = >
                                         {

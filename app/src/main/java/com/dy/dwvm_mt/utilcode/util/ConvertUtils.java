@@ -141,6 +141,37 @@ public final class ConvertUtils {
     }
 
     /**
+     * int to 2 short.
+     *
+     * @param data The int value.
+     * @return short[]
+     */
+    public static short[] spitIntToUshort(final int data) {
+        short[] ret = new short[2];
+        ret[1] = (short)(data & 0xFFFF);
+        ret[0] = (short)(data >> 16);
+        return ret;
+    }
+
+    /**
+     * mix ip&port to String.
+     *
+     * @param ipInt The ipInt value.
+     * @param port The port value.
+     * @return String "xxx.xxx.xxx.xxx:xxxxxxx"
+     */
+    public static String intIPToString(int ipInt, int port)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append((ipInt >> 24) & 0xFF).append(".");
+        sb.append((ipInt >> 16) & 0xFF).append(".");
+        sb.append((ipInt >> 8) & 0xFF).append(".");
+
+        sb.append(ipInt & 0xFF).append(":" + port);
+        return sb.toString();
+    }
+
+    /**
      * Bytes to hex string.
      * <p>e.g. bytes2HexString(new byte[] { 0, (byte) 0xa8 }) returns "00A8"</p>
      *

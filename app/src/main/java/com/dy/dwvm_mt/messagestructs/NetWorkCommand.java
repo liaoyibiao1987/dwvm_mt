@@ -76,11 +76,11 @@ public class NetWorkCommand {
     }
 
     public NetWorkCommand(ReceivePackEntity packEntity) {
-        Cmd = packEntity.getBagType();
-        IPPort = packEntity.getSzSrcIpPort();
-        SubCmd = ConvertUtils.byte2int(packEntity.getBagBuffer(), 44);
-        Data = packEntity.getBagBuffer();
-        Header = packEntity.getHeadPack();
+        setCmd(packEntity.getBagType());
+        setIPPort(packEntity.getSzSrcIpPort());
+        setSubCmd(ConvertUtils.byte2int(packEntity.getBagBuffer(), 44));
+        setData(packEntity.getBagBuffer());
+        setHeader(packEntity.getHeadPack());
         //SubCmd = BitConverter.ToInt32((byte[])packEntity.getBagBuffer(), 44);
     }
 

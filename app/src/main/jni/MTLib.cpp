@@ -144,13 +144,13 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceName
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_resetDeviceID
-        (JNIEnv *env, jobject, jlong jlong1DeviceID)
+        (JNIEnv *env, jobject, int jlong1DeviceID)
 {
     if (g_lib == NULL)
     {
         return JNI_FALSE;
     }
-    if (!g_lib->ResetDeviceID(jlong1DeviceID))
+    if (!g_lib->ResetDeviceID(&jlong1DeviceID))
     {
         return JNI_FALSE;
     }

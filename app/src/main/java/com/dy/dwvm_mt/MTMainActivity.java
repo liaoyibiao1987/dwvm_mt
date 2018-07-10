@@ -21,6 +21,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,6 +33,7 @@ import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.fragments.HomeFragment;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,12 +47,16 @@ public class MTMainActivity extends BaseActivity
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
             android.Manifest.permission.WAKE_LOCK,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.CALL_PHONE,
+            //Manifest.permission.ANSWER_PHONE_CALLS,
+            //Manifest.permission.PROCESS_OUTGOING_CALLS,
             android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
             android.Manifest.permission.ACCESS_NETWORK_STATE,
-            "Manifest.permission.RECEIVE_USER_PRESENT",
+            //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.MODIFY_PHONE_STATE,
-            Manifest.permission.MEDIA_CONTENT_CONTROL};
+            // android.Manifest.permission.MODIFY_PHONE_STATE,
+            Manifest.permission.READ_SMS};
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();
     //申请权限后的返回码
@@ -175,13 +181,28 @@ public class MTMainActivity extends BaseActivity
         return true;
     }
 
-    private void requestMyPermission() {
-        String[] permissionsArray2 = PermissionConstants.getPermissions(PermissionConstants.DY_PHONE);
-        String[] allpermiss = new String[permissionsArray2.length + permissionsArray.length];
-        System.arraycopy(permissionsArray, 0, allpermiss, 0, permissionsArray.length);
-        System.arraycopy(permissionsArray2, 0, allpermiss, permissionsArray.length, permissionsArray2.length);
+    // 用来计算返回键的点击间隔时间
+    private long exitTime = 0;
 
-        for (String permission : allpermiss) {
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK
+                && event.getAction() == KeyEvent.ACTION_DOWN) {
+            if ((System.currentTimeMillis() - exitTime) > 2000) {
+                //弹出提示，可以有多种方式
+                ToastUtils.showShort("再按一次退出程序");
+                exitTime = System.currentTimeMillis();
+            } else {
+                finish();
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+
+    private void requestMyPermission() {
+        for (String permission : permissionsArray) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                         Manifest.permission.PROCESS_OUTGOING_CALLS)) {
@@ -200,7 +221,7 @@ public class MTMainActivity extends BaseActivity
         if (permissionsList.size() > 0) {
             ActivityCompat.requestPermissions(this, permissionsList.toArray(new String[permissionsList.size()]), REQUEST_CODE_ASK_PERMISSIONS);
         } else {
-            LogUtils.e("已经获得过了全部认证");
+            LogUtils.d("已经获得过了全部认证");
         }
     }
 

@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 public class JavaStruct {
 	
 	public static final byte[] pack(Object o) throws StructException{
-		return pack(o, ByteOrder.BIG_ENDIAN);
+		return pack(o, ByteOrder.LITTLE_ENDIAN);
 	}
 
 	public static final byte[] pack(Object o, ByteOrder order) throws StructException{
