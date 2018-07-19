@@ -8,11 +8,7 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
-import com.dy.dwvm_mt.MTLib;
-import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
-import com.dy.dwvm_mt.utilcode.util.KeyboardUtils;
-import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 public abstract class BaseActivity extends AppCompatActivity {
     public static final String MT_AUTOSTARTCAMERA_ACTION = "dy.dymt.AUTOSTARTCAMERA";

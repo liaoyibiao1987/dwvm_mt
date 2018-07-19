@@ -4,7 +4,7 @@ package com.dy.dwvm_mt.Comlibs;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/10.
  * PS: Not easy to write code, please indicate.
  */
-public final class LocalWarehouse {
+public final class LocalSetting {
     private static boolean isLogined;
     private static boolean isLocalTel;
     private static boolean forcePSTranspond;
@@ -33,7 +33,7 @@ public final class LocalWarehouse {
     }
 
     public static void setIsLogined(boolean isLogined) {
-        LocalWarehouse.isLogined = isLogined;
+        LocalSetting.isLogined = isLogined;
     }
 
     public static boolean isIsLocalTel() {
@@ -41,7 +41,7 @@ public final class LocalWarehouse {
     }
 
     public static void setIsLocalTel(boolean isLocalTel) {
-        LocalWarehouse.isLocalTel = isLocalTel;
+        LocalSetting.isLocalTel = isLocalTel;
     }
 
     public static boolean isForcePSTranspond() {
@@ -49,7 +49,7 @@ public final class LocalWarehouse {
     }
 
     public static void setForcePSTranspond(boolean forcePSTranspond) {
-        LocalWarehouse.forcePSTranspond = forcePSTranspond;
+        LocalSetting.forcePSTranspond = forcePSTranspond;
     }
 
     public static String getAffiliateToPS() {
@@ -57,7 +57,7 @@ public final class LocalWarehouse {
     }
 
     public static void setAffiliateToPS(String affiliateToPS) {
-        LocalWarehouse.affiliateToPS = affiliateToPS;
+        LocalSetting.affiliateToPS = affiliateToPS;
     }
 
     public static int getDeviceId() {
@@ -65,7 +65,7 @@ public final class LocalWarehouse {
     }
 
     public static void setDeviceId(int deviceId) {
-        LocalWarehouse.deviceId = deviceId;
+        LocalSetting.deviceId = deviceId;
     }
 
     public static int getLoginTimeElapse() {

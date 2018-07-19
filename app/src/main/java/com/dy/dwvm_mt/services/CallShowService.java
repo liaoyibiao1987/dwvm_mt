@@ -23,21 +23,16 @@ import android.widget.Button;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
-import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
-import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
-import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
-import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
-import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 public class CallShowService extends Service implements I_MT_Prime.MTLibCallback {
     private static final int FOREGROUND_ID = 1;
-    private static int NOTIFKEEPERIID = 1;
+    private static int NOTIFKEEPERIID = 10711;
 
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
@@ -95,6 +90,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
             LogUtils.d("Calling..." + phoneNumber);
             isOutgoingCall = true;
         }
+
         NotificationWhenCommand();
         return super.onStartCommand(intent, START_STICKY, startId);
     }
@@ -103,7 +99,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级。
     private void NotificationWhenCommand() {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.videoico)
                 .setContentTitle("电话提醒")
                 .setContentText("点击打开视频界面.")
                 .setContentInfo("东耀企业")
@@ -280,6 +276,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
             } catch (Exception es) {
                 LogUtils.e("InnerServer -> onCreate: " + es);
             }
+            stopSelf();
         }
 
         @Override

@@ -10,18 +10,16 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.Comlibs.LocalWarehouse;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -30,9 +28,7 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
-import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
-import com.dy.dwvm_mt.utilcode.util.AppUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
@@ -133,7 +129,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
 
                             finish();
                         } else {
-                            LocalWarehouse.ResetInformation();
+                            LocalSetting.ResetInformation();
                             ToastUtils.showShort("登录失败");
                         }
                     } catch (Exception es) {
@@ -158,7 +154,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                 }
             });
 
-            LocalWarehouse.SetInformationByLoginResult(loginExtMessage);
+            LocalSetting.SetInformationByLoginResult(loginExtMessage);
         } catch (Exception es) {
             LogUtils.e("ReWriteInformation error:" + es);
         }

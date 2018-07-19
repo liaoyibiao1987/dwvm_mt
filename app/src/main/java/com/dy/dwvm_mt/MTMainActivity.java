@@ -154,18 +154,18 @@ public class MTMainActivity extends BaseActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
         Class fragmentClass = null;
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_calling) {
             fragmentClass = HomeFragment.class;
             // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        } else if (id == R.id.nav_meeting) {
 
-        } else if (id == R.id.nav_slideshow) {
+        } else if (id == R.id.nav_videotapeManage) {
 
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.nav_settings) {
 
         } else if (id == R.id.nav_share) {
 
-        } else if (id == R.id.nav_send) {
+        } else if (id == R.id.nav_logout) {
 
         }
         try {
