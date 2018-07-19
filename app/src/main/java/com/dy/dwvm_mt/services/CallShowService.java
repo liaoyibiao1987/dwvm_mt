@@ -32,7 +32,7 @@ import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 public class CallShowService extends Service implements I_MT_Prime.MTLibCallback {
     private static final int FOREGROUND_ID = 1;
-    private static int NOTIFKEEPERIID = 10711;
+    private static int NOTIFKEEPERIID = 0x111;
 
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
