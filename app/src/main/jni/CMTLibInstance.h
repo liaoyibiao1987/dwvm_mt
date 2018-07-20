@@ -113,7 +113,7 @@ public:
 
     BOOL SetDeviceName(const char *szDeviceName);
 
-    bool ResetDeviceID(const int *m_dwLocalDeviceId);
+    bool ResetDeviceID(int *m_dwLocalDeviceId);
 
     int SendUdpPacketToDevice(
         DWORD dwPacketType,

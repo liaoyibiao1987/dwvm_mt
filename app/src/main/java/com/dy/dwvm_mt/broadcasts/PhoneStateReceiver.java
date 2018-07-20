@@ -1,6 +1,7 @@
 package com.dy.dwvm_mt.broadcasts;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.telephony.TelephonyManager;
@@ -18,6 +19,12 @@ public class PhoneStateReceiver extends BroadcastReceiver {
         if (action.equals(PHONE_STATE) == true) {
             //String phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
             LogUtils.d(context, "PhoneStateReceiver 收到消息.");
+
+            /** 隐式启动service
+            intentService = new Intent();
+            intentService.setClassName("com.dy.dwvm_mt",  "com.dy.dwvm_mt.services.CallShowService");
+            */
+            //** 显式启动service
             intentService = new Intent(context, CallShowService.class);
             context.startService(intentService);
 

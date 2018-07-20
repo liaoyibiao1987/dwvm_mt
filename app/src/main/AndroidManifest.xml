@@ -130,6 +130,16 @@
                 <action android:name=".services.CallShowService" />
             </intent-filter>
         </service>
+        <!--<service android:name=".services.PollingService" android:enabled="true" android:process=":remote">&lt;!&ndash; android:process=":PhoneListenService"&ndash;&gt;
+            <intent-filter android:priority="1000">
+                <action android:name=".services.PollingService" />
+            </intent-filter>
+        </service>-->
+        <service android:name=".services.PollingService" android:enabled="true">
+            <intent-filter>
+                <action android:name=".services.PollingService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

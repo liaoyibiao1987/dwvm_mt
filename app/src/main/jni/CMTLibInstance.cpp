@@ -191,12 +191,15 @@ BOOL CMTLibInstance::SetDeviceName(const char *szDeviceName)
     return TRUE;
 }
 
-bool CMTLibInstance::ResetDeviceID(const int *m_dwLocalDeviceId){
-    if (NULL == m_dwLocalDeviceId)
+bool CMTLibInstance::ResetDeviceID(int *dwLocalDeviceId){
+    if (NULL == dwLocalDeviceId)
     {
         return FALSE;
+    } else{
+        m_dwLocalDeviceId = *dwLocalDeviceId;
+        DWVM_SetLocalDeviceId(m_sock,*dwLocalDeviceId);
+        return TRUE;
     }
-    return TRUE;
 }
 int CMTLibInstance::SendUdpPacketToDevice(
     DWORD dwPacketType,

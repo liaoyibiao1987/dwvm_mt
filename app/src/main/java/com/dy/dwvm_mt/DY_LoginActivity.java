@@ -28,6 +28,7 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
+import com.dy.dwvm_mt.services.PollingService;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
@@ -114,6 +115,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                     try {
                         s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
                         LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
+                        Intent pollingIntent = new Intent(this, PollingService.class);
+
                         if (loginResult.getDwErrorCode() == 0) {
                             ToastUtils.showShort("登录成功");
 
@@ -121,7 +124,13 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                             String ddnsIP = arg.getEventArg().getIPPort();
                             LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
 
+
                             ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
+
+                            LogUtils.e("loginResult.getDwLoginTimeElapse" + loginResult.getDwLoginTimeElapse());
+                            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, loginResult.getDwLoginTimeElapse() * 100);
+                            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, true);
+                            startService(pollingIntent);
 
                             Intent intent = new Intent();
                             intent.setClass(this, MTMainActivity.class);
@@ -129,6 +138,10 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
 
                             finish();
                         } else {
+                            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, -1);
+                            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, false);
+                            startService(pollingIntent);
+
                             LocalSetting.ResetInformation();
                             ToastUtils.showShort("登录失败");
                         }

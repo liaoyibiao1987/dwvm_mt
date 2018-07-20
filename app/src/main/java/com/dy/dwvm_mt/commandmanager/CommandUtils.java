@@ -1,6 +1,8 @@
 package com.dy.dwvm_mt.commandmanager;
 
+import com.dy.dwvm_mt.Comlibs.DataPackShell;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -9,6 +11,7 @@ import com.dy.javastruct.JavaStruct;
 
 import java.nio.ByteOrder;
 import java.sql.Struct;
+import java.util.List;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/27.
@@ -77,6 +80,9 @@ public class CommandUtils {
     public static final int WVM_CMD_DEBUG_UPLOAD = 902;
     public static final int WVM_CMD_USER_BASE = 900;
 
+    public static final String Str_Extra_Polling = "dy.mt.polling.m_interval";
+    public static final String Str_Extra_Online = "dy.mt.polling.online";
+
     private static I_MT_Prime mt_prime;
 
     public static void initSetupAdapter(I_MT_Prime adapter) {
@@ -112,6 +118,20 @@ public class CommandUtils {
             mt_prime.sendUdpPacketToDevice2(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
+        }
+    }
+
+    public static final void sendPolling() {
+        try {
+            byte[] databuff = new byte[1];
+            List<byte[]> toSend = DataPackShell.GetSendBuff(databuff);
+            int count = 0;
+            for (byte[] item : toSend) {
+                count += mt_prime.sendUdpPacketToDevice2(WVM_CMD_POLLING, 1, getDDNSDEVICEID(), getDDNSIPPort(), item, item.length);
+            }
+            System.out.print("MT-SEND CMD:WVM_CMD_POLLING \r\n DATA LEN :" + databuff.length + " \r\n DATA:" + StringUtils.toHexBinary(databuff));
+        } catch (Exception es) {
+            LogUtils.e("sendPolling error" + es.toString());
         }
     }
 }
