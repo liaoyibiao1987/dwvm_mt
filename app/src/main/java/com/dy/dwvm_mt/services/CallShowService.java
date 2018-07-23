@@ -22,6 +22,7 @@ import android.widget.Button;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
 import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
@@ -30,7 +31,7 @@ import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
-public class CallShowService extends Service implements I_MT_Prime.MTLibCallback {
+public class CallShowService extends Service {
     private static final int FOREGROUND_ID = 1;
     private static int NOTIFKEEPERIID = 0x111;
 
@@ -52,7 +53,7 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
     @Override
     public void onCreate() {
         //android.os.Debug.waitForDebugger();
-        /*if (isRunning == false) {
+        if (isRunning == false) {
             try {
                 isRunning = true;
                 initFloatView();
@@ -64,7 +65,6 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                 return;
             }
         }
-*/
         super.onCreate();
     }
 
@@ -177,7 +177,9 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
             public void onCallStateChanged(int state, String incomingNumber) {
                 super.onCallStateChanged(state, incomingNumber);
                 phoneState = state;
-                LogUtils.d("phoneState :" + phoneState + "\t incomingNumber:" + incomingNumber);
+                LocalSetting.setCallState(state);
+                CommandUtils.sendTelState(state, LocalSetting.getMeetingID());
+                LogUtils.d("PhoneStateListener phoneState :" + phoneState + "\t incomingNumber:" + incomingNumber);
                 if (isEnable) {//启用
                     switch (state) {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
@@ -199,14 +201,14 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
                             break;
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             phoneNumber = incomingNumber;
-                            try {
+                           /* try {
                                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-                                CommandUtils.sendLoginData("L_MT6", "123", "13411415574", "860756", ddnsIPAndPort);
+                                CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
                                 callShow();//显示来电秀
                                 LogUtils.d("initPhoneStateListener -> onCallStateChanged: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
                             } catch (Exception es) {
                                 LogUtils.e("initPhoneStateListener -> onCallStateChanged: .CALL_STATE_RINGING" + es);
-                            }
+                            }*/
                             break;
                         default:
                             break;
@@ -292,18 +294,4 @@ public class CallShowService extends Service implements I_MT_Prime.MTLibCallback
         }
     }
 
-    @Override
-    public long onReceivedUdpPacket(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, long packetCommandType, byte[] packetBuffer, int packetBytes) {
-        return 0;
-    }
-
-    @Override
-    public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
-        return 0;
-    }
-
-    @Override
-    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
-        return 0;
-    }
 }

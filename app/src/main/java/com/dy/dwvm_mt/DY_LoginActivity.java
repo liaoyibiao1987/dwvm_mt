@@ -115,7 +115,6 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                     try {
                         s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
                         LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
-                        Intent pollingIntent = new Intent(this, PollingService.class);
 
                         if (loginResult.getDwErrorCode() == 0) {
                             ToastUtils.showShort("登录成功");
@@ -123,53 +122,24 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                             int ddnsID = arg.getEventArg().getHeader().dwSrcId;
                             String ddnsIP = arg.getEventArg().getIPPort();
                             LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
-
-
                             ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
-
-                            LogUtils.e("loginResult.getDwLoginTimeElapse" + loginResult.getDwLoginTimeElapse());
-                            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, loginResult.getDwLoginTimeElapse() * 100);
-                            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, true);
-                            startService(pollingIntent);
-
+                            LogUtils.d("loginResult.getDwLoginTimeElapse" + loginResult.getDwLoginTimeElapse());
                             Intent intent = new Intent();
                             intent.setClass(this, MTMainActivity.class);
                             ActivityUtils.startActivity(intent);
 
                             finish();
                         } else {
-                            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, -1);
-                            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, false);
-                            startService(pollingIntent);
-
                             LocalSetting.ResetInformation();
                             ToastUtils.showShort("登录失败");
                         }
+                        startPolling(loginResult.getDwErrorCode(), loginResult.getDwLoginTimeElapse());
                     } catch (Exception es) {
                         LogUtils.e("TestActivity : Analytic package error :" + es);
                     }
                     break;
             }
 
-        }
-    }
-
-    private void ReWriteInformation(final int ddnsID, final String ddnsIP, final LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
-        try {
-            final int localDeviceID = loginExtMessage.getDeviceId();
-            this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    CommandUtils.setDDNSDEVICEID(ddnsID);
-                    CommandUtils.setDDNSIPPort(ddnsIP);
-                    I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
-                    mtlib.resetDeviceID(localDeviceID);
-                }
-            });
-
-            LocalSetting.SetInformationByLoginResult(loginExtMessage);
-        } catch (Exception es) {
-            LogUtils.e("ReWriteInformation error:" + es);
         }
     }
 

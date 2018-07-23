@@ -29,7 +29,10 @@ import android.widget.FrameLayout;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.fragments.HomeFragment;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -42,7 +45,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class MTMainActivity extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, NWCommandEventHandler {
     //所需要申请的权限数组
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
@@ -114,6 +117,7 @@ public class MTMainActivity extends BaseActivity
 
         m_mt_Lib = MTLibUtils.getBaseMTLib();
         navigationView.setNavigationItemSelectedListener(this);
+        AnalysingUtils.addRecvedCommandListeners(this);
     }
 
     @Override
@@ -256,5 +260,10 @@ public class MTMainActivity extends BaseActivity
             }
         });
         builder.create().show();
+    }
+
+    @Override
+    public void doHandler(NWCommandEventArg arg) {
+
     }
 }

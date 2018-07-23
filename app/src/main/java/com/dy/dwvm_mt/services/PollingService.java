@@ -1,36 +1,27 @@
 package com.dy.dwvm_mt.services;
 
 import android.annotation.SuppressLint;
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.PixelFormat;
-import android.os.Build;
 import android.os.IBinder;
-import android.os.SystemClock;
 import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
-import android.support.v4.app.NotificationCompat;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.WindowManager;
-import android.widget.Button;
 
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.DY_VideoPhoneActivity;
-import com.dy.dwvm_mt.MainActivity;
-import com.dy.dwvm_mt.R;
-import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
+import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
+import com.dy.dwvm_mt.broadcasts.NetworkChangeReceiver;
+import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.commandmanager.MTLibUtils;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
+import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
+import com.dy.dwvm_mt.messagestructs.s_DDNS_StatesMsg;
+import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
+import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
+import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
-public class PollingService extends Service {
+public class PollingService extends Service implements NWCommandEventHandler, NetworkChangeReceiver.OnNetWorkChange {
 
     private static int m_interval = 0;
     private static boolean m_isOnline = false;
@@ -51,6 +42,8 @@ public class PollingService extends Service {
             }
         }
 */
+        AnalysingUtils.addRecvedCommandListeners(this);
+        NetworkChangeReceiver.getInstance().setOnNetWorkChange(this);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -74,6 +67,7 @@ public class PollingService extends Service {
 
     @Override
     public void onDestroy() {
+        NetworkChangeReceiver.getInstance().delOnNetWorkChange(this);
         super.onDestroy();
     }
 
@@ -90,5 +84,81 @@ public class PollingService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    private static final void ReWriteInformation(final int ddnsID, final String ddnsIP, final LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
+        try {
+            final int localDeviceID = loginExtMessage.getDeviceId();
+            CommandUtils.setDDNSDEVICEID(ddnsID);
+            CommandUtils.setDDNSIPPort(ddnsIP);
+            I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
+            mtlib.resetDeviceID(localDeviceID);
+
+            LocalSetting.SetInformationByLoginResult(loginExtMessage);
+        } catch (Exception es) {
+            LogUtils.e("ReWriteInformation error:" + es);
+        }
+    }
+
+    @Override
+    public void doHandler(NWCommandEventArg arg) {
+        if (arg != null && arg.getEventArg() != null) {
+            int cmd = arg.getEventArg().getCmd();
+            switch (cmd) {
+                case s_messageBase.DeviceCMD.WVM_CMD_USER_BASE:
+                    try {
+                        if (arg.getEventArg().getSubCmd() == s_messageBase.DeviceCMD_Sub.DDNS_StatesMsg) {
+                            s_DDNS_StatesMsg s_statesMsg = arg.getEventArg().Param(s_DDNS_StatesMsg.class);
+                            if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.ReLogin) {
+                                CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+                                LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPor: %S", "L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort()));
+                            } else if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.LoginOffline) {
+                                LogUtils.d("设备已在另一处登录,被迫下线。请检查电脑是否拥有多个网络地址!");
+                            }
+                        }
+                    } catch (Exception es) {
+                        LogUtils.e("PollingService WVM_CMD_USER_BASE: Analytic package error :" + es);
+                    }
+                    break;
+                case s_messageBase.DeviceCMD.WVM_CMD_DDNS_LOGIN_RESULT:
+                    try {
+                        s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
+                        LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
+                        if (loginResult.getDwErrorCode() == 0) {
+                            ToastUtils.showShort("登录成功");
+                            int ddnsID = arg.getEventArg().getHeader().dwSrcId;
+                            String ddnsIP = arg.getEventArg().getIPPort();
+                            LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
+                            ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
+                        } else {
+                            LocalSetting.ResetInformation();
+                            ToastUtils.showShort("登录失败");
+                        }
+                    } catch (Exception es) {
+                        LogUtils.e("PollingService WVM_CMD_DDNS_LOGIN_RESULT: Analytic package error :" + es);
+                    }
+            }
+
+        }
+    }
+
+    @Override
+    public void onNetStateChange(int wifi, int mobile, int none, int oldStatus, int newStatus) {
+        LogUtils.d("网络状态变化,重新登录.");
+        if (newStatus == none){
+            //没有网络
+        }
+        if (newStatus == mobile){
+            //移动网络
+            CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+        }
+        if (newStatus == wifi){
+            CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+            //wifi网络
+            if (oldStatus == mobile) {
+                //从移动网络切换到wifi网络
+            }
+        }
+
     }
 }

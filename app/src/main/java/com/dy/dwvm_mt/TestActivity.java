@@ -47,7 +47,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
             @Override
             public void onClick(View view) {
                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-                CommandUtils.sendLoginData("L_MT6", "123", "3850203", "860756", ddnsIPAndPort);
+                CommandUtils.sendLoginData("L_MT5", "123", "3850203", "860756", ddnsIPAndPort);
             }
         });
     }

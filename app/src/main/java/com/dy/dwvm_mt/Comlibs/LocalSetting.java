@@ -11,6 +11,8 @@ public final class LocalSetting {
     private static String affiliateToPS;
     private static int deviceId;
     private static int LoginTimeElapse;
+    private static int callState;
+    private static int meetingID;
 
     public static void SetInformationByLoginResult(LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
         setAffiliateToPS(loginExtMessage.getPSIPPort());
@@ -74,5 +76,22 @@ public final class LocalSetting {
 
     public static void setLoginTimeElapse(int loginTimeElapse) {
         LoginTimeElapse = loginTimeElapse;
+    }
+
+    public static int getCallState() {
+        return callState;
+    }
+
+    public static void setCallState(int callState) {
+        LocalSetting.callState = callState;
+    }
+
+
+    public static int getMeetingID() {
+        return meetingID;
+    }
+
+    public static void setMeetingID(int meetingID) {
+        LocalSetting.meetingID = meetingID;
     }
 }

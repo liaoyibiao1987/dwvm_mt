@@ -2,13 +2,18 @@ package com.dy.dwvm_mt.Comlibs;
 
 
 import android.content.Context;
+import android.content.Intent;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
+import com.dy.dwvm_mt.services.PollingService;
+import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 public abstract class BaseActivity extends AppCompatActivity {
     public static final String MT_AUTOSTARTCAMERA_ACTION = "dy.dymt.AUTOSTARTCAMERA";
@@ -52,5 +57,41 @@ public abstract class BaseActivity extends AppCompatActivity {
                     && event.getY() > top && event.getY() < bottom);
         }
         return false;
+    }
+
+
+    public final void startPolling(int errorCode, @Nullable int elapse) {
+        Intent pollingIntent = new Intent(this, PollingService.class);
+        if (errorCode == 0){
+            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, elapse * 800);
+            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, true);
+        }else {
+            pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, -1);
+            pollingIntent.putExtra(CommandUtils.Str_Extra_Online, false);
+        }
+        startService(pollingIntent);
+    }
+
+    public final void ReWriteInformation(final int ddnsID, final String ddnsIP, final LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
+        try {
+            final int localDeviceID = loginExtMessage.getDeviceId();
+           /* this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    CommandUtils.setDDNSDEVICEID(ddnsID);
+                    CommandUtils.setDDNSIPPort(ddnsIP);
+                    I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
+                    mtlib.resetDeviceID(localDeviceID);
+                }
+            });*/
+            CommandUtils.setDDNSDEVICEID(ddnsID);
+            CommandUtils.setDDNSIPPort(ddnsIP);
+            I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
+            mtlib.resetDeviceID(localDeviceID);
+
+            LocalSetting.SetInformationByLoginResult(loginExtMessage);
+        } catch (Exception es) {
+            LogUtils.e("ReWriteInformation error:" + es);
+        }
     }
 }
