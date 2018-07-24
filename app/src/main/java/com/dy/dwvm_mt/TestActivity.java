@@ -35,6 +35,10 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
 
     @BindView(R.id.btn_test_login)
     Button btn_testlogin;
+
+    @BindView(R.id.btn_test_reportstate)
+    Button btn_testreportstate;
+
     private I_MT_Prime m_mtLib;
 
     @Override
@@ -48,6 +52,12 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
             public void onClick(View view) {
                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
                 CommandUtils.sendLoginData("L_MT5", "123", "3850203", "860756", ddnsIPAndPort);
+            }
+        });
+        btn_testreportstate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CommandUtils.sendTelState(6, 0);
             }
         });
     }

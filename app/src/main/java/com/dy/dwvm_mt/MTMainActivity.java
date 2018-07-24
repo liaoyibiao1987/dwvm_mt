@@ -168,7 +168,8 @@ public class MTMainActivity extends BaseActivity
         } else if (id == R.id.nav_settings) {
 
         } else if (id == R.id.nav_share) {
-
+            Intent intent = new Intent(this, TestActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_logout) {
 
         }

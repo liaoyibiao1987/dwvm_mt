@@ -28,6 +28,7 @@ import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
@@ -40,10 +41,11 @@ public class CallShowService extends Service {
     public static boolean isRunning = false;//是否正在运行
     private int phoneState = TelephonyManager.CALL_STATE_IDLE;//收到的话机状态
     private boolean isEnable = true;//是否启用服务
-    private boolean isOutgoingCall = false;//是否主动拨号
     private boolean isFloatShown = false;
 
-    private String phoneNumber = "";
+    private String commingTelNumber = "";
+    private String outgoingTelNumber = "";
+    private boolean isOutgoingCall = false;//是否主动拨号
 
     private ConstraintLayout mFloatLayout;
     private WindowManager.LayoutParams wmParams;
@@ -86,8 +88,8 @@ public class CallShowService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && Intent.ACTION_NEW_OUTGOING_CALL.equals(intent.getAction())) {
             //去电
-            phoneNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
-            LogUtils.d("Calling..." + phoneNumber);
+            outgoingTelNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
+            LogUtils.d("ACTION_NEW_OUTGOING_CALL : " + outgoingTelNumber);
             isOutgoingCall = true;
         }
 
@@ -178,43 +180,48 @@ public class CallShowService extends Service {
                 super.onCallStateChanged(state, incomingNumber);
                 phoneState = state;
                 LocalSetting.setCallState(state);
-                CommandUtils.sendTelState(state, LocalSetting.getMeetingID());
-                LogUtils.d("PhoneStateListener phoneState :" + phoneState + "\t incomingNumber:" + incomingNumber);
+                int callstate = s_messageBase.TelStates.Idle;
                 if (isEnable) {//启用
                     switch (state) {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
-                            LogUtils.d("initPhoneStateListener -> onCallStateChanged: CALL_STATE_IDLE");
+                            LogUtils.d("PhoneStateListener CALL_STATE_IDLE");
                             isOutgoingCall = false;
+                            outgoingTelNumber = "";
+                            commingTelNumber = "";
                             dismiss();//关闭来电秀
+                            break;
+
+                        case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
+                            commingTelNumber = incomingNumber;
+                            callstate = s_messageBase.TelStates.Ring;
+                            LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
+                           /* try {
+                                String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
+                                //CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
+                                callShow();//显示来电秀
+                                LogUtils.d("PhoneStateListener onCallStateChanged: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
+                            } catch (Exception es) {
+                                LogUtils.e("PhoneStateListener onCallStateChanged: .CALL_STATE_RINGING" + es);
+                            }*/
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
-                                Thread.sleep(1000);
                                 if (isOutgoingCall == true) {
+                                    Thread.sleep(1000);
                                     callShow();
                                 }
-                                LogUtils.d("initPhoneStateListener -> onCallStateChanged: CALL_STATE_OFFHOOK");
+                                callstate = isOutgoingCall == true ? s_messageBase.TelStates.Offhook : s_messageBase.TelStates.CalledOffhook;
+                                LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK");
                             } catch (Exception es) {
-                                LogUtils.e("initPhoneStateListener -> onCallStateChanged: CALL_STATE_OFFHOOK error" + es);
+                                LogUtils.e("PhoneStateListener CALL_STATE_OFFHOOK error" + es);
                             }
 
-                            break;
-                        case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
-                            phoneNumber = incomingNumber;
-                           /* try {
-                                String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-                                CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
-                                callShow();//显示来电秀
-                                LogUtils.d("initPhoneStateListener -> onCallStateChanged: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
-                            } catch (Exception es) {
-                                LogUtils.e("initPhoneStateListener -> onCallStateChanged: .CALL_STATE_RINGING" + es);
-                            }*/
                             break;
                         default:
                             break;
                     }
                 }
-
+                CommandUtils.sendTelState(callstate, LocalSetting.getMeetingID());
             }
 
             private void callShow() {

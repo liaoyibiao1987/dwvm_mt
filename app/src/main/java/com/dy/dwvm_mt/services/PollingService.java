@@ -6,9 +6,13 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
+import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.Comlibs.EncoderManager;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
+import com.dy.dwvm_mt.DY_VideoPhoneActivity;
+import com.dy.dwvm_mt.TestActivity;
 import com.dy.dwvm_mt.broadcasts.NetworkChangeReceiver;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -44,6 +48,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
 */
         AnalysingUtils.addRecvedCommandListeners(this);
         NetworkChangeReceiver.getInstance().setOnNetWorkChange(this);
+        EncoderManager.Init(MTLibUtils.getBaseMTLib());
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -51,7 +56,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                     try {
                         if (m_isOnline == true && m_interval > 0) {
                             CommandUtils.sendPolling();
-                            LogUtils.d("Send polling package.");
+                            //LogUtils.d("Send polling package.");
                             Thread.sleep(m_interval);
                         } else {
                             Thread.sleep(200);
@@ -106,19 +111,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
             int cmd = arg.getEventArg().getCmd();
             switch (cmd) {
                 case s_messageBase.DeviceCMD.WVM_CMD_USER_BASE:
-                    try {
-                        if (arg.getEventArg().getSubCmd() == s_messageBase.DeviceCMD_Sub.DDNS_StatesMsg) {
-                            s_DDNS_StatesMsg s_statesMsg = arg.getEventArg().Param(s_DDNS_StatesMsg.class);
-                            if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.ReLogin) {
-                                CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
-                                LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPor: %S", "L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort()));
-                            } else if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.LoginOffline) {
-                                LogUtils.d("设备已在另一处登录,被迫下线。请检查电脑是否拥有多个网络地址!");
-                            }
-                        }
-                    } catch (Exception es) {
-                        LogUtils.e("PollingService WVM_CMD_USER_BASE: Analytic package error :" + es);
-                    }
+                    onReceivedSubCMD(arg);
                     break;
                 case s_messageBase.DeviceCMD.WVM_CMD_DDNS_LOGIN_RESULT:
                     try {
@@ -137,22 +130,55 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                     } catch (Exception es) {
                         LogUtils.e("PollingService WVM_CMD_DDNS_LOGIN_RESULT: Analytic package error :" + es);
                     }
+                    break;
             }
 
         }
     }
 
+    private void onReceivedSubCMD(NWCommandEventArg arg) {
+        try {
+            int subCMD = arg.getEventArg().getSubCmd();
+            switch (subCMD) {
+                case s_messageBase.DeviceCMD_Sub.DDNS_StatesMsg:
+                    s_DDNS_StatesMsg s_statesMsg = arg.getEventArg().Param(s_DDNS_StatesMsg.class);
+                    if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.ReLogin) {
+                        CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+                        LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPor: %S", "L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort()));
+                    } else if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.LoginOffline) {
+                        LogUtils.d("设备已在另一处登录,被迫下线。请检查电脑是否拥有多个网络地址!");
+                    }
+                    break;
+                case s_messageBase.DeviceCMD_Sub.DDNS_MTInfo:
+                    LogUtils.d("通知设备进入视频电话.");
+                    Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+                    getApplication().startActivity(intent);
+                    break;
+                case s_messageBase.DeviceCMD_Sub.DDNS_SetCoding://ddns通知MT打开或关闭编码器(打开只有在摘机的时候才能操作)
+                    EncoderManager.Manage(arg);
+                default:
+                    break;
+            }
+
+        } catch (Exception es) {
+            LogUtils.e("PollingService WVM_CMD_USER_BASE: Analytic package error :" + es);
+        }
+
+    }
+
     @Override
     public void onNetStateChange(int wifi, int mobile, int none, int oldStatus, int newStatus) {
         LogUtils.d("网络状态变化,重新登录.");
-        if (newStatus == none){
+        if (newStatus == none) {
             //没有网络
         }
-        if (newStatus == mobile){
+        if (newStatus == mobile) {
             //移动网络
             CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
         }
-        if (newStatus == wifi){
+        if (newStatus == wifi) {
             CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
             //wifi网络
             if (oldStatus == mobile) {

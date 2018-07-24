@@ -122,7 +122,7 @@ public class CommandUtils {
 
         try {
             byte[] databuff = JavaStruct.pack(loginstruct, ByteOrder.BIG_ENDIAN);
-            System.out.print("MT-SEND DATA LEN : " + databuff.length + " \r\n DATA: " + StringUtils.toHexBinary(databuff));
+            System.out.println("MT-SEND DATA LEN : " + databuff.length + " DATA: " + StringUtils.toHexBinary(databuff));
             mt_prime.sendUdpPacketToDevice2(WVM_CMD_DDNS_LOGIN, 0, DDNSDEVICEID, ddnsIPAndPort, databuff, databuff.length);
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
@@ -132,12 +132,8 @@ public class CommandUtils {
     public static final void sendPolling() {
         try {
             byte[] databuff = new byte[1];
-            List<byte[]> toSend = DataPackShell.GetSendBuff(databuff);
-            int count = 0;
-            for (byte[] item : toSend) {
-                count += mt_prime.sendUdpPacketToDevice2(WVM_CMD_POLLING, 1, getDDNSDEVICEID(), getDDNSIPPort(), item, item.length);
-            }
-            System.out.print("MT-SEND CMD:WVM_CMD_POLLING \r\n DATA LEN :" + databuff.length + " \r\n DATA:" + StringUtils.toHexBinary(databuff));
+            mt_prime.sendUdpPacketToDevice2(WVM_CMD_POLLING, 1, getDDNSDEVICEID(), getDDNSIPPort(), databuff, databuff.length);
+            System.out.println("MT-SEND CMD:WVM_CMD_POLLING \r\n DATA LEN :" + databuff.length + " DATA:" + StringUtils.toHexBinary(databuff));
         } catch (Exception es) {
             LogUtils.e("sendPolling error" + es.toString());
         }
@@ -147,6 +143,7 @@ public class CommandUtils {
         s_MT_TelState s_mtStates = new s_MT_TelState();
         s_mtStates.CMD_Sub = s_messageBase.DeviceCMD_Sub.MT_Tel_States;
         s_mtStates.MeetingID = meetingID;
+        s_mtStates.TelState = telStates;
         String telnumber = PhoneUtils.getLine1Number();
         if (StringUtils.isTrimEmpty(telnumber) == false && telnumber.startsWith("+86")) {
             telnumber = telnumber.substring(3);
@@ -156,12 +153,9 @@ public class CommandUtils {
         s_mtStates.Data = telnumber.getBytes();
 
         try {
-            byte[] databuff = JavaStruct.pack(s_mtStates, ByteOrder.BIG_ENDIAN);
-            List<byte[]> toSend = DataPackShell.GetSendBuff(databuff);
-            for (byte[] item : toSend) {
-                mt_prime.sendUdpPacketToDevice2(WVM_CMD_USER_BASE, 1, DDNSDEVICEID, getDDNSIPPort(), item, item.length);
-                System.out.print("MT-SEND CMD:MT_Tel_States DATA LEN : " + databuff.length + " \r\n DATA: " + StringUtils.toHexBinary(databuff));
-            }
+            byte[] databuff = JavaStruct.pack(s_mtStates);//普通命令包用小端模式
+            mt_prime.sendUdpPacketToDevice2(WVM_CMD_USER_BASE, 1, DDNSDEVICEID, getDDNSIPPort(), databuff, databuff.length);
+            System.out.println("\r\n MT-SEND CMD:MT_Tel_States DATA LEN : " + databuff.length + " DATA: " + StringUtils.toHexBinary(databuff));
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
         }

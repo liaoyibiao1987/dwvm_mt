@@ -7,6 +7,7 @@ public class s_messageBase {
     public static final int WVM_MAX_USERNAME_LEN = 16;        //用户名的最大长度
     public static final int WVM_MAX_PASSWORD_LEN = 16;        //用户密码的最大长度
     public static final int WVM_MAX_IP_PORT_LEN = 24;         // IP地址+端口的最大长度
+    public static final int WVM_MAX_DESIPADDR_LEN = 30;
     public static final int WVM_MAX_PS_DEST_NUMBER = 12;      // PS转发时的一个源ID对应的最多目标ID数量
     public static final int WVM_MAX_MT_ENCODER_NUMBER = 64;   // MT编码通道的最大数量
     public static final int WVM_MAX_MT_DECODER_NUMBER = 64;   // MT解码通道的最大数量
@@ -17,6 +18,8 @@ public class s_messageBase {
     public static final int WVM_MAX_COMMON_CMD_LEN = 10;       //普通命令使用的参数最长长度
 
     public static final int WVM_MAX_TELPSTATE_CODE_LEN = 20;    //电话状态
+
+
 
     public static class DeviceCMD {
         public static final int WVM_CMD_POLLING = 1;
@@ -109,5 +112,22 @@ public class s_messageBase {
         public static final int ReLogin = 1;
         public static final int TelHasUse = 6;
         public static final int WhiteBoardError = 7;
+    }
+
+    public class TelStates
+    {
+        public static final int Idle = 0;
+        public static final int Offhook = 5;
+        public static final int CalledOffhook = 6;
+        public static final int OnHook = 7;
+        public static final int Ring = 2;
+        public static final int VaildCode = 9;
+    }
+
+    public class StreamType
+    {
+        public static final int VIDEO = 1;
+        public static final int AUDIO = 2;
+        public static final int BOTH = 3;
     }
 }
