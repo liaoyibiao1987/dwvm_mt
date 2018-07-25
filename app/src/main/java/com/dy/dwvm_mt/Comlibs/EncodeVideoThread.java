@@ -1,12 +1,17 @@
 package com.dy.dwvm_mt.Comlibs;
 
+import android.graphics.ImageFormat;
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
 import com.dy.dwvm_mt.MTLib;
+import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.StringUtils;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.EventListener;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -15,6 +20,8 @@ public class EncodeVideoThread extends Thread {
     private boolean isRuning = true;
     private boolean needEncoding = true;
     private byte[] input = null;
+    private byte[] m_encodeFrameBuffer = null;
+
     private long pts = 0;
     private long generateIndex = 0;
     private int m_framerate = 30;
@@ -41,6 +48,7 @@ public class EncodeVideoThread extends Thread {
         m_iRawWidth = rawWidth;
         m_iRawHeight = rawHeight;
         m_iColorFormat = colorFormat;
+        LogUtils.w(String.format("EncodeVideoThread colorFormat: %s rawWidth: %s rawHeight: %s", colorFormat, rawWidth, rawHeight));
     }
 
     private void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
@@ -58,6 +66,21 @@ public class EncodeVideoThread extends Thread {
             nv12[framesize + j] = nv21[j + framesize - 1];
         }
     }
+
+    /*private void NV21ToNV12(byte[] nv12, byte[] nv21, int width, int height) {
+        if (nv21 == null || nv12 == null) return;
+        int framesize = width * height;
+        System.arraycopy(nv21, 0, nv12, 0, framesize);
+        for (int i = 0; i < framesize; i++) {
+            nv12[i] = nv21[i];
+        }
+        for (int j = 0; j < framesize / 2; j += 2) {
+            nv12[framesize + j - 1] = nv21[j + framesize];
+        }
+        for (int j = 0; j < framesize / 2; j += 2) {
+            nv12[framesize + j] = nv21[j + framesize - 1];
+        }
+    }*/
 
     /**
      * Generates the presentation time for frame N, in microseconds.
@@ -125,7 +148,22 @@ public class EncodeVideoThread extends Thread {
             YUVQueue.poll();
         }
         synchronized (m_yuvlocker) {
-            YUVQueue.add(buffer);
+            YUVQueue.add(buffer.clone());
+        }
+    }
+
+    public final void endEncoder() {
+        isRuning = false;
+        if (encoder != null) {
+            encoder.stop();
+            encoder.release();
+            encoder = null;
+        }
+        if (input != null) {
+            input = null;
+        }
+        if (m_encodeFrameBuffer != null) {
+            m_encodeFrameBuffer = null;
         }
     }
 
@@ -158,61 +196,10 @@ public class EncodeVideoThread extends Thread {
 
         while (isRuning) {
             if (needEncoding == true) {
-                if (YUVQueue.size() > 0) {
-                    input = YUVQueue.poll();
-                    byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
-                    NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
-                    input = yuv420sp;
-                }
-                if (input != null) {
-                    try {
-                        long startMs = System.currentTimeMillis();
-                        ByteBuffer[] inputBuffers = encoder.getInputBuffers();
-                        ByteBuffer[] outputBuffers = encoder.getOutputBuffers();
-                        int inputBufferIndex = encoder.dequeueInputBuffer(-1);
-                        if (inputBufferIndex >= 0) {
-                            pts = computePresentationTime(generateIndex);
-                            ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                            inputBuffer.clear();
-                            inputBuffer.put(input);
-                            encoder.queueInputBuffer(inputBufferIndex, 0, input.length, pts, 0);
-                            generateIndex += 1;
-                        }
-
-                        MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                        int outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
-                        while (outputBufferIndex >= 0) {
-                            //Log.i("AvcEncoder", "Get H264 Buffer Success! flag = "+bufferInfo.flags+",pts = "+bufferInfo.presentationTimeUs+"");
-                            final int iEncodeFrameSize = bufferInfo.size;
-                            ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
-                            byte[] tmp_encodeFrameBuffer = new byte[bufferInfo.size];
-                            outputBuffer.get(tmp_encodeFrameBuffer);
-
-
-                            encoder.releaseOutputBuffer(outputBufferIndex, false);
-                            outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
-                            // send to network
-                            if (m_mtLib.isWorking()) {
-                                m_mtLib.sendOneFrameToDevice(0, m_ldeviceID, 0, m_sremoteIPPort, MTLib.CODEC_VIDEO_H264,
-                                        tmp_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
-                            }
-                        }
-
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                } else {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } else {
                 try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    onSentEncoding2();
+                } catch (Exception es) {
+                    LogUtils.e("EncodeVideoThread run error:" + es.toString());
                 }
             }
         }
@@ -281,8 +268,151 @@ public class EncodeVideoThread extends Thread {
                 }
             }
             */
-
-        encoder.stop();
-        encoder.release();
     }
+
+    protected void NV21_to_YUV420SP(byte[] image, int width, int height) {
+        byte tmp = 0;
+        int uvBegin = width * height;
+        int uvBytes = width * height / 2;
+        for (int i = 0; i < uvBytes; i += 2) {
+            tmp = image[uvBegin + i];
+            image[uvBegin + i] = image[uvBegin + i + 1];
+            image[uvBegin + i + 1] = tmp;
+        }
+    }
+
+    private void onSentEncoding2() {
+        final int iInputSize = (m_iRawWidth * m_iRawHeight * m_iColorFormat / 8);
+        if (YUVQueue.size() > 0) {
+            input = YUVQueue.poll();
+        }
+        if (input != null) {
+            if (input.length < iInputSize || iInputSize <= 0) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+
+            // input to encoder
+            try {
+                ByteBuffer[] inputBuffers = encoder.getInputBuffers();
+                int inputBufferIndex = encoder.dequeueInputBuffer(-1);
+                if (inputBufferIndex >= 0) {
+                    ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+                    inputBuffer.clear();
+                    if (inputBuffer.remaining() < iInputSize) {
+                        LogUtils.e("Encode input: " + iInputSize + ", remain: " + inputBuffer.remaining());
+                        return;
+                    } else {
+                        // if camera is NV12, and encoder is YUV420SP, need swap U & V color
+                        if (m_iColorFormat == ImageFormat.NV21 &&
+                                m_iColorFormat == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                            NV21_to_YUV420SP(input, m_iRawWidth, m_iRawHeight);
+                        }
+                        byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
+                        NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
+                        input = yuv420sp;
+
+                        inputBuffer.put(input, 0, iInputSize);
+                        encoder.queueInputBuffer(inputBufferIndex, 0, iInputSize, 0, 0);
+                    }
+                }
+            } catch (Exception e) {
+                LogUtils.e("Encode input failed: " + e.getMessage());
+            }
+
+            // get encoder output
+            try {
+                ByteBuffer[] outputBuffers = encoder.getOutputBuffers();
+                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                int outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, 0);
+                while (outputBufferIndex >= 0) {
+                    final int iEncodeFrameSize = bufferInfo.size;
+                    // copy to buffer
+                    if (m_encodeFrameBuffer == null || m_encodeFrameBuffer.length < iEncodeFrameSize) {
+                        m_encodeFrameBuffer = new byte[(iEncodeFrameSize + 0xFFF) & (~0xFFF)];
+                    }
+                    outputBuffers[outputBufferIndex].get(m_encodeFrameBuffer);
+
+                    // unlock
+                    encoder.releaseOutputBuffer(outputBufferIndex, false);
+                    outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, 0);
+
+                    // send to network
+                    if (m_mtLib.isWorking()) {
+                        m_mtLib.sendOneFrameToDevice(0, m_ldeviceID, 0, m_sremoteIPPort, MTLib.CODEC_VIDEO_H264,
+                                m_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
+                    }
+                }
+            } catch (Exception e) {
+                LogUtils.e("Encode output failed: " + e.getMessage());
+            }
+        } else {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    private void onSentEncoding() {
+
+        if (YUVQueue.size() > 0) {
+            input = YUVQueue.poll();
+            // 上一层已经将数据转为YUV420SP
+            byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
+            NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
+            input = yuv420sp;
+        }
+        if (input != null) {
+            try {
+                ByteBuffer[] inputBuffers = encoder.getInputBuffers();
+                ByteBuffer[] outputBuffers = encoder.getOutputBuffers();
+                int inputBufferIndex = encoder.dequeueInputBuffer(-1);
+                if (inputBufferIndex >= 0) {
+                    pts = computePresentationTime(generateIndex);
+                    ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
+                    inputBuffer.clear();
+                    inputBuffer.put(input);
+                    encoder.queueInputBuffer(inputBufferIndex, 0, input.length, pts, 0);
+                    generateIndex += 1;
+                }
+
+                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+                int outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
+                while (outputBufferIndex >= 0) {
+                    //Log.i("AvcEncoder", "Get H264 Buffer Success! flag = "+bufferInfo.flags+",pts = "+bufferInfo.presentationTimeUs+"");
+                    final int iEncodeFrameSize = bufferInfo.size;
+                    ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
+                    byte[] tmp_encodeFrameBuffer = new byte[bufferInfo.size];
+                    outputBuffer.get(tmp_encodeFrameBuffer);
+
+
+                    encoder.releaseOutputBuffer(outputBufferIndex, false);
+                    outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
+                    // send to network
+                    if (m_mtLib.isWorking()) {
+                        m_mtLib.sendOneFrameToDevice(0, m_ldeviceID, 0, m_sremoteIPPort, MTLib.CODEC_VIDEO_H264,
+                                tmp_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
+                    }
+                }
+
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        } else {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
 }

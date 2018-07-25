@@ -150,6 +150,7 @@ public class CommandUtils {
         } else {
             telnumber = telnumber.substring(1);
         }
+        LogUtils.d(String.format("telStates: %s  meetingID: %s  CMD_Sub: %s  telnumber: %s", telStates, meetingID, s_mtStates.CMD_Sub, telnumber));
         s_mtStates.Data = telnumber.getBytes();
 
         try {

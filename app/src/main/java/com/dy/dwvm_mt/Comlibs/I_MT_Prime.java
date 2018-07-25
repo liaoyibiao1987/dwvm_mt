@@ -3,6 +3,9 @@ package com.dy.dwvm_mt.Comlibs;
 public interface I_MT_Prime {
     void installCallback(MTLibCallback instance);
 
+    void addReceivedVideoHandler(MTLibReceivedVideoHandler instance);
+    void removeReceivedVideoHandler(MTLibReceivedVideoHandler instance);
+
     long callbackFromJNI(
             String funcName,
             String remoteDeviceIpPort,
@@ -77,9 +80,7 @@ public interface I_MT_Prime {
             int imageWidth,
             int imageHeight
     );
-
-    public interface MTLibCallback
-    {
+    public interface MTLibCallback {
         long onReceivedUdpPacket(
                 long localDeviceId,
                 String remoteDeviceIpPort,
@@ -115,4 +116,23 @@ public interface I_MT_Prime {
                 int frameSize
         );
     }
+
+
+    public interface MTLibReceivedVideoHandler {
+        void onReceivedVideoFrames(
+                long localDeviceId,
+                String remoteDeviceIpPort,
+                long remoteDeviceId,
+                int remoteEncoderChannelIndex,
+                int localDecoderChannelIndex,
+                long frameType,
+                String videoCodec,
+                int imageResolution,
+                int width,
+                int height,
+                byte[] frameBuffer,
+                int frameSize
+        );
+    }
+
 }

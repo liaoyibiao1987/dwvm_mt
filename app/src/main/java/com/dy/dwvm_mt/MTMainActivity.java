@@ -168,10 +168,13 @@ public class MTMainActivity extends BaseActivity
         } else if (id == R.id.nav_settings) {
 
         } else if (id == R.id.nav_share) {
-            Intent intent = new Intent(this, TestActivity.class);
+            Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_logout) {
-
+            Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+            getApplication().startActivity(intent);
         }
         try {
             Fragment fragment = (Fragment) fragmentClass.newInstance();

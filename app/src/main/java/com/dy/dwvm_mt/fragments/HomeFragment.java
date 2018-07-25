@@ -23,12 +23,15 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.R;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
@@ -40,7 +43,7 @@ import butterknife.ButterKnife;
 
 import static com.dy.dwvm_mt.Comlibs.BaseActivity.MT_VP_PAGE_OPENTYPE;
 
-public class HomeFragment extends Fragment implements Camera.PreviewCallback, MTLib.MTLibCallback {
+public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_MT_Prime.MTLibReceivedVideoHandler {
     /*@BindView(R.id.viewpager)
     ViewPager viewPager;
 
@@ -51,13 +54,14 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     protected SurfaceView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
     protected SurfaceView m_surfaceDecoderShow;
+    @BindView(R.id.btn_endcall)
+    protected ImageButton m_btn_endcall;
 
     // parameters for MTLib demo
-    private static final long LOCAL_DEVICE_ID = 0x04000009;
-    private static final int LOCAL_UDP_PORT = 5004;
     private static final String LOCAL_DEVICE_NAME = "MT-Demo-Android";
-    private static final long REMOTE_DEVICE_ID = 0x04000000;
-    private String REMOTE_DEVICE_IP = "172.16.0.144:5007";
+    private static final long REMOTE_DEVICE_ID = 0x2000006;
+    private String REMOTE_DEVICE_IP = "112.91.151.186:5001";
+    private boolean isInit = false;
 
     /*非公有的变量前面要加上小写m，
         静态变量前面加上小写s，
@@ -88,9 +92,8 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     private int m_iRawHeight = 0;
 
     // encoder
-    private MediaCodec m_encoder = null;
-    private byte[] m_encodeFrameBuffer = null;
-    private boolean m_encoderPauseSend = false;
+    private EncodeVideoThread encodeVideoThread = null;
+
 
     // decoder
     private MediaCodec m_decoder = null;
@@ -101,8 +104,6 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     private int m_decoderHeight = 0;
     private boolean m_decodeWaitKeyFrame = true;
 
-    private EncodeVideoThread encodeVideoThread = null;
-
     HomeFragment.AutoStartCamera receiver = null;
     IntentFilter intentFilter = null;
     private int m_pageOpenType = 0;
@@ -112,7 +113,6 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragments_home, container, false);
         ButterKnife.bind(this, rootView);
-        //baseActivity = (BaseActivity) getActivity();
         if (ContextCompat.checkSelfPermission(this.getActivity(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             Log.e("TEST", "获取到摄像头的使用.");
@@ -122,11 +122,12 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
 
-        m_surfaceDecoderShow.setZOrderOnTop(true);
+        //m_surfaceDecoderShow.setZOrderOnTop(true);
         m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
         m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
 
+        //m_btn_endcall.setZOrderOnTop(true);
         /*TabsAdapter tabsAdapter = new TabsAdapter(getChildFragmentManager());
         tabsAdapter.addFragment(new DialTabFragment(1), "Favorite 1");
         tabsAdapter.addFragment(new DialTabFragment(2), "Favorite 2");
@@ -152,30 +153,26 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     @Override
     public void onDestroy() {
         stopAll();
+        isInit = false;
+        m_mtoperator.removeReceivedVideoHandler(this);
         super.onDestroy();
     }
 
 
     public void startAll() {
-        setupM_mtLib();
-        // open camera
-        if (cameraStart() == false) {
-            LogUtils.e("MT 打开摄像头：", "打开摄像头失败");
-            //onClickBtnStop();
-            return;
+        if (isInit == false) {
+            setupM_mtLib();
+            // open camera
+            if (cameraStart() == false) {
+                LogUtils.e("MT 打开摄像头：", "打开摄像头失败");
+                return;
+            }
+            // open encoder
+            encoderStart();
+
+            isInit = true;
         }
 
-        // open encoder
-        if (encoderStart() == false) {
-            //onClickBtnStop();
-            LogUtils.e("MT 编码：", "打开编码失败");
-            return;
-        }
-        if (encodeVideoThread == null) {
-            encodeVideoThread = new EncodeVideoThread(m_mtoperator, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
-            encodeVideoThread.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
-            encodeVideoThread.start();
-        }
     }
 
     public void stopAll() {
@@ -186,19 +183,20 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     }
 
     private void setupM_mtLib() {
-        if (!m_mtoperator.isWorking()) {
-            m_mtoperator.installCallback(this);
+        if (m_mtoperator.isWorking() == false) {
             try {
-                if (!m_mtoperator.start(LOCAL_DEVICE_ID, LOCAL_UDP_PORT, 1024 * 1024, 0, 1, 1, "")) {
+                if (!m_mtoperator.start(LocalSetting.getDeviceId(), CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
                     LogUtils.e("MTLib.start() failed !");
                     return;
                 }
+                LogUtils.e("setupM_mtLib .start !");
             } catch (Exception e) {
                 LogUtils.e("MTLib.start() error: " + e.getMessage());
                 return;
             }
             m_mtoperator.setDeviceName(LOCAL_DEVICE_NAME);
         }
+        m_mtoperator.addReceivedVideoHandler(this);
     }
 
     private boolean cameraStart() {
@@ -339,50 +337,19 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
 
     private boolean encoderStart() {
         // create encoder
-        try {
-            m_encoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
-        } catch (Exception e) {
-            if (m_encoder != null) {
-                m_encoder = null;
-            }
-            LogUtils.e("Encoder create error: " + e.getMessage());
-            return false;
-        }
-
-        // setting encode parameters
-        try {
-            int iFrameRate = m_cam.getParameters().getPreviewFrameRate();
-            if (iFrameRate <= 0) {
-                iFrameRate = 30;
-            }
-            MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 512000); // 512 kbps
-            mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, iFrameRate);
-            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
-            mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
-            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
-
-            m_encoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            m_encoder.start();
-        } catch (Exception e) {
-            if (m_encoder != null) {
-                m_encoder = null;
-            }
-            LogUtils.e("Encoder config error: " + e.getMessage());
-            return false;
+        if (encodeVideoThread == null) {
+            LogUtils.d("MT 编码：", "正在打开编码.");
+            encodeVideoThread = new EncodeVideoThread(m_mtoperator, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            encodeVideoThread.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
+            encodeVideoThread.start();
         }
 
         return true;
     }
 
     private void encoderStop() {
-        if (m_encoder != null) {
-            m_encoder.release();
-            m_encoder = null;
-        }
-        if (m_encodeFrameBuffer != null) {
-            m_encodeFrameBuffer = null;
-        }
+        encodeVideoThread.endEncoder();
+        encodeVideoThread = null;
     }
 
     private boolean decoderStart(String codecName, int width, int height) {
@@ -518,11 +485,11 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
         if (data.length < iInputSize || iInputSize <= 0) {
             return;
         } else {
-            // if camera is NV12, and encoder is YUV420SP, need swap U & V color
-            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
+            // if camera is NV21, and encoder is YUV420SP, need swap U & V color
+           /* if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
                     ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                 NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
-            }
+            }*/
             savePreviewFrame(data, camera);
         }
     }
@@ -553,24 +520,14 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, MT
     }
 
     @Override
-    public long onReceivedUdpPacket(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, long packetCommandType, byte[] packetBuffer, int packetBytes) {
-        return 0;
-    }
-
-    @Override
-    public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
-        decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
-        return 1;
-    }
-
-    @Override
-    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
-        return 0;
+    public void onReceivedVideoFrames(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
+        if (localDecoderChannelIndex == 0) {
+            decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
+        }
     }
 
 
     public class AutoStartCamera extends BroadcastReceiver {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             if (HomeFragment.this.getOpenType() == BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_CALLING ||
