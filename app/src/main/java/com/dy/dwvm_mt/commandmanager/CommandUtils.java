@@ -7,6 +7,7 @@ import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.messagestructs.s_MT_TelState;
+import com.dy.dwvm_mt.messagestructs.s_MT_Tel_ValidCode;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.CacheMemoryUtils;
@@ -145,18 +146,34 @@ public class CommandUtils {
         s_mtStates.MeetingID = meetingID;
         s_mtStates.TelState = telStates;
         String telnumber = PhoneUtils.getLine1Number();
-        if (StringUtils.isTrimEmpty(telnumber) == false && telnumber.startsWith("+86")) {
-            telnumber = telnumber.substring(3);
-        } else {
-            telnumber = telnumber.substring(1);
+        if (StringUtils.isTrimEmpty(telnumber) == false) {
+            if (telnumber.startsWith("+86")) {
+                telnumber = telnumber.substring(3);
+            } else {
+                telnumber = telnumber.substring(1);
+            }
+            LogUtils.d(String.format("telStates: %s  meetingID: %s  CMD_Sub: %s  telnumber: %s", telStates, meetingID, s_mtStates.CMD_Sub, telnumber));
+            s_mtStates.Data = telnumber.getBytes();
         }
-        LogUtils.d(String.format("telStates: %s  meetingID: %s  CMD_Sub: %s  telnumber: %s", telStates, meetingID, s_mtStates.CMD_Sub, telnumber));
-        s_mtStates.Data = telnumber.getBytes();
 
         try {
             byte[] databuff = JavaStruct.pack(s_mtStates);//普通命令包用小端模式
             mt_prime.sendUdpPacketToDevice2(WVM_CMD_USER_BASE, 1, DDNSDEVICEID, getDDNSIPPort(), databuff, databuff.length);
             System.out.println("\r\n MT-SEND CMD:MT_Tel_States DATA LEN : " + databuff.length + " DATA: " + StringUtils.toHexBinary(databuff));
+        } catch (Exception es) {
+            LogUtils.e("sendLoginData error" + es.toString());
+        }
+    }
+
+    public static final void sendVerifyCode(int verifyCode, String calledNumber) {
+        s_MT_Tel_ValidCode s_mt_tel_validCode = new s_MT_Tel_ValidCode();
+        s_mt_tel_validCode.CMD_Sub = s_messageBase.DeviceCMD_Sub.MT_Tel_ValidCode;
+        s_mt_tel_validCode.Code = verifyCode;
+        s_mt_tel_validCode.CalledNumber = calledNumber.getBytes();
+        try {
+            byte[] dataBuff = JavaStruct.pack(s_mt_tel_validCode);//普通命令包用小端模式
+            mt_prime.sendUdpPacketToDevice2(WVM_CMD_USER_BASE, 1, DDNSDEVICEID, getDDNSIPPort(), dataBuff, dataBuff.length);
+            System.out.println("\r\n MT-SEND CMD:MT_Tel_States DATA LEN : " + dataBuff.length + " DATA: " + StringUtils.toHexBinary(dataBuff));
         } catch (Exception es) {
             LogUtils.e("sendLoginData error" + es.toString());
         }

@@ -36,6 +36,7 @@ import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 
 import butterknife.BindView;
@@ -261,6 +262,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             }
             // enum all preview format, and set to RAW_IMAGE_COLOR_TABLE (yuy2,nv21,yv12)
             List<Integer> previewFormats = camParams.getSupportedPreviewFormats();
+            LogUtils.w(" Camera previewFormats: " + Arrays.toString(previewFormats.toArray()));
             if (previewFormats.size() > 0) {
                 m_iColorFormatIndex = -1;
                 for (int r = 0; r < RAW_IMAGE_COLOR_TABLE.length && m_iColorFormatIndex < 0; r++) {
@@ -273,6 +275,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
                         }
                     }
                 }
+                LogUtils.w(" Camera previewFormats set: " + Arrays.toString(previewFormats.toArray()));
                 if (m_iColorFormatIndex < 0) {
                     LogUtils.e("Camera NOT support YUV color!");
                     m_cam.release();
@@ -294,7 +297,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             m_iRawWidth = res.width;
             m_iRawHeight = res.height;
             // malloc buffer
-            m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 4 + 4096];
+            m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 5 + 4096];
         } catch (Exception e) {
             m_cam.release();
             m_cam = null;
@@ -486,10 +489,10 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             return;
         } else {
             // if camera is NV21, and encoder is YUV420SP, need swap U & V color
-           /* if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
+            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
                     ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                 NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
-            }*/
+            }
             savePreviewFrame(data, camera);
         }
     }

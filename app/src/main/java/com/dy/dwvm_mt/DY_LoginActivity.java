@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.opengl.Visibility;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -57,6 +58,13 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @BindView(R.id.btn_login)
     Button btnLogin;
 
+    @BindView(R.id.txt_login_telnumber)
+    EditText EtTelNumber;
+
+    @BindView(R.id.btn_login_auth_alert)
+    Button btnAuthAlert;
+
+
     //所需要申请的权限数组
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
@@ -64,9 +72,10 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.CALL_PHONE,
             //Manifest.permission.ANSWER_PHONE_CALLS,
-            //Manifest.permission.PROCESS_OUTGOING_CALLS,
+            Manifest.permission.PROCESS_OUTGOING_CALLS,
             android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
             android.Manifest.permission.ACCESS_NETWORK_STATE,
+            //android.Manifest.permission.READ_PHONE_NUMBERS,
             //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,
             // android.Manifest.permission.MODIFY_PHONE_STATE,
@@ -93,17 +102,29 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                 onLoginClicked();
             }
         });
+
+        String phoneNumber = PhoneUtils.getLine1Number();
+        if (StringUtils.isTrimEmpty(phoneNumber) == false && phoneNumber.startsWith("+86")) {
+            phoneNumber = phoneNumber.substring(3);
+            EtTelNumber.setText(phoneNumber);
+        }
+
+        btnAuthAlert.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(Uri.parse("package:" + getPackageName())); // 根据包名打开对应的设置界面
+                startActivity(intent);
+            }
+        });
     }
 
     private void onLoginClicked() {
-        String loginid = EtLoginID.getText().toString();
+        String loginID = EtLoginID.getText().toString();
         String psw = EtLoginPsw.getText().toString();
-        String phonenumber = PhoneUtils.getLine1Number();
-        if (StringUtils.isTrimEmpty(phonenumber) == false && phonenumber.startsWith("+86")) {
-            phonenumber = phonenumber.substring(3);
-        }
+        String telNumber = EtTelNumber.getText().toString();
         String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-        CommandUtils.sendLoginData(loginid, psw, phonenumber, "", ddnsIPAndPort);
+        CommandUtils.sendLoginData(loginID, psw, telNumber, "", ddnsIPAndPort);
     }
 
     @Override
@@ -143,28 +164,30 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         }
     }
 
-
     private void requestMyPermission() {
-        for (String permission : permissionsArray) {
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                        Manifest.permission.PROCESS_OUTGOING_CALLS)) {
-                    // Should we show an explanation?
-                    // 第一次打开App时	false
-                    // 上次弹出权限点击了禁止（但没有勾选“下次不在询问”）	true
-                    // 上次选择禁止并勾选：下次不在询问	false
-                    permissionsList.add(permission);
-                    LogUtils.e("we should explain why we need this permission!");
-                } else {
-                    permissionsList.add(permission);
-                    LogUtils.d("需要手动打开权限了：" + permission);
+        try {
+            for (String permission : permissionsArray) {
+                if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this, permission)) {
+                        // Should we show an explanation?
+                        // 第一次打开App时	false
+                        // 上次弹出权限点击了禁止（但没有勾选“下次不在询问”）	true
+                        // 上次选择禁止并勾选：下次不在询问	false
+                        permissionsList.add(permission);
+                        LogUtils.e("we should explain why we need this permission!");
+                    } else {
+                        permissionsList.add(permission);
+                        LogUtils.d("需要手动打开权限了：" + permission);
+                    }
                 }
             }
-        }
-        if (permissionsList.size() > 0) {
-            ActivityCompat.requestPermissions(this, permissionsList.toArray(new String[permissionsList.size()]), REQUEST_CODE_ASK_PERMISSIONS);
-        } else {
-            LogUtils.d("已经获得过了全部认证");
+            if (permissionsList.size() > 0) {
+                ActivityCompat.requestPermissions(this, permissionsList.toArray(new String[permissionsList.size()]), REQUEST_CODE_ASK_PERMISSIONS);
+            } else {
+                LogUtils.d("已经获得过了全部认证");
+            }
+        } catch (Exception es) {
+            LogUtils.e("requestMyPermission error:" + es.toString());
         }
     }
 
@@ -182,7 +205,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     }
 
     private void AskForPermission() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        btnAuthAlert.setVisibility(View.VISIBLE);
+       /* AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("需要特定权限需要设置!");
         builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
             @Override
@@ -198,7 +222,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                 startActivity(intent);
             }
         });
-        builder.create().show();
+        builder.create().show();*/
     }
 
     @Override

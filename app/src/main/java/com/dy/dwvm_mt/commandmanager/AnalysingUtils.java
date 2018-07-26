@@ -1,5 +1,8 @@
 package com.dy.dwvm_mt.commandmanager;
 
+import android.os.Debug;
+import android.util.Log;
+
 import com.dy.dwvm_mt.Comlibs.DataPackShell;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
@@ -57,6 +60,7 @@ public class AnalysingUtils {
 
     /**
      * 封装好并解析过的数据包提供给应用程序使用
+     *
      * @param handler NWCommandEvent Handler
      */
     public static void addRecvedCommandListeners(NWCommandEventHandler handler) {
@@ -114,7 +118,8 @@ public class AnalysingUtils {
 
                         }*/
                     }
-                    LogUtils.d("收到网络报：bagType -> " + e.getbagType());
+                    Log.d("mt setReceiveFull", " 收到网络报：bagType -> " + e.getbagType());
+                    //LogUtils.d("收到网络报：bagType -> " + e.getbagType());
                     ReceivePackEntity rp = new ReceivePackEntity(e.getbagBuffer(), e.getbagSize(), e.getbagType(), srcIpPort);
                     if (e.getbagType() != s_messageBase.DeviceCMD.WVM_CMD_REPLY) {              //不是回应包
                         if (e.getbagType() != 207) {
@@ -138,8 +143,8 @@ public class AnalysingUtils {
                         try {
                             JavaStruct.unpack(s_reply, e.getbagBuffer());//获取到登录包结构数据
                             if (s_reply.getDwSrcCmd() != s_messageBase.DeviceCMD.WVM_CMD_POLLING) {
-                                    NetWorkCommand peercommand = new NetWorkCommand(rp);
-                                    addCommand(peercommand);
+                                NetWorkCommand peercommand = new NetWorkCommand(rp);
+                                addCommand(peercommand);
 
                                 /*  移除多次发送的命令    m_devices.Lock(() = >
                                         {

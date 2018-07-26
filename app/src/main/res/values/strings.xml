@@ -34,6 +34,9 @@
 
     <string name="txt_login_id">登陆名</string>
     <string name="txt_login_password">密 码</string>
+    <string name="txt_login_telnumber">电话号码</string>
+
+    <string name="txt_login_auth_alert">为了更好的使用,请点击此处手动设置权限</string>
 
     <string name="txt_btn_login">登陆</string>
 

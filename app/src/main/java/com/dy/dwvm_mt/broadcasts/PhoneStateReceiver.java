@@ -18,12 +18,12 @@ public class PhoneStateReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (action.equals(PHONE_STATE) == true) {
             //String phoneNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER);
-            LogUtils.d(context, "PhoneStateReceiver 收到消息.");
+            LogUtils.d(intent.getAction(), "PhoneStateReceiver 收到消息.");
 
             /** 隐式启动service
-            intentService = new Intent();
-            intentService.setClassName("com.dy.dwvm_mt",  "com.dy.dwvm_mt.services.CallShowService");
-            */
+             intentService = new Intent();
+             intentService.setClassName("com.dy.dwvm_mt",  "com.dy.dwvm_mt.services.CallShowService");
+             */
             //** 显式启动service
             intentService = new Intent(context, CallShowService.class);
             context.startService(intentService);

@@ -143,7 +143,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                 case s_messageBase.DeviceCMD_Sub.DDNS_StatesMsg:
                     s_DDNS_StatesMsg s_statesMsg = arg.getEventArg().Param(s_DDNS_StatesMsg.class);
                     if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.ReLogin) {
-                        CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+                        //CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
                         LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPor: %S", "L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort()));
                     } else if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.LoginOffline) {
                         LogUtils.d("设备已在另一处登录,被迫下线。请检查电脑是否拥有多个网络地址!");
@@ -176,10 +176,10 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
         }
         if (newStatus == mobile) {
             //移动网络
-            CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+            //CommandUtils.sendLoginData("L_MT6", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
         }
         if (newStatus == wifi) {
-            CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
+            //CommandUtils.sendLoginData("L_MT6", "123", "13411415574", "", CommandUtils.getDDNSIPPort());
             //wifi网络
             if (oldStatus == mobile) {
                 //从移动网络切换到wifi网络
