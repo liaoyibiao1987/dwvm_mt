@@ -33,6 +33,7 @@ import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
+import com.dy.dwvm_mt.fragments.DialTabFragment;
 import com.dy.dwvm_mt.fragments.HomeFragment;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -74,8 +75,8 @@ public class MTMainActivity extends BaseActivity
     Toolbar toolbar;
     @BindView(R.id.content_frame)
     FrameLayout contentFrame;
-    @BindView(R.id.fab)
-    FloatingActionButton fab;
+    /*@BindView(R.id.fab)
+    FloatingActionButton fab;*/
     @BindView(R.id.nav_view)
     NavigationView navigationView;
     @BindView(R.id.drawer_layout)
@@ -87,6 +88,7 @@ public class MTMainActivity extends BaseActivity
         setContentView(R.layout.activity_mtmain);
         ButterKnife.bind(this);
         requestMyPermission();
+
         fragmentManager = getSupportFragmentManager();
 
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -94,13 +96,13 @@ public class MTMainActivity extends BaseActivity
 //        Toolbar toolbar = findViewById(R.id.toolbar);
 //        setSupportActionBar(toolbar);
 
-        fab.setOnClickListener(new View.OnClickListener() {
+        /*fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
-        });
+        });*/
         if (Build.VERSION.SDK_INT >= 23) {
             if (!Settings.canDrawOverlays(this)) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
@@ -158,23 +160,27 @@ public class MTMainActivity extends BaseActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
         Class fragmentClass = null;
-        if (id == R.id.nav_calling) {
-            fragmentClass = HomeFragment.class;
-            // Handle the camera action
-        } else if (id == R.id.nav_meeting) {
-
-        } else if (id == R.id.nav_videotapeManage) {
-
-        } else if (id == R.id.nav_settings) {
-
-        } else if (id == R.id.nav_share) {
-            Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_logout) {
-            Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-            getApplication().startActivity(intent);
+        switch (id) {
+            case R.id.nav_meeting:
+                break;
+            case R.id.nav_videotapeManage:
+                break;
+            case R.id.nav_settings:
+                break;
+            case R.id.nav_share:
+                Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.nav_logout:
+                Intent intent2 = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+                getApplication().startActivity(intent2);
+                break;
+            case R.id.nav_calling:
+            default:
+                fragmentClass = DialTabFragment.class;
+                break;
         }
         try {
             Fragment fragment = (Fragment) fragmentClass.newInstance();

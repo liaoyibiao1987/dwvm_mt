@@ -25,10 +25,10 @@ public class DialTabFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.floatview, container, false);
+        View rootView = inflater.inflate(R.layout.fragments_dialtab2, container, false);
 
-        TextView textView =  rootView.findViewById(R.id.float_id);
-        textView.setText("Favorite " + mPosition);
+        /*TextView textView =  rootView.findViewById(R.id.float_id);
+        textView.setText("Favorite " + mPosition);*/
 
         return rootView;
     }

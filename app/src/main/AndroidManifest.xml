@@ -116,7 +116,11 @@
         <receiver android:name=".broadcasts.AutoStartReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+            <intent-filter>
                 <action android:name="dwvm_mt.autostart_action" />
             </intent-filter>
         </receiver>

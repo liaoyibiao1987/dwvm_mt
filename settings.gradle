@@ -1,1 +1,2 @@
-include ':app', ':javastruct'
+include ':app', ':javastruct', ':phone.common'
+project(':phone.common').projectDir = new File('phonecommon')

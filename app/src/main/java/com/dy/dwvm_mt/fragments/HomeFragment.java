@@ -177,10 +177,14 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     }
 
     public void stopAll() {
-        getActivity().unregisterReceiver(receiver);
-        cameraStop();
-        encoderStop();
-        decoderStop();
+        try {
+            getActivity().unregisterReceiver(receiver);
+            cameraStop();
+            encoderStop();
+            decoderStop();
+        } catch (Exception es) {
+            LogUtils.e("HomeFragment stopAll() error :" + es.toString());
+        }
     }
 
     private void setupM_mtLib() {

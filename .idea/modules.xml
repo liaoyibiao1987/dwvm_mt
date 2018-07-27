@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/dwvm_mt.iml" filepath="$PROJECT_DIR$/dwvm_mt.iml" />
       <module fileurl="file://$PROJECT_DIR$/javastruct/javastruct.iml" filepath="$PROJECT_DIR$/javastruct/javastruct.iml" />
+      <module fileurl="file://$PROJECT_DIR$/phonecommon/phone.common.iml" filepath="$PROJECT_DIR$/phonecommon/phone.common.iml" />
     </modules>
   </component>
 </project>
