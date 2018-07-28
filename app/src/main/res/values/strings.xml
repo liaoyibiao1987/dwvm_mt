@@ -17,6 +17,7 @@
     <string name="nav_title_share">分享</string>
     <string name="nav_title_logout">退出登录</string>
 
+    <string name="config_prohibited_phone_number_regexp"></string>
 
     <string name="f_btn_show">这是按钮</string>
     <string name="btn_str_clickme">点我试试</string>
@@ -39,5 +40,6 @@
     <string name="txt_login_auth_alert">为了更好的使用,请点击此处手动设置权限</string>
 
     <string name="txt_btn_login">登陆</string>
+    <string name="title_dialerheader">可视电话</string>
 
 </resources>

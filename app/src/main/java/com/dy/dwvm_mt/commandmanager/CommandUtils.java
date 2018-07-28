@@ -1,5 +1,6 @@
 package com.dy.dwvm_mt.commandmanager;
 
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.dy.dwvm_mt.Comlibs.DataPackShell;
@@ -140,21 +141,24 @@ public class CommandUtils {
         }
     }
 
-    public static final void sendTelState(int telStates, int meetingID) {
+    public static final void sendTelState(int telStates, int meetingID, @Nullable String telnumber) {
         s_MT_TelState s_mtStates = new s_MT_TelState();
         s_mtStates.CMD_Sub = s_messageBase.DeviceCMD_Sub.MT_Tel_States;
         s_mtStates.MeetingID = meetingID;
         s_mtStates.TelState = telStates;
-        String telnumber = PhoneUtils.getLine1Number();
-        if (StringUtils.isTrimEmpty(telnumber) == false) {
-            if (telnumber.startsWith("+86")) {
-                telnumber = telnumber.substring(3);
-            } else {
-                telnumber = telnumber.substring(1);
+        if (telnumber == null || telnumber.isEmpty()) {
+            telnumber = PhoneUtils.getLine1Number();
+            if (StringUtils.isTrimEmpty(telnumber) == false) {
+                if (telnumber.startsWith("+86")) {
+                    telnumber = telnumber.substring(3);
+                } else {
+                    telnumber = telnumber.substring(1);
+                }
+                LogUtils.d(String.format("telStates: %s  meetingID: %s  CMD_Sub: %s  telnumber: %s", telStates, meetingID, s_mtStates.CMD_Sub, telnumber));
             }
-            LogUtils.d(String.format("telStates: %s  meetingID: %s  CMD_Sub: %s  telnumber: %s", telStates, meetingID, s_mtStates.CMD_Sub, telnumber));
-            s_mtStates.Data = telnumber.getBytes();
         }
+        s_mtStates.Data = telnumber.getBytes();
+
 
         try {
             byte[] databuff = JavaStruct.pack(s_mtStates);//普通命令包用小端模式
@@ -165,10 +169,17 @@ public class CommandUtils {
         }
     }
 
-    public static final void sendVerifyCode(int verifyCode, String calledNumber) {
+    public static final void sendVerifyCode(String verifyCode, String calledNumber) {
+        int vCode = 0;
+        try {
+            String substr = verifyCode.substring((verifyCode.length() - 2), (verifyCode.length() - 1));
+            vCode = Integer.valueOf(substr).intValue();
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
         s_MT_Tel_ValidCode s_mt_tel_validCode = new s_MT_Tel_ValidCode();
         s_mt_tel_validCode.CMD_Sub = s_messageBase.DeviceCMD_Sub.MT_Tel_ValidCode;
-        s_mt_tel_validCode.Code = verifyCode;
+        s_mt_tel_validCode.Code = vCode;
         s_mt_tel_validCode.CalledNumber = calledNumber.getBytes();
         try {
             byte[] dataBuff = JavaStruct.pack(s_mt_tel_validCode);//普通命令包用小端模式

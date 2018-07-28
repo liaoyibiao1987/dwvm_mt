@@ -15,4 +15,6 @@
     <color name="login_button">#44beff</color>
     <color name="login_Edit_Text">#E0E0E0</color>
     <color name="login_text">#E0E0E0</color>
+
+    <color name="floating_action_button_touch_tint">#80ffffff</color>
 </resources>

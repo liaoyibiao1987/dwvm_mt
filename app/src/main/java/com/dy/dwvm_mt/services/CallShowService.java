@@ -23,6 +23,7 @@ import android.widget.Button;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
+import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
@@ -87,19 +88,12 @@ public class CallShowService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && Intent.ACTION_NEW_OUTGOING_CALL.equals(intent.getAction())) {
-            //去电
+            //去电 根本行不通,大多数手机根本无法获取去电。
             outgoingTelNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
             LogUtils.d("ACTION_NEW_OUTGOING_CALL : " + outgoingTelNumber);
             isOutgoingCall = true;
             if (StringUtils.isTrimEmpty(outgoingTelNumber) == false && outgoingTelNumber.length() > 2) {
-                int verifyCode = 0;
-                try {
-                    String substr = outgoingTelNumber.substring((outgoingTelNumber.length() - 2), (outgoingTelNumber.length() - 1));
-                    verifyCode = Integer.valueOf(substr).intValue();
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-                CommandUtils.sendVerifyCode(verifyCode, outgoingTelNumber);
+                CommandUtils.sendVerifyCode(outgoingTelNumber, outgoingTelNumber);
             }
 
         }
@@ -117,7 +111,7 @@ public class CallShowService extends Service {
                 .setContentText("点击打开视频界面.")
                 .setContentInfo("东耀企业")
                 .setWhen(System.currentTimeMillis());
-        Intent activityIntent = new Intent(this, MainActivity.class);
+        Intent activityIntent = new Intent(this, MTMainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
@@ -200,20 +194,11 @@ public class CallShowService extends Service {
                             outgoingTelNumber = "";
                             commingTelNumber = "";
                             dismiss();//关闭来电秀
+                            LocalSetting.setCallingNumber("");
                             break;
 
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             commingTelNumber = incomingNumber;
-                            if (StringUtils.isTrimEmpty(commingTelNumber) == false && commingTelNumber.length() > 2) {
-                                int verifyCode = 0;
-                                try {
-                                    String subStr = commingTelNumber.substring((commingTelNumber.length() - 2), (commingTelNumber.length() - 1));
-                                    verifyCode = Integer.valueOf(subStr).intValue();
-                                } catch (NumberFormatException e) {
-                                    e.printStackTrace();
-                                }
-                                CommandUtils.sendVerifyCode(verifyCode, commingTelNumber);
-                            }
                             callState = s_messageBase.TelStates.Ring;
                             LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
                            /* try {
@@ -227,6 +212,7 @@ public class CallShowService extends Service {
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
+                                isOutgoingCall = StringUtils.isTrimEmpty(LocalSetting.getCallingNumber()) == false;
                                 if (isOutgoingCall == true) {
                                     Thread.sleep(1000);
                                     callShow();
@@ -242,12 +228,12 @@ public class CallShowService extends Service {
                             break;
                     }
                 }
-                CommandUtils.sendTelState(callState, LocalSetting.getMeetingID());
+                CommandUtils.sendTelState(callState, LocalSetting.getMeetingID(), null);
             }
 
             private void callShow() {
                 if (isFloatShown == false) {
-                    SystemClock.sleep(1000);// 睡0.5秒是为了让悬浮窗显示在360或别的悬浮窗口的上方
+                    SystemClock.sleep(500);// 睡0.5秒是为了让悬浮窗显示在360或别的悬浮窗口的上方
                     if (phoneState != TelephonyManager.CALL_STATE_IDLE) {
                         //添加mFloatLayout
                         mWindowManager.addView(mFloatLayout, wmParams);
@@ -263,11 +249,12 @@ public class CallShowService extends Service {
                                 try {
                                     PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                     PhoneUtils.answerRingingCall(CallShowService.this);
-                                    Thread.sleep(5000);
-                                    Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                                    //Thread.sleep(5000);
+                                    CommandUtils.sendVerifyCode(LocalSetting.getCallingNumber(), LocalSetting.getCallingNumber());
+                                   /* Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
                                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-                                    getApplication().startActivity(dialogIntent);
+                                    getApplication().startActivity(dialogIntent);*/
                                 } catch (Exception es) {
                                     LogUtils.e("mFloatButton error: " + es);
                                 } finally {

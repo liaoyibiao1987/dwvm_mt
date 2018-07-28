@@ -50,9 +50,9 @@
     <dimen name="dialpad_bottom_space_height">80dp</dimen>
 
     <!-- Height of the floating action button -->
-    <dimen name="floating_action_button_height">56dp</dimen>
+    <dimen name="floating_action_button_height">62dp</dimen>
     <!-- Width of the floating action button -->
-    <dimen name="floating_action_button_width">56dp</dimen>
+    <dimen name="floating_action_button_width">62dp</dimen>
     <!-- Corner radius of the floating action button -->
     <dimen name="floating_action_button_radius">28dp</dimen>
     <!-- Z translation of the floating action button -->

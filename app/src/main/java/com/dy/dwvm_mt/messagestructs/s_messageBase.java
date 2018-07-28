@@ -117,10 +117,11 @@ public class s_messageBase {
     public class TelStates
     {
         public static final int Idle = 0;
+        public static final int Ring = 2;
+        public static final int DialingNum = 3;
         public static final int Offhook = 5;
         public static final int CalledOffhook = 6;
         public static final int OnHook = 7;
-        public static final int Ring = 2;
         public static final int VaildCode = 9;
     }
 

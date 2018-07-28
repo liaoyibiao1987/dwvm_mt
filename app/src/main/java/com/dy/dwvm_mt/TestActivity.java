@@ -57,7 +57,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler 
         btn_testreportstate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                CommandUtils.sendTelState(6, 0);
+                CommandUtils.sendTelState(s_messageBase.TelStates.CalledOffhook, 0, null);
             }
         });
     }

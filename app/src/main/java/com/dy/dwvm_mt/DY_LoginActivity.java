@@ -93,6 +93,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         AnalysingUtils.addRecvedCommandListeners(this);
         requestMyPermission();
 
+        EtLoginID.setText(LocalSetting.getLoginID());
+        EtLoginPsw.setText(LocalSetting.getLoginPSW());
         EtLoginID.setSelection(EtLoginID.getText().length());
         EtLoginPsw.setSelection(EtLoginPsw.getText().length());
 
@@ -124,6 +126,9 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         String psw = EtLoginPsw.getText().toString();
         String telNumber = EtTelNumber.getText().toString();
         String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
+        LocalSetting.setTelNumber(telNumber);
+        LocalSetting.setCallingNumber(telNumber);
+
         CommandUtils.sendLoginData(loginID, psw, telNumber, "", ddnsIPAndPort);
     }
 

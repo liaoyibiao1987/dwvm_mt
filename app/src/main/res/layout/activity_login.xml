@@ -47,8 +47,7 @@
                 android:layout_gravity="center_horizontal"
                 android:background="@color/login_Edit_Text"
                 android:hint="@string/txt_login_id"
-                android:paddingLeft="10dp"
-                android:text="L_MT5" />
+                android:paddingLeft="10dp" />
 
         </android.support.design.widget.TextInputLayout>
 
@@ -61,13 +60,12 @@
             <EditText
                 android:id="@+id/txt_login_password"
                 android:layout_width="320dp"
-                android:inputType="textPassword"
                 android:layout_height="42dp"
                 android:layout_gravity="center_horizontal"
                 android:background="@color/login_Edit_Text"
                 android:hint="@string/txt_login_password"
-                android:paddingLeft="10dp"
-                android:text="123" />
+                android:inputType="textPassword"
+                android:paddingLeft="10dp" />
         </android.support.design.widget.TextInputLayout>
 
         <android.support.design.widget.TextInputLayout

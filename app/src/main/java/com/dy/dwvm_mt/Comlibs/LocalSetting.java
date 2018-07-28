@@ -5,6 +5,13 @@ package com.dy.dwvm_mt.Comlibs;
  * PS: Not easy to write code, please indicate.
  */
 public final class LocalSetting {
+
+    private static String loginID = "L_MT5";
+    private static String loginPSW = "123";
+    private static String telNumber = "";
+
+    private static String callingNumber = "";
+
     private static boolean isLogined;
     private static boolean isLocalTel;
     private static boolean forcePSTranspond;
@@ -28,6 +35,40 @@ public final class LocalSetting {
         affiliateToPS = "";
         deviceId = -1;
         LoginTimeElapse = -1;
+    }
+
+
+    public static String getLoginID() {
+        return loginID;
+    }
+
+    public static void setLoginID(String loginID) {
+        LocalSetting.loginID = loginID;
+    }
+
+    public static String getLoginPSW() {
+        return loginPSW;
+    }
+
+    public static void setLoginPSW(String loginPSW) {
+        LocalSetting.loginPSW = loginPSW;
+    }
+
+    public static String getTelNumber() {
+        return telNumber;
+    }
+
+    public static void setTelNumber(String telNumber) {
+        LocalSetting.telNumber = telNumber;
+    }
+
+
+    public static String getCallingNumber() {
+        return callingNumber;
+    }
+
+    public static void setCallingNumber(String callingNumber) {
+        LocalSetting.callingNumber = callingNumber;
     }
 
     public static boolean isIsLogined() {

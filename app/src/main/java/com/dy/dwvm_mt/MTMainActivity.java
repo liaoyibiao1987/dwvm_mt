@@ -120,7 +120,14 @@ public class MTMainActivity extends BaseActivity
         m_mt_Lib = MTLibUtils.getBaseMTLib();
         navigationView.setNavigationItemSelectedListener(this);
         AnalysingUtils.addRecvedCommandListeners(this);
+        try {
+            Fragment fragment = DialTabFragment.class.newInstance();
+            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        } catch (Exception es) {
+            LogUtils.e("MTMainActivity onCreate error:" + es.toString());
+        }
     }
+
 
     @Override
     public void onBackPressed() {
