@@ -1,13 +1,19 @@
 package com.dy.dwvm_mt.Comlibs;
 
+import com.dy.javastruct.Constants;
+
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/10.
  * PS: Not easy to write code, please indicate.
  */
 public final class LocalSetting {
 
-    private static String loginID = "L_MT5";
-    private static String loginPSW = "123";
+    public static final String Cache_Name_LoginID = "Cache_Name_LoginID";
+    public static final String Cache_Name_Password = "Cache_Name_Password";
+    public static final String Cache_Name_TelNumber = "Cache_Name_TelNumber";
+
+    private static String loginID = "";
+    private static String loginPSW = "";
     private static String telNumber = "";
 
     private static String callingNumber = "";

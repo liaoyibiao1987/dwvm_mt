@@ -14,6 +14,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -31,6 +32,8 @@ import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.services.PollingService;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
+import com.dy.dwvm_mt.utilcode.util.CacheDoubleUtils;
+import com.dy.dwvm_mt.utilcode.util.CrashUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
@@ -42,12 +45,15 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/9.
  * PS: 东耀会议系统登录界面
  */
 
 public class DY_LoginActivity extends BaseActivity implements NWCommandEventHandler {
+    private boolean isFirstLaunch = true;
 
     @BindView(R.id.txt_login_id)
     EditText EtLoginID;
@@ -64,7 +70,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @BindView(R.id.btn_login_auth_alert)
     Button btnAuthAlert;
 
-
+    private CacheDoubleUtils cacheDoubleUtils;
     //所需要申请的权限数组
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
@@ -75,6 +81,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             Manifest.permission.PROCESS_OUTGOING_CALLS,
             android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
             android.Manifest.permission.ACCESS_NETWORK_STATE,
+            WRITE_EXTERNAL_STORAGE,
             //android.Manifest.permission.READ_PHONE_NUMBERS,
             //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,
@@ -88,7 +95,12 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            CrashUtils.init();
+        }
         setContentView(R.layout.activity_login);
+        cacheDoubleUtils = CacheDoubleUtils.getInstance();
+        initSetting();
         ButterKnife.bind(this);
         AnalysingUtils.addRecvedCommandListeners(this);
         requestMyPermission();
@@ -121,11 +133,48 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         });
     }
 
+    @Override
+    protected void onResume() {
+        /*try {
+            throw new NullPointerException();
+        } catch (NullPointerException e1) {
+            LogUtils.e("onResume", Log.getStackTraceString(e1));
+        }*/
+        //onResume 天然激活两次
+        super.onResume();
+        initSetting();
+        if (StringUtils.isTrimEmpty(LocalSetting.getLoginID()) == false
+                && StringUtils.isTrimEmpty(LocalSetting.getLoginPSW()) == false
+                && StringUtils.isTrimEmpty(LocalSetting.getTelNumber()) == false) {
+            if (isFirstLaunch == false)
+                btnLogin.callOnClick();
+        }
+    }
+
+    private void initSetting() {
+        String id = cacheDoubleUtils.getString(LocalSetting.Cache_Name_LoginID);
+        if (StringUtils.isTrimEmpty(id) == false) {
+            LocalSetting.setLoginID(id);
+        }
+        String password = cacheDoubleUtils.getString(LocalSetting.Cache_Name_Password);
+        if (StringUtils.isTrimEmpty(password) == false) {
+            LocalSetting.setLoginPSW(password);
+        }
+        String telNumber = cacheDoubleUtils.getString(LocalSetting.Cache_Name_TelNumber);
+        if (StringUtils.isTrimEmpty(telNumber) == false) {
+            LocalSetting.setTelNumber(telNumber);
+        }
+    }
+
     private void onLoginClicked() {
         String loginID = EtLoginID.getText().toString();
         String psw = EtLoginPsw.getText().toString();
         String telNumber = EtTelNumber.getText().toString();
         String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
+        cacheDoubleUtils.put(LocalSetting.Cache_Name_LoginID, loginID);
+        cacheDoubleUtils.put(LocalSetting.Cache_Name_Password, psw);
+        cacheDoubleUtils.put(LocalSetting.Cache_Name_TelNumber, telNumber);
+
         LocalSetting.setTelNumber(telNumber);
         LocalSetting.setCallingNumber(telNumber);
 
@@ -233,6 +282,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isFirstLaunch = false;
         AnalysingUtils.removeRecvedCommandListeners(this);
     }
 }

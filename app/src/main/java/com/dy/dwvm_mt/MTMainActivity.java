@@ -175,14 +175,14 @@ public class MTMainActivity extends BaseActivity
             case R.id.nav_settings:
                 break;
             case R.id.nav_share:
-                Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
-                startActivity(intent);
+                /*Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
+                startActivity(intent);*/
                 break;
             case R.id.nav_logout:
-                Intent intent2 = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                /*Intent intent2 = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-                getApplication().startActivity(intent2);
+                getApplication().startActivity(intent2);*/
                 break;
             case R.id.nav_calling:
             default:
