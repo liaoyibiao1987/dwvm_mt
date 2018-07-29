@@ -112,10 +112,11 @@ public final class PhoneUtils {
                 (TelephonyManager) Utils.getApp().getSystemService(Context.TELEPHONY_SERVICE);
         return tm != null ? tm.getSubscriberId() : "";
     }
+
     /**
      * Return the sim number.
-     *  <p>Must hold
-     *  {@code <uses-permission android:name="android.permission.READ_PHONE_STATE" />}</p>
+     * <p>Must hold
+     * {@code <uses-permission android:name="android.permission.READ_PHONE_STATE" />}</p>
      *
      * @return the sim number
      */
@@ -124,6 +125,7 @@ public final class PhoneUtils {
                 (TelephonyManager) Utils.getApp().getSystemService(Context.TELEPHONY_SERVICE);
         return tm != null ? tm.getLine1Number() : "";
     }
+
     /**
      * Returns the current phone type.
      *
@@ -337,9 +339,10 @@ public final class PhoneUtils {
     public static final void telcomInvok(Context context, String type) {
         try {
             TelephonyManager tm = (TelephonyManager) context.getSystemService(context.TELEPHONY_SERVICE);
-            Method m1 = tm.getClass().getDeclaredMethod("getITelephony");
-            m1.setAccessible(true);
-            Object iTelephony = m1.invoke(tm);
+            Class<TelephonyManager> clazz = TelephonyManager.class;
+            Method method = clazz.getDeclaredMethod("getITelephony", null);
+            method.setAccessible(true);
+            ITelephony iTelephony = (ITelephony) method.invoke(tm, null);
             switch (type) {
                 case "endCall":
                     Method m2 = iTelephony.getClass().getDeclaredMethod("endCall");

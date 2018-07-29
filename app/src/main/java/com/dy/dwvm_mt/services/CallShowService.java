@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import com.android.internal.telephony.ITelephony;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
@@ -32,6 +33,8 @@ import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
+
+import java.lang.reflect.Method;
 
 public class CallShowService extends Service {
     private static final int FOREGROUND_ID = 1;
@@ -209,6 +212,7 @@ public class CallShowService extends Service {
                             } catch (Exception es) {
                                 LogUtils.e("PhoneStateListener onCallStateChanged: .CALL_STATE_RINGING" + es);
                             }*/
+                           //PhoneUtils.telcomInvok(getApplicationContext(),"endCall");
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {

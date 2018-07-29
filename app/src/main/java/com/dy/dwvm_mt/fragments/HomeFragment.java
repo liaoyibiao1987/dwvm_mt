@@ -17,6 +17,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
@@ -25,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 
+import com.android.internal.telephony.ITelephony;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
@@ -35,6 +37,7 @@ import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -128,6 +131,23 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
 
+        m_btn_endcall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Class<TelephonyManager> clazz = TelephonyManager.class;//得到方法
+                try {
+                    Method method = clazz.getDeclaredMethod("getITelephony", null);
+                    //设置可访问
+                    method.setAccessible(true);
+                    //执行方法
+                    TelephonyManager telephonyManager = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
+                    ITelephony iTelephony = (ITelephony) method.invoke(telephonyManager, null);
+                    iTelephony.endCall();
+                } catch (Exception ex) {
+                    LogUtils.e("initPhoneStateListener" + ex.toString());
+                }
+            }
+        });
         //m_btn_endcall.setZOrderOnTop(true);
         /*TabsAdapter tabsAdapter = new TabsAdapter(getChildFragmentManager());
         tabsAdapter.addFragment(new DialTabFragment(1), "Favorite 1");
