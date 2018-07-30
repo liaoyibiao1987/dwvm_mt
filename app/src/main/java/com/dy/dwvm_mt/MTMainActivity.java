@@ -36,6 +36,7 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.fragments.DialTabFragment;
 import com.dy.dwvm_mt.fragments.HomeFragment;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
+import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
@@ -127,7 +128,6 @@ public class MTMainActivity extends BaseActivity
             LogUtils.e("MTMainActivity onCreate error:" + es.toString());
         }
     }
-
 
     @Override
     public void onBackPressed() {

@@ -20,12 +20,8 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import com.android.internal.telephony.ITelephony;
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.DY_VideoPhoneActivity;
 import com.dy.dwvm_mt.MTMainActivity;
-import com.dy.dwvm_mt.MainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -49,7 +45,6 @@ public class CallShowService extends Service {
 
     private String commingTelNumber = "";
     private String outgoingTelNumber = "";
-    private boolean isOutgoingCall = false;//是否主动拨号
 
     private ConstraintLayout mFloatLayout;
     private WindowManager.LayoutParams wmParams;
@@ -94,10 +89,9 @@ public class CallShowService extends Service {
             //去电 根本行不通,大多数手机根本无法获取去电。
             outgoingTelNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
             LogUtils.d("ACTION_NEW_OUTGOING_CALL : " + outgoingTelNumber);
-            isOutgoingCall = true;
-            if (StringUtils.isTrimEmpty(outgoingTelNumber) == false && outgoingTelNumber.length() > 2) {
+           /* if (StringUtils.isTrimEmpty(outgoingTelNumber) == false && outgoingTelNumber.length() > 2) {
                 CommandUtils.sendVerifyCode(outgoingTelNumber, outgoingTelNumber);
-            }
+            }*/
 
         }
 
@@ -193,11 +187,10 @@ public class CallShowService extends Service {
                     switch (state) {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
                             LogUtils.d("PhoneStateListener CALL_STATE_IDLE");
-                            isOutgoingCall = false;
                             outgoingTelNumber = "";
                             commingTelNumber = "";
+                            LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, "");
                             dismiss();//关闭来电秀
-                            LocalSetting.setCallingNumber("");
                             break;
 
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
@@ -212,16 +205,17 @@ public class CallShowService extends Service {
                             } catch (Exception es) {
                                 LogUtils.e("PhoneStateListener onCallStateChanged: .CALL_STATE_RINGING" + es);
                             }*/
-                           //PhoneUtils.telcomInvok(getApplicationContext(),"endCall");
+                            //PhoneUtils.telcomInvok(getApplicationContext(),"endCall");
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
-                                isOutgoingCall = StringUtils.isTrimEmpty(LocalSetting.getCallingNumber()) == false;
-                                if (isOutgoingCall == true) {
+                                if (StringUtils.isTrimEmpty(incomingNumber) == true) {
+                                    callState = s_messageBase.TelStates.Offhook;
                                     Thread.sleep(1000);
                                     callShow();
+                                } else {
+                                    callState = s_messageBase.TelStates.CalledOffhook;
                                 }
-                                callState = isOutgoingCall == true ? s_messageBase.TelStates.Offhook : s_messageBase.TelStates.CalledOffhook;
                                 LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK", incomingNumber);
                             } catch (Exception es) {
                                 LogUtils.e("PhoneStateListener CALL_STATE_OFFHOOK error" + es);
@@ -253,8 +247,9 @@ public class CallShowService extends Service {
                                 try {
                                     PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                     PhoneUtils.answerRingingCall(CallShowService.this);
-                                    //Thread.sleep(5000);
-                                    CommandUtils.sendVerifyCode(LocalSetting.getCallingNumber(), LocalSetting.getCallingNumber());
+                                    String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
+                                    LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
+                                    CommandUtils.sendVerifyCode(calling, calling);
                                    /* Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
                                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);

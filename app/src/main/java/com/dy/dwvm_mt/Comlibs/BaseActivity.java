@@ -43,7 +43,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
         return super.dispatchTouchEvent(ev);
     }
-
     // Return whether touch the view.
     private boolean isShouldHideKeyboard(View v, MotionEvent event) {
         if (v != null && (v instanceof EditText)) {
@@ -62,10 +61,10 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     public final void startPolling(int errorCode, @Nullable int elapse) {
         Intent pollingIntent = new Intent(this, PollingService.class);
-        if (errorCode == 0){
+        if (errorCode == 0) {
             pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, elapse * 800);
             pollingIntent.putExtra(CommandUtils.Str_Extra_Online, true);
-        }else {
+        } else {
             pollingIntent.putExtra(CommandUtils.Str_Extra_Polling, -1);
             pollingIntent.putExtra(CommandUtils.Str_Extra_Online, false);
         }

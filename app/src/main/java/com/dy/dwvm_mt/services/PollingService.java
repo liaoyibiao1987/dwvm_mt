@@ -153,11 +153,17 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                     }
                     break;
                 case s_messageBase.DeviceCMD_Sub.DDNS_MTInfo:
-                    LogUtils.d("通知设备进入视频电话.");
-                    Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-                    getApplication().startActivity(intent);
+                    try {
+                        Thread.sleep(2000);
+                        LogUtils.d("通知设备进入视频电话.");
+                        Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+                        getApplication().startActivity(intent);
+                    } catch (Exception es) {
+                        LogUtils.e("PollingService onReceivedSubCMD error:" + es.toString());
+                    }
+
                     break;
                 case s_messageBase.DeviceCMD_Sub.DDNS_SetCoding://ddns通知MT打开或关闭编码器(打开只有在摘机的时候才能操作)
                     EncoderManager.Manage(arg);
@@ -182,10 +188,10 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
         }
         if (newStatus == mobile) {
             //移动网络
-            CommandUtils.sendLoginData(loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort());
+            //CommandUtils.sendLoginData(loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort());
         }
         if (newStatus == wifi) {
-            CommandUtils.sendLoginData(loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort());
+            //CommandUtils.sendLoginData(loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort());
             //wifi网络
             if (oldStatus == mobile) {
                 //从移动网络切换到wifi网络

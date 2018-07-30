@@ -29,6 +29,7 @@ import java.util.List;
  */
 public class CommandUtils {
     public static int MTPORT = 5007;
+    //private static String DDNSIP = "112.90.144.6";
     private static String DDNSIP = "112.91.151.187";
     private static String DDNSPORT = "4998";
     private static int DDNSDEVICEID = 16777217;

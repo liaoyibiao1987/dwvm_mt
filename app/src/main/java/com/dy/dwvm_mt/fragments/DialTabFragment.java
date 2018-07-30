@@ -34,12 +34,11 @@ import android.widget.TextView;
 
 import com.android.phone.common.dialpad.DialpadKeyButton;
 import com.android.phone.common.dialpad.DialpadView;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.StringUtils;
-import com.dy.dwvm_mt.utilcode.util.ThreadUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -370,7 +369,7 @@ public class DialTabFragment extends Fragment implements View.OnClickListener, V
             handleDialButtonClickWithEmptyDigits();
         } else {
             final String number = mDigits.getText().toString();
-
+            LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, number);
             // "persist.radio.otaspdial" is a temporary hack needed for one carrier's automated
             // test equipment.
             // TODO: clean it up.
@@ -385,7 +384,7 @@ public class DialTabFragment extends Fragment implements View.OnClickListener, V
                 try {
                     CommandUtils.sendTelState(s_messageBase.TelStates.DialingNum, 0, "86" + number);
                     Thread.sleep(100);
-                    CommandUtils.sendVerifyCode(number, number);
+                    //CommandUtils.sendVerifyCode(number, number);
                 } catch (Exception e) {
                     LogUtils.e("DialTabFragment handleDialButtonPressed error" + e.toString());
                     e.printStackTrace();

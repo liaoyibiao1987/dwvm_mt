@@ -1,5 +1,6 @@
 package com.dy.dwvm_mt.Comlibs;
 
+import com.dy.dwvm_mt.utilcode.util.CacheDoubleUtils;
 import com.dy.javastruct.Constants;
 
 /**
@@ -11,12 +12,11 @@ public final class LocalSetting {
     public static final String Cache_Name_LoginID = "Cache_Name_LoginID";
     public static final String Cache_Name_Password = "Cache_Name_Password";
     public static final String Cache_Name_TelNumber = "Cache_Name_TelNumber";
+    public static final String Cache_Name_CallingTelNumber = "Cache_Name_CallingTelNumber";
 
     private static String loginID = "";
     private static String loginPSW = "";
     private static String telNumber = "";
-
-    private static String callingNumber = "";
 
     private static boolean isLogined;
     private static boolean isLocalTel;
@@ -27,11 +27,20 @@ public final class LocalSetting {
     private static int callState;
     private static int meetingID;
 
+    private static CacheDoubleUtils cacheDoubleUtils;
+
     public static void SetInformationByLoginResult(LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
         setAffiliateToPS(loginExtMessage.getPSIPPort());
         setDeviceId(loginExtMessage.getDeviceId());
         setForcePSTranspond(loginExtMessage.isForcePSTranspond());
         setIsLocalTel(loginExtMessage.isLocalTel());
+    }
+
+    public static CacheDoubleUtils getCacheDoubleUtils(){
+        if(cacheDoubleUtils==null){
+            cacheDoubleUtils = CacheDoubleUtils.getInstance();
+        }
+        return cacheDoubleUtils;
     }
 
     public static void ResetInformation() {
@@ -66,15 +75,6 @@ public final class LocalSetting {
 
     public static void setTelNumber(String telNumber) {
         LocalSetting.telNumber = telNumber;
-    }
-
-
-    public static String getCallingNumber() {
-        return callingNumber;
-    }
-
-    public static void setCallingNumber(String callingNumber) {
-        LocalSetting.callingNumber = callingNumber;
     }
 
     public static boolean isIsLogined() {

@@ -32,9 +32,11 @@ import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.MTLib;
+import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
+import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.lang.reflect.Method;
@@ -65,6 +67,8 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     private static final String LOCAL_DEVICE_NAME = "MT-Demo-Android";
     private static final long REMOTE_DEVICE_ID = 0x2000006;
     private String REMOTE_DEVICE_IP = "112.91.151.186:5001";
+    /*private static final long REMOTE_DEVICE_ID = 0x2000000;
+    private String REMOTE_DEVICE_IP = "112.90.144.6:6001";*/
     private boolean isInit = false;
 
     /*非公有的变量前面要加上小写m，
@@ -143,6 +147,10 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
                     TelephonyManager telephonyManager = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
                     ITelephony iTelephony = (ITelephony) method.invoke(telephonyManager, null);
                     iTelephony.endCall();
+
+
+                    Intent intent = new Intent(getContext(), MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ActivityUtils.startActivity(intent);
                 } catch (Exception ex) {
                     LogUtils.e("initPhoneStateListener" + ex.toString());
                 }

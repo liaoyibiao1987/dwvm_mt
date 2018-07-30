@@ -30,9 +30,7 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
-import com.dy.dwvm_mt.services.PollingService;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
-import com.dy.dwvm_mt.utilcode.util.CacheDoubleUtils;
 import com.dy.dwvm_mt.utilcode.util.CrashUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
@@ -70,7 +68,6 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @BindView(R.id.btn_login_auth_alert)
     Button btnAuthAlert;
 
-    private CacheDoubleUtils cacheDoubleUtils;
     //所需要申请的权限数组
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
@@ -98,8 +95,9 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             CrashUtils.init();
         }
+
+        Log.d("东耀视频会议系统", "开始运行");
         setContentView(R.layout.activity_login);
-        cacheDoubleUtils = CacheDoubleUtils.getInstance();
         initSetting();
         ButterKnife.bind(this);
         AnalysingUtils.addRecvedCommandListeners(this);
@@ -121,6 +119,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         if (StringUtils.isTrimEmpty(phoneNumber) == false && phoneNumber.startsWith("+86")) {
             phoneNumber = phoneNumber.substring(3);
             EtTelNumber.setText(phoneNumber);
+        } else {
+            EtTelNumber.setText(LocalSetting.getTelNumber());
         }
 
         btnAuthAlert.setOnClickListener(new View.OnClickListener() {
@@ -152,15 +152,15 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     }
 
     private void initSetting() {
-        String id = cacheDoubleUtils.getString(LocalSetting.Cache_Name_LoginID);
+        String id = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_LoginID);
         if (StringUtils.isTrimEmpty(id) == false) {
             LocalSetting.setLoginID(id);
         }
-        String password = cacheDoubleUtils.getString(LocalSetting.Cache_Name_Password);
+        String password = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_Password);
         if (StringUtils.isTrimEmpty(password) == false) {
             LocalSetting.setLoginPSW(password);
         }
-        String telNumber = cacheDoubleUtils.getString(LocalSetting.Cache_Name_TelNumber);
+        String telNumber = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_TelNumber);
         if (StringUtils.isTrimEmpty(telNumber) == false) {
             LocalSetting.setTelNumber(telNumber);
         }
@@ -171,12 +171,11 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         String psw = EtLoginPsw.getText().toString();
         String telNumber = EtTelNumber.getText().toString();
         String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-        cacheDoubleUtils.put(LocalSetting.Cache_Name_LoginID, loginID);
-        cacheDoubleUtils.put(LocalSetting.Cache_Name_Password, psw);
-        cacheDoubleUtils.put(LocalSetting.Cache_Name_TelNumber, telNumber);
+        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_LoginID, loginID);
+        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_Password, psw);
+        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_TelNumber, telNumber);
 
         LocalSetting.setTelNumber(telNumber);
-        LocalSetting.setCallingNumber(telNumber);
 
         CommandUtils.sendLoginData(loginID, psw, telNumber, "", ddnsIPAndPort);
     }
