@@ -177,7 +177,7 @@ public class EncodeVideoThread extends Thread {
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
             //mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, m_iColorFormat);
-            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 180);
+            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
 
             encoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         } catch (Exception e) {

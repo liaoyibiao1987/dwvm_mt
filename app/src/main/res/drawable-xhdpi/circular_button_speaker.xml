@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <!--<shape android:tintMode="multiply">-->
+        <shape>
+            <stroke android:width="1dp" android:color="#ffffff" />
+            <!--色值-->
+            <solid android:color="#99c6c6c6" />
+            <!--圆角-->
+            <corners android:radius="35dp" />
+        </shape>
+    </item>
+    <!--默认背景-->
+    <item android:state_selected="false">
+        <shape>
+            <stroke android:width="1dp" android:color="#ffd2e1" />
+            <solid android:color="#1eb5b5b5" />
+            <corners android:radius="35dp" />
+        </shape>
+    </item>
+</selector>

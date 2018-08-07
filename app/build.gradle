@@ -98,4 +98,5 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     implementation project(':javastruct')
     implementation project(':phone.common')
+    implementation 'fr.baloomba:viewpagerindicator:2.4.2'
 }

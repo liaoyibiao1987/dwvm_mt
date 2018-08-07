@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.RECEIVE_USER_PRESENT" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <permission android:name=".services.CallShowService" />
     <uses-permission android:name=".services.CallShowService" />  <!--此处与activity声明权限不同 。Package要求某自定义权限时，需要同时使用<permission> Tag 和 <uses-permission> Tag-->

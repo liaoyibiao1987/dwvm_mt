@@ -175,9 +175,9 @@ public class MTMainActivity extends BaseActivity
             case R.id.nav_settings:
                 break;
             case R.id.nav_share:
-                /*Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
-                startActivity(intent);*/
-                break;
+                Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
+                startActivity(intent);
+                return true;
             case R.id.nav_logout:
                 /*Intent intent2 = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

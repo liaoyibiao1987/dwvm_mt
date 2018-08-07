@@ -1,9 +1,11 @@
 package com.dy.dwvm_mt.utilcode.util;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.RequiresPermission;
@@ -340,11 +342,12 @@ public final class PhoneUtils {
         try {
             TelephonyManager tm = (TelephonyManager) context.getSystemService(context.TELEPHONY_SERVICE);
             Class<TelephonyManager> clazz = TelephonyManager.class;
-            Method method = clazz.getDeclaredMethod("getITelephony", null);
+            Method method = clazz.getDeclaredMethod("getITelephony", new Class[0]);
             method.setAccessible(true);
-            ITelephony iTelephony = (ITelephony) method.invoke(tm, null);
+            ITelephony iTelephony = (ITelephony) method.invoke(tm, new Object[]{});
             switch (type) {
                 case "endCall":
+                    /*iTelephony.endCall();*/
                     Method m2 = iTelephony.getClass().getDeclaredMethod("endCall");
                     m2.invoke(iTelephony);
                     break;
@@ -359,6 +362,33 @@ public final class PhoneUtils {
             LogUtils.e("ITelcomInvok error" + es);
         }
 
+    }
+
+    public static void setSpeakerphoneOn(Context context, boolean on) {
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            audioManager.setMode(on ? AudioManager.MODE_NORMAL : AudioManager.MODE_IN_CALL);
+        } else {
+            try {
+                Activity activity= (Activity) context;
+                //setVolumeControlStream设置当前页面，按音量键控制的是STREAM_VOICE_CALL 打电话声音，避免控制多媒体声音
+                activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+                Class audioSystemClass = Class.forName("android.media.AudioSystem");
+                Method setForceUse = audioSystemClass.getMethod("setForceUse", int.class, int.class);
+                if (on) {
+                    audioManager.setMicrophoneMute(false);
+                    audioManager.setSpeakerphoneOn(true);
+                    audioManager.setMode(AudioManager.MODE_NORMAL);
+                } else {
+                    audioManager.setSpeakerphoneOn(false);
+                    audioManager.setMode(AudioManager.MODE_NORMAL);
+                    setForceUse.invoke(null, 0, 0);
+                    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 

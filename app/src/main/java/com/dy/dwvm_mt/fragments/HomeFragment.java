@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
+import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -36,8 +37,10 @@ import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
+import com.dy.dwvm_mt.userview.DYImageButton;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -60,15 +63,17 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     protected SurfaceView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
     protected SurfaceView m_surfaceDecoderShow;
+    @BindView(R.id.btn_freehand)
+    protected DYImageButton m_btn_freehand;
     @BindView(R.id.btn_endcall)
     protected ImageButton m_btn_endcall;
 
     // parameters for MTLib demo
     private static final String LOCAL_DEVICE_NAME = "MT-Demo-Android";
-    private static final long REMOTE_DEVICE_ID = 0x2000006;
-    private String REMOTE_DEVICE_IP = "112.91.151.186:5001";
-    /*private static final long REMOTE_DEVICE_ID = 0x2000000;
-    private String REMOTE_DEVICE_IP = "112.90.144.6:6001";*/
+    /* private static final long REMOTE_DEVICE_ID = 0x2000006;
+     private String REMOTE_DEVICE_IP = "112.91.151.186:5001";*/
+    private static final long REMOTE_DEVICE_ID = 0x2000000;
+    private String REMOTE_DEVICE_IP = "112.90.144.6:6001";
     private boolean isInit = false;
 
     /*非公有的变量前面要加上小写m，
@@ -140,20 +145,19 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             public void onClick(View view) {
                 Class<TelephonyManager> clazz = TelephonyManager.class;//得到方法
                 try {
-                    Method method = clazz.getDeclaredMethod("getITelephony", null);
-                    //设置可访问
-                    method.setAccessible(true);
-                    //执行方法
-                    TelephonyManager telephonyManager = (TelephonyManager) getContext().getSystemService(Context.TELEPHONY_SERVICE);
-                    ITelephony iTelephony = (ITelephony) method.invoke(telephonyManager, null);
-                    iTelephony.endCall();
-
-
+                    PhoneUtils.telcomInvok(getContext(), "endCall");
                     Intent intent = new Intent(getContext(), MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                     ActivityUtils.startActivity(intent);
                 } catch (Exception ex) {
                     LogUtils.e("initPhoneStateListener" + ex.toString());
                 }
+            }
+        });
+        PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
+        m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
+                PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
             }
         });
         //m_btn_endcall.setZOrderOnTop(true);
