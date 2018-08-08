@@ -69,11 +69,11 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     protected ImageButton m_btn_endcall;
 
     // parameters for MTLib demo
-    private static final String LOCAL_DEVICE_NAME = "MT-Demo-Android";
+    private static final String LOCAL_DEVICE_NAME = "MT-Android";
     /* private static final long REMOTE_DEVICE_ID = 0x2000006;
      private String REMOTE_DEVICE_IP = "112.91.151.186:5001";*/
     private static final long REMOTE_DEVICE_ID = 0x2000000;
-    private String REMOTE_DEVICE_IP = "112.90.144.6:6001";
+    private String REMOTE_DEVICE_IP = LocalSetting.getPSIPPort();
     private boolean isInit = false;
 
     /*非公有的变量前面要加上小写m，
@@ -160,12 +160,6 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
                 PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
             }
         });
-        //m_btn_endcall.setZOrderOnTop(true);
-        /*TabsAdapter tabsAdapter = new TabsAdapter(getChildFragmentManager());
-        tabsAdapter.addFragment(new DialTabFragment(1), "Favorite 1");
-        tabsAdapter.addFragment(new DialTabFragment(2), "Favorite 2");
-        viewPager.setAdapter(tabsAdapter);
-        tabLayout.setupWithViewPager(viewPager);*/
         m_mtoperator = MTLibUtils.getBaseMTLib();
 
         if (getArguments() != null) {
@@ -524,16 +518,16 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         if (data.length < iInputSize || iInputSize <= 0) {
             return;
         } else {
-            // if camera is NV21, and encoder is YUV420SP, need swap U & V color
+            // if camera is NV21(YUV420SP), and encoder is NV12(YUV420SP), need swap U & V color
             if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
                     ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                NV21_to_YUV420SP(data, m_iRawWidth, m_iRawHeight);
+                NV21_to_YV2(data, m_iRawWidth, m_iRawHeight);
             }
+            //data = yuv_rotate90(data, m_iRawWidth, m_iRawHeight);
             savePreviewFrame(data, camera);
         }
     }
-
-    protected void NV21_to_YUV420SP(byte[] image, int width, int height) {
+    protected void NV21_to_YV2(byte[] image, int width, int height) {
         byte tmp = 0;
         int uvBegin = width * height;
         int uvBytes = width * height / 2;

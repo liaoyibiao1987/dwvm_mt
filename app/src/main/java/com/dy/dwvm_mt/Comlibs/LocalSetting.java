@@ -13,6 +13,7 @@ public final class LocalSetting {
     public static final String Cache_Name_Password = "Cache_Name_Password";
     public static final String Cache_Name_TelNumber = "Cache_Name_TelNumber";
     public static final String Cache_Name_CallingTelNumber = "Cache_Name_CallingTelNumber";
+    public static final String Cache_Name_PSIPPort = "Cache_Name_PSIPPort";
 
     private static String loginID = "";
     private static String loginPSW = "";
@@ -34,10 +35,11 @@ public final class LocalSetting {
         setDeviceId(loginExtMessage.getDeviceId());
         setForcePSTranspond(loginExtMessage.isForcePSTranspond());
         setIsLocalTel(loginExtMessage.isLocalTel());
+        getCacheDoubleUtils().put(Cache_Name_PSIPPort, loginExtMessage.getPSIPPort());
     }
 
-    public static CacheDoubleUtils getCacheDoubleUtils(){
-        if(cacheDoubleUtils==null){
+    public static CacheDoubleUtils getCacheDoubleUtils() {
+        if (cacheDoubleUtils == null) {
             cacheDoubleUtils = CacheDoubleUtils.getInstance();
         }
         return cacheDoubleUtils;
@@ -52,6 +54,9 @@ public final class LocalSetting {
         LoginTimeElapse = -1;
     }
 
+    public static String getPSIPPort(){
+        return getCacheDoubleUtils().getString(Cache_Name_PSIPPort);
+    }
 
     public static String getLoginID() {
         return loginID;

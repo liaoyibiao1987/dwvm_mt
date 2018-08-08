@@ -53,7 +53,6 @@ public class CallShowService extends Service {
 
     @Override
     public void onCreate() {
-        //android.os.Debug.waitForDebugger();
         if (isRunning == false) {
             try {
                 isRunning = true;
@@ -209,7 +208,7 @@ public class CallShowService extends Service {
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
-                                if (StringUtils.isTrimEmpty(incomingNumber) == true) {
+                                if (StringUtils.isTrimEmpty(incomingNumber) == false) {
                                     callState = s_messageBase.TelStates.Offhook;
                                     Thread.sleep(1000);
                                     callShow();
