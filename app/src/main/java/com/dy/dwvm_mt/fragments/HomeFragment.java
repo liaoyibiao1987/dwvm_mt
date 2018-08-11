@@ -9,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.media.AudioManager;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -27,12 +26,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 
-import com.android.internal.telephony.ITelephony;
+import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -42,7 +39,6 @@ import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -105,7 +101,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     private int m_iRawHeight = 0;
 
     // encoder
-    private EncodeVideoThread encodeVideoThread = null;
+    private AvcEncoder encodeVideoThread = null;
 
 
     // decoder
@@ -327,7 +323,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             m_iRawWidth = res.width;
             m_iRawHeight = res.height;
             // malloc buffer
-            m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 5 + 4096];
+            m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 4 + 4096];
         } catch (Exception e) {
             m_cam.release();
             m_cam = null;
@@ -372,7 +368,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         // create encoder
         if (encodeVideoThread == null) {
             LogUtils.d("MT 编码：", "正在打开编码.");
-            encodeVideoThread = new EncodeVideoThread(m_mtoperator, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            encodeVideoThread = new AvcEncoder(m_mtoperator, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             encodeVideoThread.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             encodeVideoThread.start();
         }
@@ -420,6 +416,8 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         // bind to surface, and start
         try {
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
+            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
+
             m_decoder.configure(mediaFormat, holder.getSurface(), null, 0);
             m_decoder.start();
         } catch (Exception e) {
@@ -466,6 +464,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         // if codec or image-resolution changed, NOT process it
         // maybe, you can test: decoderStop() then decoderStart()
         if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_decoderWidth != width || m_decoderHeight != height) {
+            decoderStop();
             return false;
         }
 
@@ -518,23 +517,31 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         if (data.length < iInputSize || iInputSize <= 0) {
             return;
         } else {
-            // if camera is NV21(YUV420SP), and encoder is NV12(YUV420SP), need swap U & V color
-            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
-                    ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
-                NV21_to_YV2(data, m_iRawWidth, m_iRawHeight);
+            // if camera is NV21(YUV420SP), and the encoder can only encode NV12, need swap U & V color
+            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21) {  //ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+                byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
+                //把待编码的视频帧转换为YUV420格式
+                NV21ToNV12(data, yuv420sp, m_iRawWidth, m_iRawHeight);
+                data = yuv420sp;
             }
+
             //data = yuv_rotate90(data, m_iRawWidth, m_iRawHeight);
             savePreviewFrame(data, camera);
         }
     }
-    protected void NV21_to_YV2(byte[] image, int width, int height) {
-        byte tmp = 0;
-        int uvBegin = width * height;
-        int uvBytes = width * height / 2;
-        for (int i = 0; i < uvBytes; i += 2) {
-            tmp = image[uvBegin + i];
-            image[uvBegin + i] = image[uvBegin + i + 1];
-            image[uvBegin + i + 1] = tmp;
+
+    private void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
+        if (nv21 == null || nv12 == null) return;
+        int framesize = width * height;
+        System.arraycopy(nv21, 0, nv12, 0, framesize);
+        for (int i = 0; i < framesize; i++) {
+            nv12[i] = nv21[i];
+        }
+        for (int j = 0; j < framesize / 2; j += 2) {
+            nv12[framesize + j - 1] = nv21[j + framesize];
+        }
+        for (int j = 0; j < framesize / 2; j += 2) {
+            nv12[framesize + j] = nv21[j + framesize - 1];
         }
     }
 

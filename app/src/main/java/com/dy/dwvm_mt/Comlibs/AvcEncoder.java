@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
 import java.util.EventListener;
 import java.util.concurrent.ArrayBlockingQueue;
 
-public class EncodeVideoThread extends Thread {
+public class AvcEncoder extends Thread {
     private MediaCodec mEncoder;
     private boolean isRuning = true;
     private boolean needEncoding = true;
@@ -22,7 +22,7 @@ public class EncodeVideoThread extends Thread {
 
     private long pts = 0;
     private long generateIndex = 0;
-    private int m_framerate = 30;
+    private int m_framerate = 20;
     private int TIMEOUT_USEC = 12000;
 
 
@@ -34,19 +34,19 @@ public class EncodeVideoThread extends Thread {
     private String m_sremoteIPPort;
 
     private I_MT_Prime m_mtLib;
-    private final AutoResetEvent are = new AutoResetEvent(false);
+    //private final AutoResetEvent are = new AutoResetEvent(false); //Semaphore
 
     private Object m_yuvlocker = new Object();
     private int m_yuvqueuesize = 10;
     public ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(m_yuvqueuesize);
 
 
-    public EncodeVideoThread(I_MT_Prime primeService, int rawWidth, int rawHeight, int colorFormat) {
+    public AvcEncoder(I_MT_Prime primeService, int rawWidth, int rawHeight, int colorFormat) {
         m_mtLib = primeService;
         m_iRawWidth = rawWidth;
         m_iRawHeight = rawHeight;
         m_iColorFormat = colorFormat;
-        LogUtils.w(String.format("EncodeVideoThread colorFormat: %s rawWidth: %s rawHeight: %s", colorFormat, rawWidth, rawHeight));
+        LogUtils.w(String.format("AvcEncoder colorFormat: %s rawWidth: %s rawHeight: %s", colorFormat, rawWidth, rawHeight));
     }
 
     private void NV21ToNV12(byte[] nv21, byte[] nv12, int width, int height) {
@@ -170,10 +170,9 @@ public class EncodeVideoThread extends Thread {
         try {
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 5); // 1024 kbps
+            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
-            //mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, m_iColorFormat);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
 
@@ -182,7 +181,7 @@ public class EncodeVideoThread extends Thread {
             if (mEncoder != null) {
                 mEncoder = null;
             }
-            Log.e("EncodeVideoThread", "Encoder create error: " + e.getMessage());
+            Log.e("AvcEncoder", "Encoder create error: " + e.getMessage());
         }
 
         if (mEncoder == null) {
@@ -197,7 +196,7 @@ public class EncodeVideoThread extends Thread {
                 try {
                     onSentEncoding();
                 } catch (Exception es) {
-                    LogUtils.e("EncodeVideoThread run error:" + es.toString());
+                    LogUtils.e("AvcEncoder run error:" + es.toString());
                 }
             }
         }
@@ -359,18 +358,17 @@ public class EncodeVideoThread extends Thread {
     }
 
     private void onSentEncoding() {
-
         if (YUVQueue.size() > 0) {
             input = YUVQueue.poll();
             // 上一层已经将数据转为YUV420SP(NV12)
-            byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
+           /* byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
             NV21ToNV12(input, yuv420sp, m_iRawWidth, m_iRawHeight);
-            input = yuv420sp;
+            input = yuv420sp;*/
         }
         if (input != null) {
             try {
-                ByteBuffer[] inputBuffers = mEncoder.getInputBuffers();
-                ByteBuffer[] outputBuffers = mEncoder.getOutputBuffers();
+                ByteBuffer[] inputBuffers = mEncoder.getInputBuffers();//获取到输入缓冲区
+                ByteBuffer[] outputBuffers = mEncoder.getOutputBuffers();//获取到输出缓冲区
                 int inputBufferIndex = mEncoder.dequeueInputBuffer(-1);
                 if (inputBufferIndex >= 0) {
                     pts = computePresentationTime(generateIndex);
@@ -387,7 +385,7 @@ public class EncodeVideoThread extends Thread {
                     //Log.i("AvcEncoder", "Get H264 Buffer Success! flag = "+bufferInfo.flags+",pts = "+bufferInfo.presentationTimeUs+"");
                     final int iEncodeFrameSize = bufferInfo.size;
                     ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
-                    byte[] tmp_encodeFrameBuffer = new byte[bufferInfo.size];
+                    byte[] tmp_encodeFrameBuffer = new byte[iEncodeFrameSize];
                     outputBuffer.get(tmp_encodeFrameBuffer);
 
 
@@ -412,5 +410,7 @@ public class EncodeVideoThread extends Thread {
         }
     }
 
-
+    public static interface OnEncodedHandler {
+        public void Dohandler();
+    }
 }

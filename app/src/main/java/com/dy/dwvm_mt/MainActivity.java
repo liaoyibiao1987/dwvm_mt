@@ -21,7 +21,7 @@ import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.EncodeVideoThread;
+import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -94,7 +94,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     private static Object m_yuvlocker = new Object();
     private static int m_yuvqueuesize = 10;
     public static ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(m_yuvqueuesize);
-    private EncodeVideoThread mPlayer = null;
+    private AvcEncoder mPlayer = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -197,7 +197,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
         }
 
         if (mPlayer == null) {
-            mPlayer = new EncodeVideoThread(m_mtLib, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            mPlayer = new AvcEncoder(m_mtLib, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mPlayer.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             mPlayer.start();
         }
