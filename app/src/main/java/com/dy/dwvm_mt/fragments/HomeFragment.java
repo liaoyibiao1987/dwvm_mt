@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 
+import com.dy.dwvm_mt.Comlibs.AvcDecoder;
 import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
@@ -79,18 +80,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         除了protected外，其它的带有m的变量在子类中是无法访问的。*/
     // parameters for camera preview, capture, encode
     // === raw image resolution range: 640x360 ~ 720x576
-    private static final int RAW_IMAGE_WIDTH_MIN = 640;
-    private static final int RAW_IMAGE_HEIGHT_MIN = 360;
-    private static final int RAW_IMAGE_WIDTH_MAX = 720;
-    private static final int RAW_IMAGE_HEIGHT_MAX = 576;
-    // === color format mapping table: Raw <--> Encode
-    private static final int[] RAW_IMAGE_COLOR_TABLE = {ImageFormat.YUY2, ImageFormat.NV21, ImageFormat.YV12};
-    private static final int[] RAW_IMAGE_BITS_TABLE = {16, 12, 12};
-    private static final int[] ENCODE_INPUT_COLOR_TABLE = {MediaCodecInfo.CodecCapabilities.COLOR_FormatYCbYCr,
-            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-            MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar};
-    // === current raw-format
-    private int m_iColorFormatIndex = -1;
+
 
     // MT Library
     private I_MT_Prime m_mtoperator = null;
@@ -102,7 +92,7 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
 
     // encoder
     private AvcEncoder encodeVideoThread = null;
-
+    private AvcDecoder decodeVideoThread = null;
 
     // decoder
     private MediaCodec m_decoder = null;
@@ -368,11 +358,11 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
         // create encoder
         if (encodeVideoThread == null) {
             LogUtils.d("MT 编码：", "正在打开编码.");
-            encodeVideoThread = new AvcEncoder(m_mtoperator, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            encodeVideoThread = new AvcEncoder(m_cam, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            encodeVideoThread.setMTLib(m_mtoperator);
             encodeVideoThread.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             encodeVideoThread.start();
         }
-
         return true;
     }
 
@@ -382,10 +372,6 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
     }
 
     private boolean decoderStart(String codecName, int width, int height) {
-        if (m_decoder != null) {
-            return false;
-        }
-
         // get surface & holder
         if (m_surfaceDecoderShow == null) {
             return false;
@@ -397,52 +383,26 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
             LogUtils.e("decoderStart", "Get holder error: " + e.getMessage());
             return false;
         }
-        if (holder == null) {
-            LogUtils.e("decoderStart", "Get holder failed.");
+        if (decodeVideoThread == null) {
+            LogUtils.d("MT 解码：" + "正在打开解码");
+            decodeVideoThread = new AvcDecoder(holder);
+        }
+        if (decodeVideoThread.decoderStart(codecName, width, height) == true) {
+            decodeVideoThread.
+        } else {
             return false;
         }
-
-        // create decoder
-        try {
-            m_decoder = MediaCodec.createDecoderByType(codecName);
-        } catch (Exception e) {
-            if (m_decoder != null) {
-                m_decoder = null;
-            }
-            LogUtils.e("decoderStart", "Decoder create error: " + e.getMessage());
-            return false;
-        }
-
-        // bind to surface, and start
-        try {
-            MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
-            mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
-
-            m_decoder.configure(mediaFormat, holder.getSurface(), null, 0);
-            m_decoder.start();
-        } catch (Exception e) {
-            LogUtils.e("decoderStart", "surfaceCreated(decoder) error: " + e.getMessage());
-            return false;
-        }
-
-        m_decoderCodecName = codecName;
-        m_decoderWidth = width;
-        m_decoderHeight = height;
-        m_decodeWaitKeyFrame = true;
-        m_decoderValid = true;
-        return true;
     }
 
     private void decoderStop() {
-        m_decoderCreateFailed = true;
-        m_decoderValid = false;
-        if (m_decoder != null) {
-            m_decoder.stop();
-            m_decoder.release();
-            m_decoder = null;
+        if (decodeVideoThread != null) {
+            decodeVideoThread.decoderStop();
         }
-        m_decoderCreateFailed = false;
     }
+
+    private MediaCodec.BufferInfo decodeOutBufferInfo;
+    private ByteBuffer[] decodeInputBuffers;
+    private Object decoderLocker = new Object();
 
     private boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         // if no decoder, create it
@@ -480,30 +440,30 @@ public class HomeFragment extends Fragment implements Camera.PreviewCallback, I_
 
         // decode frame
         try {
-            ByteBuffer[] decodeInputBuffers = m_decoder.getInputBuffers();
-            int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(-1);
-            if (decodeInputBufferIndex >= 0) {
-                ByteBuffer inputBuffer = decodeInputBuffers[decodeInputBufferIndex];
-                inputBuffer.clear();
-                if (inputBuffer.remaining() < dataSize) {
-                    Log.e("decoderStart", "Decode input: " + dataSize + ", remain: " + inputBuffer.remaining());
-                    return false;
+            synchronized (decoderLocker) {
+                decodeInputBuffers = m_decoder.getInputBuffers();
+                int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(-1);
+                if (decodeInputBufferIndex >= 0) {
+                    ByteBuffer inputBuffer = decodeInputBuffers[decodeInputBufferIndex];
+                    inputBuffer.clear();
+                    if (inputBuffer.remaining() < dataSize) {
+                        Log.e("decoderStart", "Decode input: " + dataSize + ", remain: " + inputBuffer.remaining());
+                        return false;
+                    }
+                    inputBuffer.put(dataBuffer, 0, dataSize);
+                    m_decoder.queueInputBuffer(decodeInputBufferIndex, 0, dataSize, System.currentTimeMillis() * 1000, 0);
                 }
-                inputBuffer.put(dataBuffer, 0, dataSize);
-                m_decoder.queueInputBuffer(decodeInputBufferIndex, 0, dataSize, System.currentTimeMillis() * 1000, 0);
-            }
-
-            MediaCodec.BufferInfo decodeOutBufferInfo = new MediaCodec.BufferInfo();
-            int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
-            while (decodeOutputBufferIndex >= 0) {
-                m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
-                decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
+                decodeOutBufferInfo = new MediaCodec.BufferInfo();
+                int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
+                while (decodeOutputBufferIndex >= 0) {
+                    m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
+                    decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
+                }
             }
         } catch (Exception e) {
             Log.e("decoderStart", "Decode failed: " + e.getMessage());
             return false;
         }
-
         return true;
     }
 
