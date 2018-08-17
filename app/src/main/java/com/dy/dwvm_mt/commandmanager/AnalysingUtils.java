@@ -42,14 +42,16 @@ public class AnalysingUtils {
         eventListeners = new LinkedHashSet<NWCommandEventHandler>();
         new Thread() {
             public void run() {
-                while (isRunning) {
-                    NetWorkCommand command = popCommand();
-                    if (command != null) {
-                        try {
-                            NWCommandEventArg arg = new NWCommandEventArg(command);
-                            notifieRecvedCommands(arg);
-                        } catch (Exception es) {
-                            LogUtils.e("AnalysingUtils Thread error:" + es);
+                while (true) {
+                    if (isRunning == true) {
+                        NetWorkCommand command = popCommand();
+                        if (command != null) {
+                            try {
+                                NWCommandEventArg arg = new NWCommandEventArg(command);
+                                notifieRecvedCommands(arg);
+                            } catch (Exception es) {
+                                LogUtils.e("AnalysingUtils Thread error:" + es);
+                            }
                         }
                     }
                 }

@@ -197,7 +197,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
         }
 
         if (mPlayer == null) {
-            mPlayer = new AvcEncoder(m_mtLib, m_iRawWidth, m_iRawHeight, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
+            mPlayer = new AvcEncoder();
             mPlayer.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
             mPlayer.start();
         }
@@ -415,8 +415,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
         final int iInputSize = (m_iRawWidth * m_iRawHeight * RAW_IMAGE_BITS_TABLE[m_iColorFormatIndex] / 8);
         if (data.length < iInputSize || iInputSize <= 0) {
             return;
-        }
-        else {
+        } else {
             // if camera is NV12, and encoder is YUV420SP, need swap U & V color
             if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21 &&
                     ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {

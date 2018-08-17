@@ -25,7 +25,8 @@
     <string name="txt_btn_testlogin">测试登录</string>
     <string name="txt_btn_testreportstate">测试报告话机状态</string>
     <string name="txt_btn_testperview">测试打开视频通话</string>
-
+    <string name="txt_btn_testeopencamare">测试打开摄像头</string>
+    <string name="txt_btn_testencoder">测试预览并编码</string>
 
     <string name="txt_lab_login">登录名</string>
     <string name="txt_lab_password">密 码</string>

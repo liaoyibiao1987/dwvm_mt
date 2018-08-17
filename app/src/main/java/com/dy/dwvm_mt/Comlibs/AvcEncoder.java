@@ -34,7 +34,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
     private static final int M_YUVQUEUESIZE = 10;
 
     private MediaCodec mEncoder;
-    private boolean isRuning = true;
+    private boolean isRuning = false;
     private boolean needEncoding = true;
     private byte[] input = null;
     private byte[] m_encodeFrameBuffer = null;
@@ -141,10 +141,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
      * @param mtLib
      */
     public void setMTLib(I_MT_Prime mtLib) {
-        if (mtLib == null) {
-            m_mtLib = mtLib;
-        } else {
-            m_mtLib.stop();
+        if (m_mtLib == null) {
             m_mtLib = mtLib;
         }
     }
@@ -169,7 +166,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         return iCamIndex;
     }
 
-    public boolean cameraStart() {
+    public final boolean cameraStart() {
         if (m_cam != null) {
             // already opened
             return true;
@@ -234,10 +231,10 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
                 }
             }
             // other
-            camParams.setFlashMode("off");
+            /*camParams.setFlashMode("off");
             camParams.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
             camParams.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
-            camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);*/
             // setting
             m_cam.setParameters(camParams);
             m_cam.setDisplayOrientation(180);
@@ -255,7 +252,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         return true;
     }
 
-    public boolean startPerViewer(SurfaceView m_surfaceCameraPreview) {
+    public final boolean startPerViewer(SurfaceView m_surfaceCameraPreview) {
         // start preview & capture
         try {
             // bind to viewer
@@ -293,7 +290,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             return;
         } else {
             // if camera is NV21(YUV420SP), and the encoder can only encode NV12, need swap U & V color
-            if (m_iColorFormatIndex == ImageFormat.NV21) {  //ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
+            if (RAW_IMAGE_COLOR_TABLE[m_iColorFormatIndex] == ImageFormat.NV21) {  //ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex] == MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar) {
                 byte[] yuv420sp = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
                 //把待编码的视频帧转换为YUV420格式
                 NV21ToNV12(bytes, yuv420sp, m_iRawWidth, m_iRawHeight);
@@ -329,11 +326,23 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
     }
 
     private final void synAddImageBuffer(byte[] buffer) {
-        if (YUVQueue.size() >= 10) {
-            YUVQueue.poll();
+        if (isRuning == true) {
+            if (YUVQueue.size() >= 10) {
+                YUVQueue.poll();
+            }
+            synchronized (m_yuvlocker) {
+                YUVQueue.add(buffer.clone());
+            }
         }
-        synchronized (m_yuvlocker) {
-            YUVQueue.add(buffer.clone());
+    }
+
+    private final void startEncoder() {
+        if (m_cam == null) {
+            needEncoding = false;
+            return;
+        } else {
+            isRuning = true;
+            needEncoding = true;
         }
     }
 
@@ -360,12 +369,13 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
     @Override
     public void run() {
         try {
+            startEncoder();
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
-            mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, m_iColorFormatIndex);
+            mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
 
             mEncoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -460,6 +470,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
     }
 
     private void onSentEncoding() {
+        //LogUtils.d("onSentEncoding YUVQueue size", YUVQueue.size());
         if (YUVQueue.size() > 0) {
             input = YUVQueue.poll();
         }

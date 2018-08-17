@@ -59,11 +59,7 @@ public class AvcDecoder {
         m_holder = holder;
     }
 
-    public void initAvcDecoder() {
-
-    }
-
-    public boolean decoderStart(String codecName, int width, int height) {
+    private boolean decoderStart(String codecName, int width, int height) {
         if (m_decoder != null) {
             return false;
         }
@@ -114,14 +110,14 @@ public class AvcDecoder {
         m_decoderCreateFailed = false;
     }
 
-    private boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
+    public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         // if no decoder, create it
         if (m_decoder == null) {
             // only try one to create decoder
             if (m_decoderCreateFailed) {
                 return false;
             }
-            if (!decoderStart(codecName, width, height)) {
+            if (decoderStart(codecName, width, height) == false) {
                 m_decoderCreateFailed = true;
                 return false;
             }

@@ -79,9 +79,16 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
     @SuppressLint("WrongConstant")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        m_interval = intent.getIntExtra(CommandUtils.Str_Extra_Polling, -1);
-        m_isOnline = intent.getBooleanExtra(CommandUtils.Str_Extra_Online, false);
-
+        try {
+            if (intent!=null){
+                m_interval = intent.getIntExtra(CommandUtils.Str_Extra_Polling, -1);
+                m_isOnline = intent.getBooleanExtra(CommandUtils.Str_Extra_Online, false);
+            }else {
+                LogUtils.w("PollingService -> onStartCommand (Intent is null)");
+            }
+        } catch (Exception es) {
+            LogUtils.e("onStartCommand error", es.toString());
+        }
         return super.onStartCommand(intent, START_STICKY, startId);
     }
 
