@@ -82,7 +82,7 @@ public class AvcDecoder {
 
         // bind to surface, and start
         try {
-            MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, m_width, m_height);
+            MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, m_rotation);
             m_decoder.configure(mediaFormat, m_holder.getSurface(), null, 0);
             m_decoder.start();
@@ -149,7 +149,6 @@ public class AvcDecoder {
             try {
                 decodeInputBuffers = m_decoder.getInputBuffers();
                 decodeOutBufferInfo = new MediaCodec.BufferInfo();
-
                 int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(-1);
                 if (decodeInputBufferIndex >= 0) {
                     ByteBuffer inputBuffer = decodeInputBuffers[decodeInputBufferIndex];

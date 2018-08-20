@@ -43,7 +43,7 @@ public class CallShowService extends Service {
     private boolean isEnable = true;//是否启用服务
     private boolean isFloatShown = false;
 
-    private String commingTelNumber = "";
+    private static String COMMINGTELNUMBER = "";
     private String outgoingTelNumber = "";
 
     private ConstraintLayout mFloatLayout;
@@ -187,15 +187,16 @@ public class CallShowService extends Service {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
                             LogUtils.d("PhoneStateListener CALL_STATE_IDLE");
                             outgoingTelNumber = "";
-                            commingTelNumber = "";
+                            COMMINGTELNUMBER = "";
                             LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, "");
                             dismiss();//关闭来电秀
                             break;
 
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
-                            commingTelNumber = incomingNumber;
+                            COMMINGTELNUMBER = incomingNumber;
                             callState = s_messageBase.TelStates.Ring;
-                            LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
+                            dismiss();
+                            LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + COMMINGTELNUMBER);//来电号码
                            /* try {
                                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
                                 //CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
@@ -208,7 +209,8 @@ public class CallShowService extends Service {
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
-                                if (StringUtils.isTrimEmpty(incomingNumber) == false) {
+                                LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK incomingNumber ->" + COMMINGTELNUMBER);//来电号码
+                                if (StringUtils.isTrimEmpty(COMMINGTELNUMBER) == true) {
                                     callState = s_messageBase.TelStates.Offhook;
                                     Thread.sleep(1000);
                                     callShow();

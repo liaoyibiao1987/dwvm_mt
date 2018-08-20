@@ -74,4 +74,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/surface_test_encoder"
         app:layout_constraintVertical_bias="0.968" />
+
+    <Button
+        android:id="@+id/btn_test_decoder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="264dp"
+        android:text="@string/txt_btn_testdecoder"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_test_encoder" />
 </android.support.constraint.ConstraintLayout>

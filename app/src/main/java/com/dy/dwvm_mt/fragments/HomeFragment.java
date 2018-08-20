@@ -1,14 +1,10 @@
 package com.dy.dwvm_mt.fragments;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -38,14 +34,7 @@ import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static com.dy.dwvm_mt.Comlibs.BaseActivity.MT_VP_PAGE_OPENTYPE;
-
 public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVideoHandler, SurfaceHolder.Callback {
-    /*@BindView(R.id.viewpager)
-    ViewPager viewPager;
-
-    @BindView(R.id.tablayout)
-    TabLayout tabLayout;*/
 
     @BindView(R.id.surfaceCameraPreview)
     protected SurfaceView m_surfaceCameraPreview;
@@ -71,7 +60,8 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
         除了protected外，其它的带有m的变量在子类中是无法访问的。*/
     // parameters for camera preview, capture, encode
     // === raw image resolution range: 640x360 ~ 720x576
-
+    private boolean m_IsDecoderStart = false;
+    private boolean m_IsEncoderStart = false;
 
     // MT Library
     private I_MT_Prime m_mtoperator = null;
@@ -123,7 +113,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
                 }
             }
         });
-        PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
+        //PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
@@ -215,8 +205,8 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     private boolean decoderStart(SurfaceHolder holder) {
         try {
-           /* m_mtoperator.addReceivedVideoHandler(this);
-            decodeVideoThread = new AvcDecoder(holder);*/
+            m_mtoperator.addReceivedVideoHandler(this);
+            decodeVideoThread = new AvcDecoder(holder);
             return true;
         } catch (Exception es) {
             LogUtils.e("decoderStart error", es.toString());
@@ -233,34 +223,39 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     @Override
     public void onReceivedVideoFrames(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
-        if (localDecoderChannelIndex == 0 && isInit == true) {
+        if (localDecoderChannelIndex == 0 && m_IsDecoderStart == true && isInit == true) {
             decodeVideoThread.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
         }
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        LogUtils.d("surfaceCreated");
         if (holder == (m_surfaceDecoderShow.getHolder())) {
             if (decoderStart(holder) == false) {
                 LogUtils.e("MT 打开解码：", "打开解码失败");
                 return;
+            } else {
+                m_IsDecoderStart = true;
+                LogUtils.e("MT 打开解码成功");
             }
         } else if (holder == (m_surfaceCameraPreview.getHolder())) {
             if (encoderStart(m_surfaceCameraPreview) == false) {
                 LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
                 return;
+            } else {
+                m_IsEncoderStart = true;
+                LogUtils.e("MT 打开摄像头、编码成功");
             }
         }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-
     }
 
 

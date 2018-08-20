@@ -49,11 +49,16 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     @BindView(R.id.btn_test_encoder)
     Button btn_testencoder;
 
+    @BindView(R.id.btn_test_decoder)
+    protected Button btn_testdecoder;
+
     @BindView(R.id.surface_test_encoder)
     protected SurfaceView m_surfacetestencoder;
 
     @BindView(R.id.surface_test_decoder)
     protected SurfaceView m_surfacetestdecoder;
+
+
 
     private AvcEncoder avcEncoder = null;
     private AvcDecoder avcDncoder = null;
@@ -79,14 +84,21 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
             }
         });
 
+        btn_testdecoder.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startDecoder(m_surfacetestdecoder.getHolder());
+            }
+        });
+
         m_surfacetestencoder.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                avcEncoder.setMTLib(MTLibUtils.getBaseMTLib());
+               /* avcEncoder.setMTLib(MTLibUtils.getBaseMTLib());
                 avcEncoder.changeRemoter(LocalSetting.getDeviceId(), "127.0.0.1:5008");
                 avcEncoder.cameraStart();
                 avcEncoder.startPerViewer(m_surfacetestencoder);
-                avcEncoder.start();
+                avcEncoder.start();*/
             }
 
             @Override
@@ -103,7 +115,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         m_surfacetestdecoder.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                startDecoder(holder);
+                //startDecoder(holder);
             }
 
             @Override
@@ -121,7 +133,8 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
             @Override
             public void onClick(View v) {
                 avcEncoder.setMTLib(MTLibUtils.getBaseMTLib());
-                avcEncoder.changeRemoter(0x04000000, "172.16.0.144:5004");
+                avcEncoder.changeRemoter(LocalSetting.getDeviceId(), "127.0.0.1:" + CommandUtils.MTPORT);
+                //avcEncoder.changeRemoter(0x04000000, "172.16.0.144:5004");
                 avcEncoder.cameraStart();
             }
         });
@@ -135,8 +148,8 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     }
 
     public void startDecoder(SurfaceHolder holder) {
-      /*  MTLibUtils.getBaseMTLib().addReceivedVideoHandler(this);
-        avcDncoder = new AvcDecoder(holder);*/
+        avcDncoder = new AvcDecoder(holder);
+        MTLibUtils.getBaseMTLib().addReceivedVideoHandler(this);
     }
 
     @Override
