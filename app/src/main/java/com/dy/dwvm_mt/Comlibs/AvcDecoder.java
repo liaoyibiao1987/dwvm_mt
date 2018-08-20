@@ -44,6 +44,7 @@ public class AvcDecoder {
     private int m_width;
     private int m_height;
     private int m_rotation = 90;
+    private final static int TIME_INTERNAL = 5;
 
 
     private boolean m_decoderCreateFailed = false;
@@ -59,7 +60,7 @@ public class AvcDecoder {
         m_holder = holder;
     }
 
-    private boolean decoderStart(String codecName, int width, int height) {
+    private synchronized  boolean decoderStart(String codecName, int width, int height) {
         if (m_decoder != null) {
             return false;
         }
@@ -110,6 +111,7 @@ public class AvcDecoder {
         m_decoderCreateFailed = false;
     }
 
+    int mCount = 0;
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         // if no decoder, create it
         if (m_decoder == null) {
@@ -148,8 +150,7 @@ public class AvcDecoder {
             // decode frame
             try {
                 decodeInputBuffers = m_decoder.getInputBuffers();
-                decodeOutBufferInfo = new MediaCodec.BufferInfo();
-                int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(-1);
+                int decodeInputBufferIndex = m_decoder.dequeueInputBuffer(100);
                 if (decodeInputBufferIndex >= 0) {
                     ByteBuffer inputBuffer = decodeInputBuffers[decodeInputBufferIndex];
                     inputBuffer.clear();
@@ -158,9 +159,11 @@ public class AvcDecoder {
                         return false;
                     }
                     inputBuffer.put(dataBuffer, 0, dataSize);
-                    m_decoder.queueInputBuffer(decodeInputBufferIndex, 0, dataSize, System.currentTimeMillis(), 0);
+                    m_decoder.queueInputBuffer(decodeInputBufferIndex, 0, dataSize, mCount * TIME_INTERNAL, 0);
+                    mCount++;
                 }
-                int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
+                decodeOutBufferInfo = new MediaCodec.BufferInfo();
+                int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 100);
                 while (decodeOutputBufferIndex >= 0) {
                     m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
                     decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(decodeOutBufferInfo, 0);
