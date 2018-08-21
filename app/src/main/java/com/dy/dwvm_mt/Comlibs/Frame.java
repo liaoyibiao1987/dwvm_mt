@@ -1,20 +1,39 @@
 package com.dy.dwvm_mt.Comlibs;
 
 public final class Frame {
-    public byte[] mData;
-    public int mdataSize;
-    public int mwidth;
-    public int mheight;
-    public long mframeType;
-    public String mCodecName;
+    private byte[] mData;
+    private int mdataSize;
+    private long mFrameType;
 
-    public Frame(String codecName, byte[] data, int width, int height, int size, long frameType) {
-        mCodecName = codecName;
+    public long getFrameType() {
+        return mFrameType;
+    }
+
+    public void setFrameType(long frameType) {
+        this.mFrameType = frameType;
+    }
+
+    public byte[] getmData() {
+        return mData;
+    }
+
+    public void setmData(byte[] mData) {
+        this.mData = mData;
+    }
+
+    public int getMdataSize() {
+        return mdataSize;
+    }
+
+    public void setMdataSize(int mdataSize) {
+        this.mdataSize = mdataSize;
+    }
+
+
+    public Frame(byte[] data, int size, long frameType) {
         mData = data;
-        this.mdataSize = size;
-        mwidth = width;
-        mheight = height;
-        mframeType = frameType;
+        mdataSize = size;
+        mFrameType = frameType;
     }
 
 }

@@ -5,6 +5,7 @@ import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -166,7 +167,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         return iCamIndex;
     }
 
-    public final boolean cameraStart() {
+    public synchronized boolean cameraStart() {
         if (m_cam != null) {
             // already opened
             return true;
@@ -310,7 +311,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         }
     }
 
-    public final void changeRemoter(long deviceID, String remoteIP) {
+    public synchronized void changeRemoter(long deviceID, String remoteIP) {
         RemoteUpdateEventListener ml = getListenerInfo().mOnUpdateRemoteListener;
         if (ml != null) {
             ml.handleUpdateTargetEvent(deviceID, remoteIP);
@@ -336,7 +337,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         }
     }
 
-    private final void startEncoder() {
+    private void startEncoder() {
         if (m_cam == null) {
             needEncoding = false;
             return;
@@ -346,24 +347,31 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         }
     }
 
-    public final void endEncoder() {
+    public void endEncoder() {
         isRuning = false;
         needEncoding = false;
-        if (mEncoder != null) {
-            mEncoder.stop();
-            mEncoder.release();
-            mEncoder = null;
-        }
-        if (input != null) {
-            input = null;
-        }
-        if (m_encodeFrameBuffer != null) {
-            m_encodeFrameBuffer = null;
-        }
-        if (YUVQueue != null) {
-            YUVQueue.clear();
-            YUVQueue = null;
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SystemClock.sleep(200);
+                if (input != null) {
+                    input = null;
+                }
+                if (m_encodeFrameBuffer != null) {
+                    m_encodeFrameBuffer = null;
+                }
+                if (YUVQueue != null) {
+                    YUVQueue.clear();
+                    YUVQueue = null;
+                }
+                if (mEncoder != null) {
+                    mEncoder.stop();
+                    mEncoder.release();
+                    mEncoder = null;
+                }
+            }
+        }).start();
+
     }
 
     @Override
@@ -402,71 +410,6 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
                 }
             }
         }
-
-
-/*
-            ByteBuffer[] inputBuffers = decoder.getInputBuffers();
-            ByteBuffer[] outputBuffers = decoder.getOutputBuffers();
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            boolean isEOS = false;
-            long startMs = System.currentTimeMillis();
-            while (!Thread.interrupted()) {
-                if (!isEOS) {
-                    int inIndex = decoder.dequeueInputBuffer(10000);
-                    if (inIndex >= 0) {
-                        ByteBuffer buffer = inputBuffers[inIndex];
-                        int sampleSize = extractor.readSampleData(buffer, 0);
-                        if (sampleSize < 0) {
-                            // We shouldn't stop the playback at this point, just pass the EOS
-                            // flag to decoder, we will get it again from the
-                            // dequeueOutputBuffer
-                            Log.d("DecodeActivity", "InputBuffer BUFFER_FLAG_END_OF_STREAM");
-                            decoder.queueInputBuffer(inIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            isEOS = true;
-                        } else {
-                            decoder.queueInputBuffer(inIndex, 0, sampleSize, extractor.getSampleTime(), 0);
-                            extractor.advance();
-                        }
-                    }
-                }
-
-                int outIndex = decoder.dequeueOutputBuffer(info, 10000);
-                switch (outIndex) {
-                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:
-                        Log.d("DecodeActivity", "INFO_OUTPUT_BUFFERS_CHANGED");
-                        outputBuffers = decoder.getOutputBuffers();
-                        break;
-                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:
-                        Log.d("DecodeActivity", "New format " + decoder.getOutputFormat());
-                        break;
-                    case MediaCodec.INFO_TRY_AGAIN_LATER:
-                        Log.d("DecodeActivity", "dequeueOutputBuffer timed out!");
-                        break;
-                    default:
-                        ByteBuffer buffer = outputBuffers[outIndex];
-                        Log.v("DecodeActivity", "We can't use this buffer but render it due to the API limit, " + buffer);
-
-                        // We use a very simple clock to keep the video FPS, or the video
-                        // playback will be too fast
-                        while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
-                            try {
-                                sleep(10);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                                break;
-                            }
-                        }
-                        decoder.releaseOutputBuffer(outIndex, true);
-                        break;
-                }
-
-                // All decoded frames have been rendered, we can stop playing now
-                if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                    Log.d("DecodeActivity", "OutputBuffer BUFFER_FLAG_END_OF_STREAM");
-                    break;
-                }
-            }
-            */
     }
 
     private void onSentEncoding() {

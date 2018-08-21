@@ -149,6 +149,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
 
     public void startDecoder(SurfaceHolder holder) {
         avcDncoder = new AvcDecoder(holder);
+        avcDncoder.start();
         MTLibUtils.getBaseMTLib().addReceivedVideoHandler(this);
     }
 

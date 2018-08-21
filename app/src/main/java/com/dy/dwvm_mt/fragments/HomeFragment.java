@@ -198,6 +198,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     private void encoderStop() {
         if (encodeVideoThread != null) {
+            LogUtils.d("encoderStop.....");
             encodeVideoThread.endEncoder();
             encodeVideoThread = null;
         }
@@ -205,8 +206,9 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     private boolean decoderStart(SurfaceHolder holder) {
         try {
-            m_mtoperator.addReceivedVideoHandler(this);
             decodeVideoThread = new AvcDecoder(holder);
+            decodeVideoThread.start();
+            m_mtoperator.addReceivedVideoHandler(HomeFragment.this);
             return true;
         } catch (Exception es) {
             LogUtils.e("decoderStart error", es.toString());
@@ -216,6 +218,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     private void decoderStop() {
         if (decodeVideoThread != null) {
+            LogUtils.d("decoderStop.....");
             decodeVideoThread.decoderStop();
             decodeVideoThread = null;
         }
