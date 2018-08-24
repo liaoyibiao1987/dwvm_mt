@@ -9,6 +9,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -40,6 +41,9 @@ import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.ScreenUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -289,8 +293,11 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         return 1;
     }
 
+
     @Override
-    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
+    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort,
+                                     long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String
+                                             audioCodec, byte[] frameBuffer, int frameSize) {
         return 1;
     }
 }

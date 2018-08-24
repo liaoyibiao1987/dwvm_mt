@@ -36,6 +36,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 
 //public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVideoHandler, SurfaceHolder.Callback {
+@Deprecated
+@SuppressWarnings("已不用了")
 public class HomeFragment extends Fragment {
     @BindView(R.id.surfaceCameraPreview)
     protected SurfaceView m_surfaceCameraPreview;

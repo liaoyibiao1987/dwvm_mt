@@ -3,6 +3,7 @@ package com.dy.dwvm_mt.Comlibs;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
@@ -13,6 +14,11 @@ import android.view.SurfaceView;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.ThreadUtils;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,6 +104,12 @@ public class AvcDecoder extends Thread {
         try {
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, m_rotation);
+            mediaFormat.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+            mediaFormat.setInteger(MediaFormat.KEY_MAX_HEIGHT, height);
+            mediaFormat.setInteger(MediaFormat.KEY_MAX_WIDTH, width);
+            /*mediaFormat.setByteBuffer("csd-0", ByteBuffer.wrap(mSps));
+            mediaFormat.setByteBuffer("csd-1", ByteBuffer.wrap(mPps));*/
+
             //*************************全面屏手机两次加载sufcaeViewer和强制拉伸，不能在onCreate去传入Holder和Surface************************/
             Log.w("DYMTTTTTTT", " m_sufcaeViewer.getHolder().getSurface()");
             m_decoder.configure(mediaFormat, m_sufcaeViewer.getHolder().getSurface(), null, 0);
@@ -119,8 +131,8 @@ public class AvcDecoder extends Thread {
     public void decoderStop() {
         LogUtils.d("Decoder stop...");
         isRunning = false;
-        SystemClock.sleep(1000);
         decoderRelease();
+        SystemClock.sleep(20);
         mFrmList = null;
     }
 
@@ -133,6 +145,7 @@ public class AvcDecoder extends Thread {
             try {
                 m_decoder.stop();
                 m_decoder.release();
+                this.stop();
             } catch (Exception es) {
                 LogUtils.e("decoderRelease error", es);
             } finally {
@@ -143,9 +156,75 @@ public class AvcDecoder extends Thread {
         m_decoderCreateFailed = false;
     }
 
+    File file = new File(Environment.getExternalStorageDirectory(), "xx.h264");
+    FileOutputStream outputStream = null;
+    // 创建BufferedOutputStream对象
+    BufferedOutputStream bufferedOutputStream = null;
+    RandomAccessFile raf = null;
+    private boolean append = true;
+
+    private void savaAvcFile(byte[] data) {
+        try {
+            LogUtils.d("文件路径", Environment.getExternalStorageDirectory());
+            // 如果文件存在则删除
+            if (file.exists()) {
+                file.delete();
+            } else {
+                // 在文件系统中根据路径创建一个新的空文件
+                file.createNewFile();
+            }
+            if (append) {
+                //如果为追加则在原来的基础上继续写文件
+                raf = new RandomAccessFile(file, "rw");
+                raf.seek(file.length());
+                raf.write(data);
+            } else {
+                //重写文件，覆盖掉原来的数据
+                // 获取FileOutputStream对象
+                outputStream = new FileOutputStream(file);
+                // 获取BufferedOutputStream对象
+                bufferedOutputStream = new BufferedOutputStream(outputStream);
+                // 往文件所在的缓冲输出流中写byte数据
+                bufferedOutputStream.write(data);
+                // 刷出缓冲输出流，该步很关键，要是不执行flush()方法，那么文件的内容是空的。
+                bufferedOutputStream.flush();
+            }
+
+        } catch (Exception e) {
+            // 打印异常信息
+            e.printStackTrace();
+        } finally {
+            // 关闭创建的流对象
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (bufferedOutputStream != null) {
+                try {
+                    bufferedOutputStream.close();
+                } catch (Exception e2) {
+                    e2.printStackTrace();
+                }
+            }
+
+        }
+    }
+
+
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         //LogUtils.d(String.format("codecName %s, width %d, height %d, frameType %d", codecName, width, height, frameType));
         // if no decoder, create it
+        savaAvcFile(dataBuffer);
         if (isRunning == true && isPause == false) {
             if (m_decoder == null) {
                 // only try one to create decoder
