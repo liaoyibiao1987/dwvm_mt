@@ -28,29 +28,9 @@ public class MTLib implements I_MT_Prime {
 
     private MTLibCallback m_callbackInstance = null;
 
-    private List<MTLibReceivedVideoHandler> list_callbackVideoInstances = new ArrayList<>();
-
     @Override
     public void installCallback(MTLibCallback instance) {
         m_callbackInstance = instance;
-    }
-
-    @Override
-    public void addReceivedVideoHandler(MTLibReceivedVideoHandler instance) {
-        if (list_callbackVideoInstances.contains(instance) == false) {
-            list_callbackVideoInstances.add(instance);
-        }
-    }
-
-    @Override
-    public void removeReceivedVideoHandler(@Nullable MTLibReceivedVideoHandler instance) {
-        if (instance == null) {
-            list_callbackVideoInstances.clear();
-        } else {
-            if (list_callbackVideoInstances.contains(instance) == false) {
-                list_callbackVideoInstances.remove(instance);
-            }
-        }
     }
 
     @Override
@@ -80,12 +60,6 @@ public class MTLib implements I_MT_Prime {
                         dataBytes);
                 /*return DataPackShell.ParseBuff(dataBuffer,(int)dataType, remoteDeviceIpPort);*/
             } else if (funcName.equalsIgnoreCase("onReceivedVideoFrame")) {
-                if (list_callbackVideoInstances != null && list_callbackVideoInstances.size() > 0) {
-                    for (MTLibReceivedVideoHandler item : list_callbackVideoInstances) {
-                        item.onReceivedVideoFrames(localDeviceId, remoteDeviceIpPort, remoteDeviceId, remoteEncoderChannelIndex, localDecoderChannelIndex, dataType, codecName, imageResolution, width, height, dataBuffer, dataBytes);
-                    }
-                }
-
                 return m_callbackInstance.onReceivedVideoFrame(
                         localDeviceId,
                         remoteDeviceIpPort,

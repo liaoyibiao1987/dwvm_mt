@@ -1,5 +1,6 @@
 package com.dy.dwvm_mt.commandmanager;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -54,6 +55,7 @@ public class CommandUtils {
         return DDNSDEVICEID;
     }
 
+    @NonNull
     public static String getDDNSIPPort() {
         if (StringUtils.isTrimEmpty(DDNSIP) == false && StringUtils.isTrimEmpty(DDNSPORT) == false) {
             return DDNSIP + ":" + DDNSPORT;

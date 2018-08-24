@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.PixelFormat;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -14,142 +16,281 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.widget.ImageButton;
 
+import com.dy.dwvm_mt.Comlibs.AvcDecoder;
+import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.Comlibs.LocalSetting;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
+import com.dy.dwvm_mt.commandmanager.DY_AVPacketEventHandler;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.fragments.HomeFragment;
+import com.dy.dwvm_mt.userview.DYImageButton;
 import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
+import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.ScreenUtils;
+import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
-public class DY_VideoPhoneActivity extends BaseActivity {
+public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder.Callback, DY_AVPacketEventHandler {
 
-    private FragmentManager fragmentManager;
-    private I_MT_Prime m_mt_Lib;
+    @BindView(R.id.surfaceCameraPreview)
+    protected SurfaceView m_surfaceCameraPreview;
+    @BindView(R.id.surfaceDecoderShow)
+    protected SurfaceView m_surfaceDecoderShow;
+    @BindView(R.id.btn_freehand)
+    protected DYImageButton m_btn_freehand;
+    @BindView(R.id.btn_endcall)
+    protected ImageButton m_btn_endcall;
 
-    private int m_pageOpenType = 0;
+    // parameters for MTLib demo
+    private static final String LOCAL_DEVICE_NAME = "MT-Android";
+    /* private static final long REMOTE_DEVICE_ID = 0x2000006;
+     private String REMOTE_DEVICE_IP = "112.91.151.186:5001";*/
+    private static final long REMOTE_DEVICE_ID = 0x2000000;
+    private String REMOTE_DEVICE_IP = LocalSetting.getPSIPPort();
+    private boolean isInit = false;
+
+    /*非公有的变量前面要加上小写m，
+        静态变量前面加上小写s，
+        其它变量以小写字母开头，
+        静态变量全大写。
+        除了protected外，其它的带有m的变量在子类中是无法访问的。*/
+    // parameters for camera preview, capture, encode
+    // === raw image resolution range: 640x360 ~ 720x576
+    private boolean m_IsDecoderStart = false;
+    private boolean m_IsEncoderStart = false;
+
+    // MT Library
+    private I_MT_Prime m_mtoperator = null;
+
+    // encoder
+    private AvcEncoder encodeVideoThread = null;
+    // decoder
+    private AvcDecoder decodeVideoThread = null;
+
+   /* IntentFilter intentFilter = null;
+    HomeFragment.AutoStartCamera receiver = null;
+    private int m_pageOpenType = 0;*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videophone);
         ButterKnife.bind(this);
-        //requestMyPermission();
-        m_mt_Lib = MTLibUtils.getBaseMTLib();
-        try{
-            m_pageOpenType = getIntent().getExtras().getInt(MT_VP_PAGE_OPENTYPE);
-        }catch (Exception e){
-            LogUtils.d("getIntent().getExtras().getInt(MT_VP_PAGE_OPENTYPE) 获取不到数据.");
+        //setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            Log.e("TEST", "获取到摄像头的使用.");
+            //init(barcodeScannerView, getIntent(), null);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
 
-        fragmentManager = getSupportFragmentManager();
+        m_mtoperator = MTLibUtils.getBaseMTLib();
+        startAll();
+
+        //m_surfaceDecoderShow.setZOrderOnTop(true);
+        m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
+        m_surfaceDecoderShow.getHolder().addCallback(this);
+        //m_surfaceDecoderShow.getHolder().setFixedSize(480, 680);
+        m_surfaceCameraPreview.setZOrderOnTop(true);
+        m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
+        m_surfaceCameraPreview.getHolder().addCallback(this);
+
+        m_btn_endcall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Class<TelephonyManager> clazz = TelephonyManager.class;//得到方法
+                try {
+                    stopAll();
+                    PhoneUtils.telcomInvok(DY_VideoPhoneActivity.this, "endCall");
+                    Intent intent = new Intent(DY_VideoPhoneActivity.this, MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ActivityUtils.startActivity(intent);
+                } catch (Exception ex) {
+                    LogUtils.e("initPhoneStateListener" + ex.toString());
+                }
+            }
+        });
+        PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
+        m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
+                PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
+            }
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        isInit = false;
+        stopAll();
+    }
+
+    public void startAll() {
+        if (isInit == false) {
+            setup_mtLib();
+            // open camera
+            isInit = true;
+        }
+    }
+
+    public void stopAll() {
         try {
-            Class fragmentClass = HomeFragment.class;
-            Fragment fragment = (Fragment) fragmentClass.newInstance();
-            Bundle bundle = new Bundle();
-            bundle.putInt(MT_VP_PAGE_OPENTYPE, m_pageOpenType);
-            fragment.setArguments(bundle);
-            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        final int width = ScreenUtils.getScreenWidth();
-        final int height = ScreenUtils.getScreenHeight();
-        //每10s产生一次点击事件，点击的点坐标为(0.2W - 0.8W,0.2H - 0.8 H),W/H为手机分辨率的宽高.
-
-        //只有模拟点击屏幕才能开启摄像头
-        //有些系统为了隐私安全不容许非人为操作的开启摄像头操作。
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                //生成点击坐标
-                int x = (int) (Math.random() * width * 0.6 + width * 0.2);
-                int y = (int) (Math.random() * height * 0.6 + height * 0.2);
-                //利用ProcessBuilder执行shell命令
-                String[] order = {
-                        "input",
-                        "tap",
-                        "" + x,
-                        "" + y
-                };
-                try {
-                    new ProcessBuilder(order).start();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    /**
-     * 打印点击的点的坐标
-     *
-     * @param event
-     * @return
-     */
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-
-        int x = (int) event.getX();
-        int y = (int) event.getY();
-        //Toast.makeText(this, "X at " + x + ";Y at " + y, Toast.LENGTH_SHORT).show();
-        semirmOnclick();
-        return true;
-    }
-
-    public void semirmOnclick() {
-        Intent intent = new Intent(BaseActivity.MT_AUTOSTARTCAMERA_ACTION);
-        intent.putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, m_pageOpenType);
-        sendBroadcast(intent);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUESTCODE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (!shouldShowRequestPermissionRationale(Manifest.permission.PROCESS_OUTGOING_CALLS)) {
-                    AskForPermission();
-                }
-            }
+            //getActivity().unregisterReceiver(receiver);
+            encoderStop();
+            decoderStop();
+        } catch (Exception es) {
+            LogUtils.e("HomeFragment stopAll() error :" + es.toString());
+        } finally {
+            isInit = false;
         }
     }
 
-    private void AskForPermission() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("需要特定权限需要设置!");
-        builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+    private void setup_mtLib() {
+        if (m_mtoperator == null || m_mtoperator.isWorking() == false) {
+          /*  try {
+                if (!m_mtoperator.start(LocalSetting.getDeviceId(), CommandUtils.MTPORT, 1024 * 1024, 0, 1, 1, "")) {
+                    LogUtils.e("MTLib.start() failed !");
+                    return;
+                }
+                LogUtils.e("setup_mtLib .start !");
+            } catch (Exception e) {
+                LogUtils.e("MTLib.start() error: " + e.getMessage());
+                return;
+            }
+            m_mtoperator.setDeviceName(LOCAL_DEVICE_NAME);
+            m_mtoperator.addReceivedVideoHandler(this);*/
 
+            ToastUtils.showLong("请首先运行程序并登陆.");
+        }
+    }
+
+    private boolean encoderStart(SurfaceView surfaceView) {
+        // create encoder
+        LogUtils.d("encoderStart begining...");
+        try {
+            if (encodeVideoThread == null) {
+                encodeVideoThread = new AvcEncoder();
+                encodeVideoThread.setMTLib(m_mtoperator);
+                encodeVideoThread.changeRemoter(REMOTE_DEVICE_ID, REMOTE_DEVICE_IP);
+                encodeVideoThread.cameraStart();
+                encodeVideoThread.startPerViewer(surfaceView);
+                encodeVideoThread.start();
             }
-        });
-        builder.setPositiveButton("去设置", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + getPackageName())); // 根据包名打开对应的设置界面
-                startActivity(intent);
+            return true;
+        } catch (Exception es) {
+            LogUtils.e("encoderStart error", es.toString());
+            return false;
+        }
+    }
+
+    private void encoderStop() {
+        try {
+            if (encodeVideoThread != null) {
+                LogUtils.d("encoderStop.....");
+                encodeVideoThread.endEncoder();
+                encodeVideoThread = null;
             }
-        });
-        builder.create().show();
+        } catch (Exception es) {
+            LogUtils.e("encoderStop error", es.toString());
+        }
+    }
+
+    private boolean decoderStart() {
+        try {
+            LogUtils.d("decoderStart begining...");
+            decodeVideoThread = new AvcDecoder(m_surfaceDecoderShow);
+            decodeVideoThread.start();
+            MTLibUtils.addRecvedAVFrameListeners(this);
+            return true;
+        } catch (Exception es) {
+            LogUtils.e("decoderStart error", es.toString());
+            return false;
+        } finally {
+        }
+    }
+
+    private void decoderStop() {
+        try {
+            if (decodeVideoThread != null) {
+                LogUtils.d("decoderStop.....");
+                decodeVideoThread.decoderStop();
+                decodeVideoThread = null;
+            }
+        } catch (Exception es) {
+            LogUtils.e("decoderStop error", es.toString());
+        } finally {
+            MTLibUtils.removeRecvedAVFrameListeners(this);
+        }
+
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        LogUtils.d("surfaceCreated");
+        if (holder == (m_surfaceDecoderShow.getHolder())) {
+            if (decoderStart() == false) {
+                LogUtils.e("MT 打开解码：", "打开解码失败");
+                return;
+            } else {
+                m_IsDecoderStart = true;
+                LogUtils.e("MT 打开解码成功");
+            }
+        } else if (holder == (m_surfaceCameraPreview.getHolder())) {
+            if (encoderStart(m_surfaceCameraPreview) == false) {
+                LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
+                return;
+            } else {
+                m_IsEncoderStart = true;
+                LogUtils.e("MT 打开摄像头、编码成功");
+            }
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+    }
+
+    @Override
+    public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
+        /* Log.d("mmmmmmmmmmmmmmttt", Arrays.toString(frameBuffer));*/
+        //Log.d("onReceivedVideoFrames", localDecoderChannelIndex + videoCodec + width + height + "//" + frameSize + "//" + frameType + "//" + m_IsDecoderStart + "//" + isInit);
+        if (localDecoderChannelIndex == 0 && m_IsDecoderStart == true && isInit == true) {
+            decodeVideoThread.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
+        }
+        return 1;
+    }
+
+    @Override
+    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
+        return 1;
     }
 }

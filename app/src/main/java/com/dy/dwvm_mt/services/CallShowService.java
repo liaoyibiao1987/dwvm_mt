@@ -23,6 +23,7 @@ import android.widget.Button;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.R;
+import com.dy.dwvm_mt.TestActivity;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
@@ -33,7 +34,7 @@ import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import java.lang.reflect.Method;
 
 public class CallShowService extends Service {
-    private static final int FOREGROUND_ID = 1;
+    private static final int CallShowServiceFOREGROUND_ID = 0x201801;
     private static int NOTIFKEEPERIID = 0x111;
 
     private PhoneStateListener phoneStateListener;
@@ -246,15 +247,18 @@ public class CallShowService extends Service {
                             @Override
                             public void onClick(View v) {
                                 try {
-                                    PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
-                                    PhoneUtils.answerRingingCall(CallShowService.this);
-                                    String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
+                                    /*PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
+                                    PhoneUtils.answerRingingCall(CallShowService.this);*/
+
+                                   String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
                                     LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
                                     CommandUtils.sendVerifyCode(calling, calling);
-                                   /* Intent dialogIntent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
-                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+
+                                    /* Intent dialogIntent = new Intent(getBaseContext(), TestActivity.class);
+                                            *//*.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);*//*
                                     getApplication().startActivity(dialogIntent);*/
+
                                 } catch (Exception es) {
                                     LogUtils.e("mFloatButton error: " + es);
                                 } finally {

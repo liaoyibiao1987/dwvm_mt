@@ -367,28 +367,54 @@ public final class PhoneUtils {
     public static void setSpeakerphoneOn(Context context, boolean on) {
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            audioManager.setMode(on ? AudioManager.MODE_NORMAL : AudioManager.MODE_IN_CALL);
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
         } else {
-            try {
-                Activity activity= (Activity) context;
-                //setVolumeControlStream设置当前页面，按音量键控制的是STREAM_VOICE_CALL 打电话声音，避免控制多媒体声音
-                activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+            audioManager.setMode(AudioManager.MODE_IN_CALL);
+        }
+        //audioManager.setMode(on ? AudioManager.MODE_NORMAL : AudioManager.MODE_IN_CALL);
+        try {
+            //Activity activity = (Activity) context;
+            //setVolumeControlStream设置当前页面，按音量键控制的是STREAM_VOICE_CALL 打电话声音，避免控制多媒体声音
+            //activity.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+            //audioManager.adjustStreamVolume(AudioManager.STREAM_VOICE_CALL, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+            //Class audioSystemClass = Class.forName("android.media.AudioSystem");
+            //Method setForceUse = audioSystemClass.getMethod("setForceUse", int.class, int.class);
+            LogUtils.d("开启免提功能", audioManager.isSpeakerphoneOn() && on);
+            if (audioManager.isSpeakerphoneOn() == false && on) {
+                audioManager.setMode(AudioManager.MODE_IN_CALL);
+                audioManager.setSpeakerphoneOn(true);
+                audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,
+                        audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL),
+                        AudioManager.STREAM_VOICE_CALL);
                 Class audioSystemClass = Class.forName("android.media.AudioSystem");
                 Method setForceUse = audioSystemClass.getMethod("setForceUse", int.class, int.class);
-                if (on) {
-                    audioManager.setMicrophoneMute(false);
-                    audioManager.setSpeakerphoneOn(true);
-                    audioManager.setMode(AudioManager.MODE_NORMAL);
-                } else {
-                    audioManager.setSpeakerphoneOn(false);
-                    audioManager.setMode(AudioManager.MODE_NORMAL);
-                    setForceUse.invoke(null, 0, 0);
+                // First 1 == FOR_MEDIA, second 1 == FORCE_SPEAKER. To go back to the default
+                // behavior, use FORCE_NONE (0).
+                setForceUse.invoke(null, 1, 1);
+            } else {
+                audioManager.setSpeakerphoneOn(false);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
                     audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                } else {
+                    audioManager.setMode(AudioManager.MODE_IN_CALL);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+                //setForceUse.invoke(null, 0, 0);
             }
+
+           /* if (on) {
+                audioManager.setMicrophoneMute(false);
+                audioManager.setSpeakerphoneOn(true);
+                audioManager.setMode(AudioManager.MODE_NORMAL);
+            } else {
+                audioManager.setSpeakerphoneOn(false);
+                audioManager.setMode(AudioManager.MODE_NORMAL);
+                setForceUse.invoke(null, 0, 0);
+                audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            }*/
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
     }
 
 

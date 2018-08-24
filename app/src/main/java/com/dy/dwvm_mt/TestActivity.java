@@ -1,7 +1,8 @@
 package com.dy.dwvm_mt;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.os.Bundle;
-import android.service.carrier.CarrierService;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -10,23 +11,19 @@ import android.widget.Button;
 import com.dy.dwvm_mt.Comlibs.AvcDecoder;
 import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.DataPackShell;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
-import com.dy.dwvm_mt.commandmanager.DY_onReceivedPackEventHandler;
+import com.dy.dwvm_mt.commandmanager.DY_AVPacketEventHandler;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.javastruct.JavaStruct;
-import com.dy.javastruct.StructClass;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -35,7 +32,7 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/28.
  * PS: Not easy to write code, please indicate.
  */
-public class TestActivity extends BaseActivity implements NWCommandEventHandler, I_MT_Prime.MTLibReceivedVideoHandler {
+public class TestActivity extends BaseActivity implements NWCommandEventHandler, View.OnClickListener, DY_AVPacketEventHandler {
 
     @BindView(R.id.btn_test_login)
     Button btn_testlogin;
@@ -58,6 +55,14 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     @BindView(R.id.surface_test_decoder)
     protected SurfaceView m_surfacetestdecoder;
 
+    @BindView(R.id.btn_setSpeakerON1)
+    protected Button btnsetSpeakerON1;
+
+    @BindView(R.id.btn_setSpeakerON2)
+    protected Button btnsetSpeakerON2;
+
+    @BindView(R.id.btn_setSpeakerON3)
+    protected Button btnsetSpeakerON3;
 
 
     private AvcEncoder avcEncoder = null;
@@ -90,6 +95,10 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
                 startDecoder(m_surfacetestdecoder.getHolder());
             }
         });
+
+        btnsetSpeakerON1.setOnClickListener(this);
+        btnsetSpeakerON2.setOnClickListener(this);
+        btnsetSpeakerON3.setOnClickListener(this);
 
         m_surfacetestencoder.getHolder().addCallback(new SurfaceHolder.Callback() {
             @Override
@@ -148,20 +157,13 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     }
 
     public void startDecoder(SurfaceHolder holder) {
-        avcDncoder = new AvcDecoder(holder);
+        avcDncoder = new AvcDecoder(m_surfacetestdecoder);
         avcDncoder.start();
-        MTLibUtils.getBaseMTLib().addReceivedVideoHandler(this);
+        MTLibUtils.addRecvedAVFrameListeners(this);
     }
 
     @Override
-    public void onReceivedVideoFrames(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
-        if (localDecoderChannelIndex == 0) {
-            avcDncoder.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
-        }
-    }
-
-    @Override
-    public void doHandler(NWCommandEventArg arg) {
+    public void doNWCommandHandler(NWCommandEventArg arg) {
         if (arg != null && arg.getEventArg() != null) {
             int cmd = arg.getEventArg().getCmd();
             switch (cmd) {
@@ -176,5 +178,69 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
             }
 
         }
+    }
+
+    @Override
+    public void onClick(View v) {
+        AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+        if (v.getId() == R.id.btn_setSpeakerON1) {
+            LogUtils.d("设置手机外放", am.isSpeakerphoneOn());
+            am.setMode(AudioManager.MODE_IN_CALL);
+            am.setSpeakerphoneOn(!am.isSpeakerphoneOn());
+        } else if (v.getId() == R.id.btn_setSpeakerON2) {
+            LogUtils.d("设置手机外放2", am.isSpeakerphoneOn());
+            am.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            am.setSpeakerphoneOn(!am.isSpeakerphoneOn());
+        } else if (v.getId() == R.id.btn_setSpeakerON3) {
+            LogUtils.d("设置手机外放3", am.isSpeakerphoneOn());
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager.getMode() != AudioManager.MODE_IN_CALL) {
+                audioManager.setMode(AudioManager.MODE_IN_CALL);
+            }
+            try {
+                Class clazz = Class.forName("android.media.AudioSystem");
+                Method m = clazz.getMethod("setForceUse", new Class[]{int.class, int.class});
+                m.setAccessible(true);
+                m.invoke(null, 1, 1);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+            if (!audioManager.isSpeakerphoneOn()) {
+                audioManager.setSpeakerphoneOn(true);
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (avcEncoder != null) {
+            avcEncoder.endEncoder();
+            avcDncoder = null;
+        }
+        if (avcDncoder != null) {
+            avcDncoder.decoderStop();
+            avcDncoder = null;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
+        if (localDecoderChannelIndex == 0) {
+            avcDncoder.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
+        }
+        return 1;
+    }
+
+    @Override
+    public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
+        return 1;
     }
 }

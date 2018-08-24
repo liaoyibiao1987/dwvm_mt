@@ -7,5 +7,5 @@ import java.util.EventListener;
  * PS: 加工过实体事件handler
  */
 public interface NWCommandEventHandler extends EventListener {
-    void doHandler(NWCommandEventArg arg);
+    void doNWCommandHandler(NWCommandEventArg arg);
 }

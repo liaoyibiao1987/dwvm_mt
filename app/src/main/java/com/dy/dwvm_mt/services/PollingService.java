@@ -113,7 +113,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
     }
 
     @Override
-    public void doHandler(NWCommandEventArg arg) {
+    public void doNWCommandHandler(NWCommandEventArg arg) {
         if (arg != null && arg.getEventArg() != null) {
             int cmd = arg.getEventArg().getCmd();
             switch (cmd) {

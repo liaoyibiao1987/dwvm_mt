@@ -1,6 +1,5 @@
 package com.dy.dwvm_mt.commandmanager;
 
-import android.os.Debug;
 import android.util.Log;
 
 import com.dy.dwvm_mt.Comlibs.DataPackShell;
@@ -14,7 +13,6 @@ import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.javastruct.JavaStruct;
 
 import java.util.ArrayList;
-import java.util.EventObject;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,7 +74,7 @@ public class AnalysingUtils {
     protected static void notifieRecvedCommands(NWCommandEventArg arg) {
         if (eventListeners.size() > 0) {
             for (NWCommandEventHandler handler : eventListeners) {
-                handler.doHandler(arg);
+                handler.doNWCommandHandler(arg);
             }
         }
     }

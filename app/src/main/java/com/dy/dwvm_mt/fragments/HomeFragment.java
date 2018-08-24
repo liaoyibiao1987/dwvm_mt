@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -34,8 +35,8 @@ import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVideoHandler, SurfaceHolder.Callback {
-
+//public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVideoHandler, SurfaceHolder.Callback {
+public class HomeFragment extends Fragment {
     @BindView(R.id.surfaceCameraPreview)
     protected SurfaceView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
@@ -89,13 +90,13 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
 
-        m_mtoperator = MTLibUtils.getBaseMTLib();
+        /*m_mtoperator = MTLibUtils.getBaseMTLib();
         startAll();
 
         //m_surfaceDecoderShow.setZOrderOnTop(true);
         m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
         m_surfaceDecoderShow.getHolder().addCallback(this);
-
+        //m_surfaceDecoderShow.getHolder().setFixedSize(480, 680);
         m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
         m_surfaceCameraPreview.getHolder().addCallback(this);
@@ -103,7 +104,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
         m_btn_endcall.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Class<TelephonyManager> clazz = TelephonyManager.class;//得到方法
+                //Class<TelephonyManager> clazz = TelephonyManager.class;//得到方法
                 try {
                     PhoneUtils.telcomInvok(getContext(), "endCall");
                     Intent intent = new Intent(getContext(), MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -113,13 +114,13 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
                 }
             }
         });
-        //PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
+        PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
                 PhoneUtils.setSpeakerphoneOn(getContext(), m_btn_freehand.isSelected());
             }
-        });
+        });*/
 
        /*  if (getArguments() != null) {
             m_pageOpenType = getArguments().getInt(MT_VP_PAGE_OPENTYPE);
@@ -129,6 +130,12 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
         intentFilter.addAction(BaseActivity.MT_AUTOSTARTCAMERA_ACTION);
         getActivity().registerReceiver(receiver, intentFilter);*/
         return rootView;
+    }
+
+   /* @Override
+    public void onStart() {
+        super.onStart();
+
     }
 
     @Override
@@ -206,7 +213,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     private boolean decoderStart(SurfaceHolder holder) {
         try {
-            decodeVideoThread = new AvcDecoder(holder);
+            decodeVideoThread = new AvcDecoder(m_surfaceDecoderShow);
             decodeVideoThread.start();
             m_mtoperator.addReceivedVideoHandler(HomeFragment.this);
             return true;
@@ -235,7 +242,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
     public void surfaceCreated(SurfaceHolder holder) {
         LogUtils.d("surfaceCreated");
         if (holder == (m_surfaceDecoderShow.getHolder())) {
-            if (decoderStart(holder) == false) {
+            if (decoderStart(m_surfaceDecoderShow.getHolder()) == false) {
                 LogUtils.e("MT 打开解码：", "打开解码失败");
                 return;
             } else {
@@ -259,7 +266,7 @@ public class HomeFragment extends Fragment implements I_MT_Prime.MTLibReceivedVi
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    }
+    }*/
 
 
     /*public class AutoStartCamera extends BroadcastReceiver {

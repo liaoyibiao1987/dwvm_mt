@@ -3,14 +3,19 @@ package com.dy.dwvm_mt.Comlibs;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.ThreadUtils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -46,7 +51,7 @@ public class AvcDecoder extends Thread {
      */
 
     private MediaCodec m_decoder = null;
-    private SurfaceHolder m_holder;
+    private SurfaceView m_sufcaeViewer;
     private int m_width;
     private int m_height;
     private int m_rotation = 90;
@@ -57,15 +62,15 @@ public class AvcDecoder extends Thread {
     private boolean m_decoderValid = false;
     private String m_decoderCodecName = "";
     private boolean m_decodeWaitKeyFrame = true;
-
-    private Object decoderLocker = new Object();
     private boolean isRunning = true;
+    private boolean isPause = false;
 
-    private static final int M_YUVQUEUESIZE = 20;
+    private static final int M_YUVQUEUESIZE = 30;
     private ArrayBlockingQueue<Frame> mFrmList = new ArrayBlockingQueue<>(M_YUVQUEUESIZE);
 
-    public AvcDecoder(SurfaceHolder holder) {
-        m_holder = holder;
+    public AvcDecoder(SurfaceView surfaceView) {
+        m_sufcaeViewer = surfaceView;
+        m_sufcaeViewer.setKeepScreenOn(true);
     }
 
     private synchronized boolean decoderStart(String codecName, int width, int height) {
@@ -73,7 +78,7 @@ public class AvcDecoder extends Thread {
             return false;
         }
 
-        if (m_holder == null) {
+        if (m_sufcaeViewer == null) {
             LogUtils.e("decoderStart", "Get holder failed.");
             return false;
         }
@@ -93,8 +98,11 @@ public class AvcDecoder extends Thread {
         try {
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(codecName, width, height);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, m_rotation);
-            m_decoder.configure(mediaFormat, m_holder.getSurface(), null, 0);
+            //*************************全面屏手机两次加载sufcaeViewer和强制拉伸，不能在onCreate去传入Holder和Surface************************/
+            Log.w("DYMTTTTTTT", " m_sufcaeViewer.getHolder().getSurface()");
+            m_decoder.configure(mediaFormat, m_sufcaeViewer.getHolder().getSurface(), null, 0);
             m_decoder.start();
+
         } catch (Exception e) {
             LogUtils.e("decoderStart", "surfaceCreated(decoder) error: " + e.getMessage());
             return false;
@@ -111,72 +119,74 @@ public class AvcDecoder extends Thread {
     public void decoderStop() {
         LogUtils.d("Decoder stop...");
         isRunning = false;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                SystemClock.sleep(1000);
-                decoderRebuild();
-                mFrmList.clear();
-                mFrmList = null;
-            }
-        }).start();
+        SystemClock.sleep(1000);
+        decoderRelease();
+        mFrmList = null;
     }
 
-    private void decoderRebuild() {
+    private void decoderRelease() {
+        isPause = true;
         m_decoderCreateFailed = true;
         m_decoderValid = false;
+        mFrmList.clear();
         if (m_decoder != null) {
-            m_decoder.stop();
-            m_decoder.release();
-            m_decoder = null;
+            try {
+                m_decoder.stop();
+                m_decoder.release();
+            } catch (Exception es) {
+                LogUtils.e("decoderRelease error", es);
+            } finally {
+                m_decoder = null;
+            }
         }
+        isPause = false;
         m_decoderCreateFailed = false;
     }
 
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         //LogUtils.d(String.format("codecName %s, width %d, height %d, frameType %d", codecName, width, height, frameType));
         // if no decoder, create it
-        if (m_decoder == null) {
-            // only try one to create decoder
-            if (m_decoderCreateFailed) {
+        if (isRunning == true && isPause == false) {
+            if (m_decoder == null) {
+                // only try one to create decoder
+                if (m_decoderCreateFailed) {
+                    return false;
+                }
+                LogUtils.d("Decoder renew...");
+                if (decoderStart(codecName, width, height) == false) {
+                    //m_decoder.flush();//刷新（Flushed） 第一帧只接受关键帧，flush自动生成关键帧 慎用，影响编码
+                    m_decoderCreateFailed = true;
+                    return false;
+                }
+                m_decoderCreateFailed = false;
+            }
+            if (!m_decoderValid) {
                 return false;
             }
-            LogUtils.d("Decoder renew...");
-            if (decoderStart(codecName, width, height) == false) {
-                //m_decoder.flush();//刷新（Flushed） 第一帧只接受关键帧，flush自动生成关键帧 慎用，影响编码
-                m_decoderCreateFailed = true;
+            // if codec or image-resolution changed, NOT process it
+            // maybe, you can test: decoderStop() then decoderStart()
+            if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_width != width || m_height != height) {
+                decoderRelease();
                 return false;
             }
-            m_decoderCreateFailed = false;
-        }
-        if (!m_decoderValid) {
-            return false;
-        }
 
-        // if codec or image-resolution changed, NOT process it
-        // maybe, you can test: decoderStop() then decoderStart()
-        if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_width != width || m_height != height) {
-            decoderRebuild();
-            return false;
-        }
-
-        // wait key-frame at first
-        if (m_decodeWaitKeyFrame) {
-            if (0 != frameType) //0- I frame, 1- P frame
-            {
-                return true;
-            } else {
-                m_decodeWaitKeyFrame = false;
+            // wait key-frame at first
+            if (m_decodeWaitKeyFrame) {
+                if (0 != frameType) //0- I frame, 1- P frame
+                {
+                    return true;
+                } else {
+                    m_decodeWaitKeyFrame = false;
+                }
             }
-        }
-        if (isRunning == true) {
-            if (mFrmList.size() >= 10) {
+            if (mFrmList.size() >= M_YUVQUEUESIZE) {
                 mFrmList.poll();
             }
             Frame frame = new Frame(dataBuffer, dataSize, frameType);
-            mFrmList.add(frame);
-
+            mFrmList.offer(frame);
         }
+        return true;
+    }
         /*synchronized (decoderLocker) {
             // decode frame
             try {
@@ -206,76 +216,86 @@ public class AvcDecoder extends Thread {
             }
 
         }*/
-        return true;
-    }
 
     @Override
     public void run() {
+        Frame frame = null;
         //存放目标文件的数据
         ByteBuffer byteBuffer = null;
         //解码后的数据，包含每一个buffer的元数据信息，例如偏差，在相关解码器中有效的数据大小
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        long startMs = System.currentTimeMillis();
-        Frame frame = null;
         while (isRunning) {
-            if (mFrmList.isEmpty()) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            frame = mFrmList.poll();
-            //1 准备填充器
-            int inIndex = m_decoder.dequeueInputBuffer(0);
-
-            if (inIndex >= 0) {
-                //2 准备填充数据
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                    byteBuffer = m_decoder.getInputBuffers()[inIndex];
-                    byteBuffer.clear();
-                } else {
-                    byteBuffer = m_decoder.getInputBuffer(inIndex);
-                }
-
-                if (byteBuffer == null) {
-                    continue;
-                }
-                byteBuffer.put(frame.getmData(), 0, frame.getMdataSize());
-                //3 把数据传给解码器
-                m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, 0);
-            } else {
-                continue;
-            }
-            //这里可以根据实际情况调整解码速度
-            /*long sleep = 50;
-            if (mFrmList.size() > 10) {
-                sleep = 0;
-            }
-            SystemClock.sleep(sleep);*/
-            //SystemClock.sleep(10);
-            //4 开始解码
-            int outIndex = m_decoder.dequeueOutputBuffer(info, 0);
-            if (outIndex >= 0) {
-                //帧控制
-                while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
+            if (isPause == false) {
+                if (mFrmList.isEmpty()) {
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(50);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
+                    continue;
                 }
-                boolean doRender = (info.size != 0);
-
-                //对outputbuffer的处理完后，调用这个函数把buffer重新返回给codec类。
-                //调用这个api之后，SurfaceView才有图像
-                m_decoder.releaseOutputBuffer(outIndex, doRender);
-                System.gc();
+                frame = mFrmList.poll();
+                //Log.d("mmmmmmmmmmmmmmttt", Arrays.toString(frame.getmData()));
+                try {
+                    //1 准备填充器
+                    int inIndex = m_decoder.dequeueInputBuffer(0);
+                    //Log.w("DYMMMMMMMMMMMMMMMM", inIndex + " Input");
+                    if (inIndex >= 0) {
+                        //2 准备填充数据
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                            byteBuffer = m_decoder.getInputBuffers()[inIndex];
+                            byteBuffer.clear();
+                        } else {
+                            byteBuffer = m_decoder.getInputBuffer(inIndex);
+                        }
+                        if (byteBuffer == null) {
+                            continue;
+                        }
+                        byteBuffer.put(frame.getmData(), 0, frame.getMdataSize());
+                        /*int value = frame.getmData()[4] & 0x0f;
+                        if (value == 7 || value == 8) {
+                            m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, MediaCodec.BUFFER_FLAG_CODEC_CONFIG);
+                        } else if (value == 5) {
+                            m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, MediaCodec.BUFFER_FLAG_KEY_FRAME);
+                        } else {
+                            m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, 0);
+                        }*/
+                        //3 把数据传给解码器
+                        m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, 0);
+                    } else {
+                        continue;
+                    }
+                } catch (Exception es) {
+                    LogUtils.e("AvcDecoder dequeueInputBuffer error", es);
+                }
+                //这里可以根据实际情况调整解码速度
+                /*long sleep = mFrmList.size() > 20 ? 10 : 20;
+                SystemClock.sleep(sleep);*/
+                //4 开始解码
+                try {
+                    int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
+                    //Log.w("DYTTTTTTTTTTTTTT", outIndex + " Output");
+                    while (decodeOutputBufferIndex >= 0) {
+                        //帧控制
+                   /* while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }*/
+                        //boolean doRender = (info.size != 0);
+                        //对outputbuffer的处理完后，调用这个函数把buffer重新返回给codec类。
+                        //调用这个api之后，SurfaceView才有图像
+                        m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
+                        decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
+                    }
+                    System.gc();
+                } catch (Exception es) {
+                    LogUtils.e("AvcDecoder dequeueOutputBuffer error", es);
+                }
             }
         }
-
         Log.i("mt android ", "===stop DecodeThread===");
     }
-
 }

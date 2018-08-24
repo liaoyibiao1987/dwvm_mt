@@ -280,7 +280,7 @@ public class MTMainActivity extends BaseActivity
     }
 
     @Override
-    public void doHandler(NWCommandEventArg arg) {
+    public void doNWCommandHandler(NWCommandEventArg arg) {
 
     }
 }

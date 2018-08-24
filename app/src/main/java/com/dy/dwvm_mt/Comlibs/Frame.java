@@ -1,5 +1,7 @@
 package com.dy.dwvm_mt.Comlibs;
 
+import java.util.Arrays;
+
 public final class Frame {
     private byte[] mData;
     private int mdataSize;
@@ -17,21 +19,14 @@ public final class Frame {
         return mData;
     }
 
-    public void setmData(byte[] mData) {
-        this.mData = mData;
-    }
-
     public int getMdataSize() {
         return mdataSize;
     }
 
-    public void setMdataSize(int mdataSize) {
-        this.mdataSize = mdataSize;
-    }
-
 
     public Frame(byte[] data, int size, long frameType) {
-        mData = data;
+        mData = new byte[size];
+        System.arraycopy(data, 0, mData, 0, size);
         mdataSize = size;
         mFrameType = frameType;
     }

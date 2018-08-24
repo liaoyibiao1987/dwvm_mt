@@ -82,7 +82,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             //android.Manifest.permission.READ_PHONE_NUMBERS,
             //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,
-            // android.Manifest.permission.MODIFY_PHONE_STATE,
+            android.Manifest.permission.MODIFY_PHONE_STATE,
             Manifest.permission.READ_SMS};
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();
@@ -180,7 +180,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     }
 
     @Override
-    public void doHandler(NWCommandEventArg arg) {
+    public void doNWCommandHandler(NWCommandEventArg arg) {
         if (arg != null && arg.getEventArg() != null) {
             int cmd = arg.getEventArg().getCmd();
             switch (cmd) {

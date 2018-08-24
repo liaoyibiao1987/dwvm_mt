@@ -62,8 +62,8 @@
 
     <SurfaceView
         android:id="@+id/surface_test_decoder"
-        android:layout_width="125dp"
-        android:layout_height="235dp"
+        android:layout_width="127dp"
+        android:layout_height="218dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -84,4 +84,34 @@
         android:text="@string/txt_btn_testdecoder"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_test_encoder" />
+
+    <Button
+        android:id="@+id/btn_setSpeakerON1"
+        android:layout_width="87dp"
+        android:layout_height="43dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:text="开启免提"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_test_encoder" />
+
+    <Button
+        android:id="@+id/btn_setSpeakerON2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="开启免提2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_setSpeakerON1" />
+
+    <Button
+        android:id="@+id/btn_setSpeakerON3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="开启免提3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_setSpeakerON2" />
 </android.support.constraint.ConstraintLayout>

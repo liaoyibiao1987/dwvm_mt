@@ -42,7 +42,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
 
     private long pts = 0;
     private long generateIndex = 0;
-    private int m_framerate = 20;
+    private int m_framerate = 10;
     private int TIMEOUT_USEC = 12000;
 
 
