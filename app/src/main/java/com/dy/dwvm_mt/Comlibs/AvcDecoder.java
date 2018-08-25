@@ -11,8 +11,11 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.dy.dwvm_mt.utilcode.util.FileIOUtils;
+import com.dy.dwvm_mt.utilcode.util.FileUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.ThreadUtils;
+import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -20,8 +23,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -71,7 +76,7 @@ public class AvcDecoder extends Thread {
     private boolean isRunning = true;
     private boolean isPause = false;
 
-    private static final int M_YUVQUEUESIZE = 30;
+    private static final int M_YUVQUEUESIZE = 50;
     private ArrayBlockingQueue<Frame> mFrmList = new ArrayBlockingQueue<>(M_YUVQUEUESIZE);
 
     public AvcDecoder(SurfaceView surfaceView) {
@@ -131,6 +136,7 @@ public class AvcDecoder extends Thread {
     public void decoderStop() {
         LogUtils.d("Decoder stop...");
         isRunning = false;
+        seekFrames = 0;
         decoderRelease();
         SystemClock.sleep(20);
         mFrmList = null;
@@ -140,7 +146,6 @@ public class AvcDecoder extends Thread {
         isPause = true;
         m_decoderCreateFailed = true;
         m_decoderValid = false;
-        mFrmList.clear();
         if (m_decoder != null) {
             try {
                 m_decoder.stop();
@@ -156,76 +161,17 @@ public class AvcDecoder extends Thread {
         m_decoderCreateFailed = false;
     }
 
-    File file = new File(Environment.getExternalStorageDirectory(), "xx.h264");
-    FileOutputStream outputStream = null;
-    // 创建BufferedOutputStream对象
-    BufferedOutputStream bufferedOutputStream = null;
-    RandomAccessFile raf = null;
-    private boolean append = true;
-
-    private void savaAvcFile(byte[] data) {
-        try {
-            LogUtils.d("文件路径", Environment.getExternalStorageDirectory());
-            // 如果文件存在则删除
-            if (file.exists()) {
-                file.delete();
-            } else {
-                // 在文件系统中根据路径创建一个新的空文件
-                file.createNewFile();
-            }
-            if (append) {
-                //如果为追加则在原来的基础上继续写文件
-                raf = new RandomAccessFile(file, "rw");
-                raf.seek(file.length());
-                raf.write(data);
-            } else {
-                //重写文件，覆盖掉原来的数据
-                // 获取FileOutputStream对象
-                outputStream = new FileOutputStream(file);
-                // 获取BufferedOutputStream对象
-                bufferedOutputStream = new BufferedOutputStream(outputStream);
-                // 往文件所在的缓冲输出流中写byte数据
-                bufferedOutputStream.write(data);
-                // 刷出缓冲输出流，该步很关键，要是不执行flush()方法，那么文件的内容是空的。
-                bufferedOutputStream.flush();
-            }
-
-        } catch (Exception e) {
-            // 打印异常信息
-            e.printStackTrace();
-        } finally {
-            // 关闭创建的流对象
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (bufferedOutputStream != null) {
-                try {
-                    bufferedOutputStream.close();
-                } catch (Exception e2) {
-                    e2.printStackTrace();
-                }
-            }
-
-        }
-    }
-
+    File file = new File(Environment.getExternalStorageDirectory() + "/DY", TimeUtils.getNowString(new SimpleDateFormat("yyyy_MM_dd_HH")) + ".h264");
+    int seekFrames = 0;
 
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         //LogUtils.d(String.format("codecName %s, width %d, height %d, frameType %d", codecName, width, height, frameType));
         // if no decoder, create it
-        savaAvcFile(dataBuffer);
-        if (isRunning == true && isPause == false) {
+        FileIOUtils.writeFileFromBytesByStream(file, dataBuffer, true);
+        Log.d("writeFileFromBytes", TimeUtils.getNowString());
+        return true;
+        /*if (isRunning == true && isPause == false) {
+            Log.d("MMMMMMMMMMMMM START : " + mFrmList.size(), TimeUtils.getNowString());
             if (m_decoder == null) {
                 // only try one to create decoder
                 if (m_decoderCreateFailed) {
@@ -244,7 +190,7 @@ public class AvcDecoder extends Thread {
             }
             // if codec or image-resolution changed, NOT process it
             // maybe, you can test: decoderStop() then decoderStart()
-            if (!m_decoderCodecName.equalsIgnoreCase(codecName) || m_width != width || m_height != height) {
+            if (m_decoderCodecName.equalsIgnoreCase(codecName) == false || m_width != width || m_height != height) {
                 decoderRelease();
                 return false;
             }
@@ -261,10 +207,16 @@ public class AvcDecoder extends Thread {
             if (mFrmList.size() >= M_YUVQUEUESIZE) {
                 mFrmList.poll();
             }
+            seekFrames++;
+            Log.d("DDDDDD seekFrames : " + seekFrames, TimeUtils.getNowString());
             Frame frame = new Frame(dataBuffer, dataSize, frameType);
-            mFrmList.offer(frame);
+            if (seekFrames > 30) {
+                Log.d("YYYYYY offer : " + seekFrames, TimeUtils.getNowString());
+                mFrmList.offer(frame);
+            }
+            Log.d("TTTTTTTTTTTTT END : " + mFrmList.size(), TimeUtils.getNowString());
         }
-        return true;
+        return true;*/
     }
         /*synchronized (decoderLocker) {
             // decode frame
@@ -345,6 +297,8 @@ public class AvcDecoder extends Thread {
                         continue;
                     }
                 } catch (Exception es) {
+                    isRunning = false;
+                    isPause = true;
                     LogUtils.e("AvcDecoder dequeueInputBuffer error", es);
                 }
                 //这里可以根据实际情况调整解码速度
@@ -371,10 +325,15 @@ public class AvcDecoder extends Thread {
                     }
                     System.gc();
                 } catch (Exception es) {
+                    isRunning = false;
+                    isPause = true;
                     LogUtils.e("AvcDecoder dequeueOutputBuffer error", es);
+                    break;
                 }
             }
         }
-        Log.i("mt android ", "===stop DecodeThread===");
+        mFrmList.clear();
+        mFrmList = null;
+        Log.i("MT android ", "===============stop DecodeThread==============");
     }
 }

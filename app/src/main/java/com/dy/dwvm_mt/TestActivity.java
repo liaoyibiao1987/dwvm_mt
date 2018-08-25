@@ -32,7 +32,7 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/28.
  * PS: Not easy to write code, please indicate.
  */
-public class TestActivity extends BaseActivity implements NWCommandEventHandler, View.OnClickListener, DY_AVPacketEventHandler {
+public class TestActivity extends BaseActivity implements NWCommandEventHandler, View.OnClickListener, DY_AVPacketEventHandler, SurfaceHolder.Callback {
 
     @BindView(R.id.btn_test_login)
     Button btn_testlogin;
@@ -64,9 +64,12 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     @BindView(R.id.btn_setSpeakerON3)
     protected Button btnsetSpeakerON3;
 
+    @BindView(R.id.btn_test_appendBuffs)
+    protected Button btntestappendBuffs;
+
 
     private AvcEncoder avcEncoder = null;
-    private AvcDecoder avcDncoder = null;
+    private AvcDecoder avcDecoder = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,44 +102,10 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btnsetSpeakerON1.setOnClickListener(this);
         btnsetSpeakerON2.setOnClickListener(this);
         btnsetSpeakerON3.setOnClickListener(this);
+        btntestappendBuffs.setOnClickListener(this);
 
-        m_surfacetestencoder.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-               /* avcEncoder.setMTLib(MTLibUtils.getBaseMTLib());
-                avcEncoder.changeRemoter(LocalSetting.getDeviceId(), "127.0.0.1:5008");
-                avcEncoder.cameraStart();
-                avcEncoder.startPerViewer(m_surfacetestencoder);
-                avcEncoder.start();*/
-            }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-
-            }
-        });
-
-        m_surfacetestdecoder.getHolder().addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                //startDecoder(holder);
-            }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-
-            }
-        });
+        m_surfacetestencoder.getHolder().addCallback(this);
+        m_surfacetestdecoder.getHolder().addCallback(this);
 
         btn_testopencamare.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,8 +126,8 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     }
 
     public void startDecoder(SurfaceHolder holder) {
-        avcDncoder = new AvcDecoder(m_surfacetestdecoder);
-        avcDncoder.start();
+        avcDecoder = new AvcDecoder(m_surfacetestdecoder);
+        avcDecoder.start();
         MTLibUtils.addRecvedAVFrameListeners(this);
     }
 
@@ -222,11 +191,11 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     protected void onDestroy() {
         if (avcEncoder != null) {
             avcEncoder.endEncoder();
-            avcDncoder = null;
+            avcEncoder = null;
         }
-        if (avcDncoder != null) {
-            avcDncoder.decoderStop();
-            avcDncoder = null;
+        if (avcDecoder != null) {
+            avcDecoder.decoderStop();
+            avcDecoder = null;
         }
         super.onDestroy();
     }
@@ -234,7 +203,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     @Override
     public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
         if (localDecoderChannelIndex == 0) {
-            avcDncoder.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
+            avcDecoder.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
         }
         return 1;
     }
@@ -242,5 +211,46 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     @Override
     public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String audioCodec, byte[] frameBuffer, int frameSize) {
         return 1;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (avcEncoder != null) {
+            avcEncoder.endEncoder();
+            avcEncoder = null;
+        }
+        if (avcDecoder != null) {
+            MTLibUtils.removeRecvedAVFrameListeners(null);
+            avcDecoder.decoderStop();
+            avcDecoder = null;
+        }
+        super.onBackPressed();
+        System.out.println("按下了back键   onBackPressed()");
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        if (holder == (m_surfacetestdecoder.getHolder())) {
+            if (avcDecoder != null) {
+                avcDecoder.decoderStop();
+                avcDecoder = null;
+            }
+
+        } else if (holder == (m_surfacetestencoder.getHolder())) {
+            if (avcEncoder != null) {
+                avcEncoder.endEncoder();
+                avcEncoder = null;
+            }
+        }
     }
 }

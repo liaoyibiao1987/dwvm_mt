@@ -23,7 +23,7 @@ import java.util.Locale;
 public final class TimeUtils {
 
     @SuppressLint("SimpleDateFormat")
-    private static final DateFormat DEFAULT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat DEFAULT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
 
     private TimeUtils() {
         throw new UnsupportedOperationException("u can't instantiate me...");

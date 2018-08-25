@@ -114,4 +114,16 @@
         android:text="开启免提3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_setSpeakerON2" />
+
+    <Button
+        android:id="@+id/btn_test_appendBuffs"
+        android:layout_width="87dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="280dp"
+        android:text="测试添加数据"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.487"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_test_reportstate" />
 </android.support.constraint.ConstraintLayout>

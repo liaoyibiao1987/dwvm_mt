@@ -79,6 +79,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             android.Manifest.permission.ACCESS_NETWORK_STATE,
             MODIFY_AUDIO_SETTINGS,
             WRITE_EXTERNAL_STORAGE,
+            WRITE_EXTERNAL_STORAGE,
             //android.Manifest.permission.READ_PHONE_NUMBERS,
             //"android.permission.RECEIVE_USER_PRESENT",
             android.Manifest.permission.CAMERA,

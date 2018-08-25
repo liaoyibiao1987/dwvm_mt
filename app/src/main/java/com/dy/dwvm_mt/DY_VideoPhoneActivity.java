@@ -93,10 +93,6 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
     // decoder
     private AvcDecoder decodeVideoThread = null;
 
-   /* IntentFilter intentFilter = null;
-    HomeFragment.AutoStartCamera receiver = null;
-    private int m_pageOpenType = 0;*/
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -107,7 +103,6 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             Log.e("TEST", "获取到摄像头的使用.");
-            //init(barcodeScannerView, getIntent(), null);
         } else {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
@@ -248,9 +243,17 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         } catch (Exception es) {
             LogUtils.e("decoderStop error", es.toString());
         } finally {
-            MTLibUtils.removeRecvedAVFrameListeners(this);
+            MTLibUtils.removeRecvedAVFrameListeners(null);
         }
 
+    }
+
+    @Override
+    protected void onPause(){
+        if ( isFinishing()==true){
+            stopAll();
+        }
+        super.onPause();
     }
 
     @Override
