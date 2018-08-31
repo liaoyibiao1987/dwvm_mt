@@ -393,7 +393,7 @@ public final class PhoneUtils {
                 setForceUse.invoke(null, 1, 1);
             } else {
                 audioManager.setSpeakerphoneOn(false);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                     audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
                 } else {
                     audioManager.setMode(AudioManager.MODE_IN_CALL);

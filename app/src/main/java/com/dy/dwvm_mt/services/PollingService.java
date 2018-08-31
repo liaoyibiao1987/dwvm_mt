@@ -1,13 +1,16 @@
 package com.dy.dwvm_mt.services;
 
 import android.annotation.SuppressLint;
+import android.app.KeyguardManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
 import com.dy.dwvm_mt.Comlibs.EncoderManager;
+import com.dy.dwvm_mt.Comlibs.EnumPageState;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
@@ -80,10 +83,10 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         try {
-            if (intent!=null){
+            if (intent != null) {
                 m_interval = intent.getIntExtra(CommandUtils.Str_Extra_Polling, -1);
                 m_isOnline = intent.getBooleanExtra(CommandUtils.Str_Extra_Online, false);
-            }else {
+            } else {
                 LogUtils.w("PollingService -> onStartCommand (Intent is null)");
             }
         } catch (Exception es) {
@@ -161,12 +164,25 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                     break;
                 case s_messageBase.DeviceCMD_Sub.DDNS_MTInfo:
                     try {
-                        Thread.sleep(2000);
-                        LogUtils.d("通知设备进入视频电话.");
-                        Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
-                        getApplication().startActivity(intent);
+                        //Thread.sleep(2000);
+                        if (CommandUtils.PageState == EnumPageState.Normal) {
+                            LogUtils.d("通知设备进入视频电话.");
+
+                            Intent intent = new Intent(getBaseContext(), DY_VideoPhoneActivity.class)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
+
+                            KeyguardManager km = (KeyguardManager) this.getSystemService(Context.KEYGUARD_SERVICE);
+                            if (km.isKeyguardLocked()) {   //为true就是锁屏状态下
+                                //activity需要新的任务栈
+                                /*KeyguardManager keyguardManager = (KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+                                KeyguardManager.KeyguardLock keyguardLock = keyguardManager.newKeyguardLock("");
+                                keyguardLock.disableKeyguard();*/
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            }
+                            this.startActivity(intent);
+                            CommandUtils.PageState = EnumPageState.VideoPhone;
+                        }
                     } catch (Exception es) {
                         LogUtils.e("PollingService onReceivedSubCMD error:" + es.toString());
                     }

@@ -353,22 +353,27 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                SystemClock.sleep(200);
-                if (input != null) {
-                    input = null;
+                try {
+                    Thread.sleep(200);
+                    if (input != null) {
+                        input = null;
+                    }
+                    if (m_encodeFrameBuffer != null) {
+                        m_encodeFrameBuffer = null;
+                    }
+                    if (YUVQueue != null) {
+                        YUVQueue.clear();
+                        YUVQueue = null;
+                    }
+                    if (mEncoder != null) {
+                        mEncoder.stop();
+                        mEncoder.release();
+                        mEncoder = null;
+                    }
+                } catch (Exception es) {
+                    LogUtils.e("endEncoder", es.toString());
                 }
-                if (m_encodeFrameBuffer != null) {
-                    m_encodeFrameBuffer = null;
-                }
-                if (YUVQueue != null) {
-                    YUVQueue.clear();
-                    YUVQueue = null;
-                }
-                if (mEncoder != null) {
-                    mEncoder.stop();
-                    mEncoder.release();
-                    mEncoder = null;
-                }
+
             }
         }).start();
 

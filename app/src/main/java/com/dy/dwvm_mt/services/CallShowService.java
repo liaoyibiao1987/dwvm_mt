@@ -57,7 +57,7 @@ public class CallShowService extends Service {
         if (isRunning == false) {
             try {
                 isRunning = true;
-                initFloatView();
+                //initFloatView();
                 initPhoneStateListener();
                 Thread.sleep(1000);
             } catch (Exception es) {
@@ -170,7 +170,7 @@ public class CallShowService extends Service {
             LogUtils.e(es.toString());
         }
 
-    }//createFloatView()//创建悬浮窗
+    }
 
     /**
      * 初始化电话状态监听
@@ -190,13 +190,13 @@ public class CallShowService extends Service {
                             outgoingTelNumber = "";
                             COMMINGTELNUMBER = "";
                             LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, "");
-                            dismiss();//关闭来电秀
+                            //dismiss();//关闭来电秀
                             break;
 
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             COMMINGTELNUMBER = incomingNumber;
                             callState = s_messageBase.TelStates.Ring;
-                            dismiss();
+                            //dismiss();
                             LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + COMMINGTELNUMBER);//来电号码
                            /* try {
                                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
@@ -211,10 +211,8 @@ public class CallShowService extends Service {
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
                                 LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK incomingNumber ->" + COMMINGTELNUMBER);//来电号码
-                                if (StringUtils.isTrimEmpty(COMMINGTELNUMBER) == true) {
+                                if (StringUtils.isTrimEmpty(incomingNumber) == true) {
                                     callState = s_messageBase.TelStates.Offhook;
-                                    Thread.sleep(1000);
-                                    callShow();
                                 } else {
                                     callState = s_messageBase.TelStates.CalledOffhook;
                                 }
@@ -229,6 +227,24 @@ public class CallShowService extends Service {
                     }
                 }
                 CommandUtils.sendTelState(callState, LocalSetting.getMeetingID(), null);
+                LogUtils.d("当前电话状态", callState);
+                if (callState == s_messageBase.TelStates.CalledOffhook) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(500);
+                                //被叫发送验证码,ddns模拟成主叫
+                                String calling = COMMINGTELNUMBER;
+                                LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
+                                CommandUtils.sendVerifyCode(calling, calling);
+                            } catch (Exception es) {
+                                LogUtils.e("PhoneStateListener sendVerifyCode error" + es);
+                            }
+
+                        }
+                    }).start();
+                }
             }
 
             private void callShow() {
@@ -250,19 +266,19 @@ public class CallShowService extends Service {
                                     /*PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                     PhoneUtils.answerRingingCall(CallShowService.this);*/
 
-                                   String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
+                                    String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
                                     LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
                                     CommandUtils.sendVerifyCode(calling, calling);
 
                                     /* Intent dialogIntent = new Intent(getBaseContext(), TestActivity.class);
-                                            *//*.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                     *//*.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                             .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);*//*
                                     getApplication().startActivity(dialogIntent);*/
 
                                 } catch (Exception es) {
                                     LogUtils.e("mFloatButton error: " + es);
                                 } finally {
-                                    dismiss();
+                                    //dismiss();
                                 }
                             }
                         });//mFloatView.setOnClickListener[结束服务，关闭悬浮窗]

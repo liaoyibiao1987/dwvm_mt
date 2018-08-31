@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.dy.dwvm_mt.Comlibs.DataPackShell;
+import com.dy.dwvm_mt.Comlibs.EnumPageState;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
@@ -34,6 +35,8 @@ public class CommandUtils {
     //private static String DDNSIP = "112.91.151.187";
     private static String DDNSPORT = "4998";
     private static int DDNSDEVICEID = 16777217;
+
+    public static EnumPageState PageState = EnumPageState.Normal;
 
     public static String getDDNSIP() {
         return DDNSIP;

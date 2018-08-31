@@ -3,6 +3,7 @@ package com.dy.dwvm_mt;
 import android.content.Context;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -21,6 +22,7 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -151,15 +153,22 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
 
     @Override
     public void onClick(View v) {
-        AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+        final AudioManager am = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
         if (v.getId() == R.id.btn_setSpeakerON1) {
             LogUtils.d("设置手机外放", am.isSpeakerphoneOn());
             am.setMode(AudioManager.MODE_IN_CALL);
             am.setSpeakerphoneOn(!am.isSpeakerphoneOn());
         } else if (v.getId() == R.id.btn_setSpeakerON2) {
             LogUtils.d("设置手机外放2", am.isSpeakerphoneOn());
-            am.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            am.setSpeakerphoneOn(!am.isSpeakerphoneOn());
+            final Handler mHandler = new Handler();
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    am.setMode(AudioManager.MODE_IN_CALL);
+                    am.setSpeakerphoneOn(true);
+                    LogUtils.d("设置手机外放2", am.isSpeakerphoneOn());
+                }
+            }, 500);
         } else if (v.getId() == R.id.btn_setSpeakerON3) {
             LogUtils.d("设置手机外放3", am.isSpeakerphoneOn());
             AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);

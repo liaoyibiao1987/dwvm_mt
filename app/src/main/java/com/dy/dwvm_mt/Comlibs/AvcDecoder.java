@@ -150,7 +150,6 @@ public class AvcDecoder extends Thread {
             try {
                 m_decoder.stop();
                 m_decoder.release();
-                this.stop();
             } catch (Exception es) {
                 LogUtils.e("decoderRelease error", es);
             } finally {
@@ -164,59 +163,64 @@ public class AvcDecoder extends Thread {
     File file = new File(Environment.getExternalStorageDirectory() + "/DY", TimeUtils.getNowString(new SimpleDateFormat("yyyy_MM_dd_HH")) + ".h264");
     int seekFrames = 0;
 
+    private boolean isopen = true;
+
+    public void testswitch() {
+        isopen = !isopen;
+    }
+
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         //LogUtils.d(String.format("codecName %s, width %d, height %d, frameType %d", codecName, width, height, frameType));
         // if no decoder, create it
-        FileIOUtils.writeFileFromBytesByStream(file, dataBuffer, true);
-        Log.d("writeFileFromBytes", TimeUtils.getNowString());
-        return true;
-        /*if (isRunning == true && isPause == false) {
-            Log.d("MMMMMMMMMMMMM START : " + mFrmList.size(), TimeUtils.getNowString());
-            if (m_decoder == null) {
-                // only try one to create decoder
-                if (m_decoderCreateFailed) {
+        //FileIOUtils.writeFileFromBytesByStream(file, dataBuffer, true);
+        Log.d("writeFileFromBytes", "isopen " + isopen + "  " + TimeUtils.getNowString());
+        if (isopen == true) {
+            if (isRunning == true && isPause == false) {
+                if (m_decoder == null) {
+                    // only try one to create decoder
+                    if (m_decoderCreateFailed) {
+                        return false;
+                    }
+                    LogUtils.d("Decoder renew...");
+                    if (decoderStart(codecName, width, height) == false) {
+                        //m_decoder.flush();//刷新（Flushed） 第一帧只接受关键帧，flush自动生成关键帧 慎用，影响编码
+                        m_decoderCreateFailed = true;
+                        return false;
+                    }
+                    m_decoderCreateFailed = false;
+                }
+                if (!m_decoderValid) {
                     return false;
                 }
-                LogUtils.d("Decoder renew...");
-                if (decoderStart(codecName, width, height) == false) {
-                    //m_decoder.flush();//刷新（Flushed） 第一帧只接受关键帧，flush自动生成关键帧 慎用，影响编码
-                    m_decoderCreateFailed = true;
+                // if codec or image-resolution changed, NOT process it
+                // maybe, you can test: decoderStop() then decoderStart()
+                if (m_decoderCodecName.equalsIgnoreCase(codecName) == false || m_width != width || m_height != height) {
+                    decoderRelease();
                     return false;
                 }
-                m_decoderCreateFailed = false;
-            }
-            if (!m_decoderValid) {
-                return false;
-            }
-            // if codec or image-resolution changed, NOT process it
-            // maybe, you can test: decoderStop() then decoderStart()
-            if (m_decoderCodecName.equalsIgnoreCase(codecName) == false || m_width != width || m_height != height) {
-                decoderRelease();
-                return false;
-            }
 
-            // wait key-frame at first
-            if (m_decodeWaitKeyFrame) {
-                if (0 != frameType) //0- I frame, 1- P frame
-                {
-                    return true;
-                } else {
-                    m_decodeWaitKeyFrame = false;
+                // wait key-frame at first
+                if (m_decodeWaitKeyFrame) {
+                    if (0 != frameType) //0- I frame, 1- P frame
+                    {
+                        return true;
+                    } else {
+                        m_decodeWaitKeyFrame = false;
+                    }
                 }
+                if (mFrmList.size() >= M_YUVQUEUESIZE) {
+                    mFrmList.poll();
+                }
+                seekFrames++;
+                Log.d("DDDDDD seekFrames : " + seekFrames, TimeUtils.getNowString());
+                if (seekFrames > 5) {
+                    Frame frame = new Frame(dataBuffer, dataSize, frameType);
+                    mFrmList.offer(frame);
+                }
+                Log.d("TTTTTTTTTTTTT END : " + mFrmList.size(), TimeUtils.getNowString());
             }
-            if (mFrmList.size() >= M_YUVQUEUESIZE) {
-                mFrmList.poll();
-            }
-            seekFrames++;
-            Log.d("DDDDDD seekFrames : " + seekFrames, TimeUtils.getNowString());
-            Frame frame = new Frame(dataBuffer, dataSize, frameType);
-            if (seekFrames > 30) {
-                Log.d("YYYYYY offer : " + seekFrames, TimeUtils.getNowString());
-                mFrmList.offer(frame);
-            }
-            Log.d("TTTTTTTTTTTTT END : " + mFrmList.size(), TimeUtils.getNowString());
         }
-        return true;*/
+        return true;
     }
         /*synchronized (decoderLocker) {
             // decode frame
@@ -301,13 +305,14 @@ public class AvcDecoder extends Thread {
                     isPause = true;
                     LogUtils.e("AvcDecoder dequeueInputBuffer error", es);
                 }
+                SystemClock.sleep(25);
                 //这里可以根据实际情况调整解码速度
                 /*long sleep = mFrmList.size() > 20 ? 10 : 20;
                 SystemClock.sleep(sleep);*/
                 //4 开始解码
                 try {
                     int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
-                    //Log.w("DYTTTTTTTTTTTTTT", outIndex + " Output");
+                    Log.w("DYTTTTTTTTTTTTTT", info.presentationTimeUs / 1000 + " vs " + System.currentTimeMillis() / 1000);
                     while (decodeOutputBufferIndex >= 0) {
                         //帧控制
                    /* while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
@@ -323,7 +328,6 @@ public class AvcDecoder extends Thread {
                         m_decoder.releaseOutputBuffer(decodeOutputBufferIndex, true);
                         decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
                     }
-                    System.gc();
                 } catch (Exception es) {
                     isRunning = false;
                     isPause = true;
@@ -332,8 +336,11 @@ public class AvcDecoder extends Thread {
                 }
             }
         }
-        mFrmList.clear();
-        mFrmList = null;
+        if (mFrmList != null) {
+            mFrmList.clear();
+            mFrmList = null;
+        }
+        System.gc();
         Log.i("MT android ", "===============stop DecodeThread==============");
     }
 }

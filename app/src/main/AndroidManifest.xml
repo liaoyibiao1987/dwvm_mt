@@ -2,7 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.dy.dwvm_mt">
-    <meta-data android:name="android.max_aspect" android:value="2.1" />
+
+    <meta-data
+        android:name="android.max_aspect"
+        android:value="2.1" />
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -12,13 +15,14 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <permission android:name=".services.CallShowService" />
-    <uses-permission android:name=".services.CallShowService" />  <!--此处与activity声明权限不同 。Package要求某自定义权限时，需要同时使用<permission> Tag 和 <uses-permission> Tag-->
+
+    <uses-permission android:name=".services.CallShowService" /> <!-- 此处与activity声明权限不同 。Package要求某自定义权限时，需要同时使用<permission> Tag 和 <uses-permission> Tag -->
     <!-- 弹出窗口权限 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission
         android:name="android.permission.MODIFY_PHONE_STATE"
         tools:ignore="ProtectedPermissions" />
@@ -30,7 +34,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_SMS" />
-
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <!-- 调用硬件相机权限 -->
     <uses-feature android:name="android.hardware.camera" />
@@ -48,42 +52,36 @@
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".MTMainActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
-
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".TestActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
-
-        </activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".DY_VideoPhoneActivity"
             android:configChanges="keyboardHidden|orientation"
+            android:excludeFromRecents="true"
             android:label="@string/app_name"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
-
-        </activity>
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
         <activity
             android:name=".DY_LoginActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
 
         <!--
         <receiver android:name=".broadcasts.PhoneStateReceiver">
@@ -104,7 +102,9 @@
         </receiver>
         -->
 
-        <!-- <service
+
+        <!--
+         <service
              android:name=".services.ServiceCallerShow"
              android:enabled="true">
              <intent-filter android:priority="1000">
@@ -116,7 +116,8 @@
              <intent-filter android:priority="1000">
                  <action android:name="android.intent.action.PHONE_STATE" />
              </intent-filter>
-         </receiver>-->
+         </receiver>
+        -->
         <receiver android:name=".broadcasts.AutoStartReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
@@ -136,27 +137,29 @@
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
-
         <receiver android:name=".broadcasts.NetworkChangeReceiver">
             <intent-filter>
                 //检测网络变化的acton
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
 
         <service
             android:name=".services.CallShowService"
-            android:enabled="true"><!-- android:process=":PhoneListenService"-->
+            android:enabled="true"> <!-- android:process=":PhoneListenService" -->
             <intent-filter android:priority="1000">
                 <action android:name=".services.CallShowService" />
             </intent-filter>
         </service>
-        <!--<service android:name=".services.PollingService" android:enabled="true" android:process=":remote">&lt;!&ndash; android:process=":PhoneListenService"&ndash;&gt;
+        <!--
+        <service android:name=".services.PollingService" android:enabled="true" android:process=":remote">&lt;!&ndash; android:process=":PhoneListenService"&ndash;&gt;
             <intent-filter android:priority="1000">
                 <action android:name=".services.PollingService" />
             </intent-filter>
-        </service>-->
+        </service>
+        -->
         <service
             android:name=".services.PollingService"
             android:enabled="true">
@@ -164,6 +167,9 @@
                 <action android:name=".services.PollingService" />
             </intent-filter>
         </service>
+
+        <activity android:name=".GuideActivity" />
+        <activity android:name=".SplashActivity"></activity>
     </application>
 
 </manifest>

@@ -1,8 +1,12 @@
 package com.dy.dwvm_mt;
 
 import android.Manifest;
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.media.AudioManager;
@@ -10,6 +14,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -17,16 +22,21 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 
 import com.dy.dwvm_mt.Comlibs.AvcDecoder;
 import com.dy.dwvm_mt.Comlibs.AvcEncoder;
 import com.dy.dwvm_mt.Comlibs.BaseActivity;
+import com.dy.dwvm_mt.Comlibs.EnumPageState;
 import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.Comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -58,6 +68,24 @@ import butterknife.ButterKnife;
  */
 public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder.Callback, DY_AVPacketEventHandler {
 
+    private class PhoneStateReceive extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            try {
+                TelephonyManager tManager = (TelephonyManager) context
+                        .getSystemService(Service.TELEPHONY_SERVICE);
+                switch (tManager.getCallState()) {
+                    case TelephonyManager.CALL_STATE_IDLE:
+                        DY_VideoPhoneActivity.this.m_btn_endcall.callOnClick();
+                        break;
+                }
+
+            } catch (Exception es) {
+                LogUtils.e("DY_VideoPhoneActivity PhoneStateReceive", es);
+            }
+        }
+    }
+
     @BindView(R.id.surfaceCameraPreview)
     protected SurfaceView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
@@ -67,6 +95,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
     @BindView(R.id.btn_endcall)
     protected ImageButton m_btn_endcall;
 
+    private PhoneStateReceive mReceiver;
     // parameters for MTLib demo
     private static final String LOCAL_DEVICE_NAME = "MT-Android";
     /* private static final long REMOTE_DEVICE_ID = 0x2000006;
@@ -99,6 +128,11 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         setContentView(R.layout.activity_videophone);
         ButterKnife.bind(this);
         //setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+        final Window win = getWindow();
+        win.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -107,6 +141,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA}, 1);//1 can be another integer
         }
+        registReceiver();
 
         m_mtoperator = MTLibUtils.getBaseMTLib();
         startAll();
@@ -137,9 +172,37 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
-                PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
+                if (decodeVideoThread != null) {
+                    decodeVideoThread.testswitch();
+                }
+                //PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
             }
         });
+    }
+
+    private void registReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+        mReceiver = new PhoneStateReceive();
+        this.registerReceiver(mReceiver, filter);
+    }
+
+    /**
+     * 这个方法是当这个activity没有销毁的时候，人为的按下锁屏键，然后再启动这个Activity的时候会去调用
+     *
+     * @param intent
+     */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        PowerManager pm = (PowerManager) this.getSystemService(Context.POWER_SERVICE);
+        /*if (!pm.isScreenOn()) {
+            String msg = intent.getStringExtra("msg");
+            textview.setText("又收到消息:" + msg);
+            //点亮屏幕
+            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "bright");
+            wl.acquire();
+            wl.release();*/
     }
 
     @Override
@@ -249,8 +312,10 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
     }
 
     @Override
-    protected void onPause(){
-        if ( isFinishing()==true){
+    protected void onPause() {
+        if (isFinishing() == true) {
+            unregisterReceiver(mReceiver);
+            CommandUtils.PageState = EnumPageState.Normal;
             stopAll();
         }
         super.onPause();

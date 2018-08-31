@@ -15,7 +15,7 @@ def listSubFile2 = {
     def dir = new File("src/main/res/layout")
     def folders = []
     dir.eachDir {
-        item ->folders.add(item.absolutePath)
+        item -> folders.add(item.absolutePath)
     }
     folders.add(dir.absolutePath)
     //folders.add(file(dir).parentFile.absolutePath)
@@ -37,7 +37,7 @@ android {
             storePassword 'a.123159147'
         }
     }
-   /* sourceSets {
+    /* sourceSets {
         main {
             res.srcDirs = [
                     'src/main/res/layout/dialTabs',

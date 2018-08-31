@@ -41,6 +41,8 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.Manifest.permission.CALL_PHONE;
+import static android.Manifest.permission.DISABLE_KEYGUARD;
 import static android.Manifest.permission.MODIFY_AUDIO_SETTINGS;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
@@ -70,20 +72,21 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     //所需要申请的权限数组
     /*private  String[] permissionsArray;*/
     private String[] permissionsArray = new String[]{
-            android.Manifest.permission.WAKE_LOCK,
+            Manifest.permission.WAKE_LOCK,
             Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.CALL_PHONE,
+            DISABLE_KEYGUARD,
+            CALL_PHONE,
             //Manifest.permission.ANSWER_PHONE_CALLS,
             //Manifest.permission.PROCESS_OUTGOING_CALLS,
-            android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
-            android.Manifest.permission.ACCESS_NETWORK_STATE,
+            Manifest.permission.RECEIVE_BOOT_COMPLETED,
+            Manifest.permission.ACCESS_NETWORK_STATE,
             MODIFY_AUDIO_SETTINGS,
             WRITE_EXTERNAL_STORAGE,
             WRITE_EXTERNAL_STORAGE,
             //android.Manifest.permission.READ_PHONE_NUMBERS,
             //"android.permission.RECEIVE_USER_PRESENT",
-            android.Manifest.permission.CAMERA,
-            android.Manifest.permission.MODIFY_PHONE_STATE,
+            Manifest.permission.CAMERA,
+            Manifest.permission.MODIFY_PHONE_STATE,
             Manifest.permission.READ_SMS};
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();

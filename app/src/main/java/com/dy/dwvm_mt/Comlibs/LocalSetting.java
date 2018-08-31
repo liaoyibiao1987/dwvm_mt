@@ -8,6 +8,7 @@ import com.dy.javastruct.Constants;
  * PS: Not easy to write code, please indicate.
  */
 public final class LocalSetting {
+    public static final String SPUtilsName = "DYMT";
 
     public static final String Cache_Name_LoginID = "Cache_Name_LoginID";
     public static final String Cache_Name_Password = "Cache_Name_Password";
@@ -54,7 +55,7 @@ public final class LocalSetting {
         LoginTimeElapse = -1;
     }
 
-    public static String getPSIPPort(){
+    public static String getPSIPPort() {
         return getCacheDoubleUtils().getString(Cache_Name_PSIPPort);
     }
 
