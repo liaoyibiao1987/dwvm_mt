@@ -104,7 +104,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             CrashUtils.init();
         }
-        Log.d("东耀视频会议系统", "开始运行");
+        Log.d("东耀视频会议系统", "登录界面开始运行");
         AnalysingUtils.addRecvedCommandListeners(this);
         int startType = getIntent().getIntExtra(StartLoginType, 0);
         if (startType == 0) {
@@ -321,7 +321,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        System.out.println("\r\n登录界面结束运行\r\n");
         AnalysingUtils.removeRecvedCommandListeners(this);
+        super.onDestroy();
     }
 }

@@ -205,12 +205,13 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
             avcDecoder.decoderStop();
             avcDecoder = null;
         }
+        AnalysingUtils.removeRecvedCommandListeners(this);
         super.onDestroy();
     }
 
     @Override
     public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
-        if (localDecoderChannelIndex == 0) {
+        if (localDecoderChannelIndex == 0 && avcDecoder != null) {
             avcDecoder.decoderOneVideoFrame(videoCodec, width, height, frameBuffer, frameSize, frameType);
         }
         return 1;

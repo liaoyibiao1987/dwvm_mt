@@ -58,7 +58,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     private int m_iColorFormatIndex = -1;
 
     // MT Library
-    private final MTLib m_mtLib = new MTLib();
+    private MTLib m_mtLib;
 
     // Camera
     private Camera m_cam = null;
@@ -99,6 +99,7 @@ public class MainActivity extends BaseActivity implements MTLib.MTLibCallback, C
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        m_mtLib = new MTLib();
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         // get UI controls

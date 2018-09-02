@@ -17,7 +17,7 @@ import java.util.Set;
 public class MTLibUtils {
     // MT Library
     private static I_MT_Prime m_mtLib = null;
-    private static Set<DY_FullUdpPacketEventHandler> UdpPacketListeners;
+    //private static Set<DY_FullUdpPacketEventHandler> UdpPacketListeners;
     private static Set<DY_AVPacketEventHandler> AVFrameListeners;
 
     public static I_MT_Prime getBaseMTLib() {
@@ -30,13 +30,13 @@ public class MTLibUtils {
     }
 
     static {
-        UdpPacketListeners = new LinkedHashSet();
+        //UdpPacketListeners = new LinkedHashSet();
         AVFrameListeners = new LinkedHashSet();
         setupMTLib();
         try {
             Thread.sleep(1000);
             //收到完整的数据包再给这里的事件去处置，此时数据包无封装无解析。
-            DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
+            /*DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
                 @Override
                 public void onReviced(DataPackShell.ReceivedPackEntity entity) {
                     if (UdpPacketListeners.size() > 0) {
@@ -45,7 +45,8 @@ public class MTLibUtils {
                         }
                     }
                 }
-            });
+            });*/
+            LogUtils.i("MTLibUtils 开始初始化了");
             AnalysingUtils.setupMTLib(m_mtLib);
             AnalysingUtils.startReviceData();
             //此处只是全局注册后的全局打印收到的 DDNS 包
@@ -117,18 +118,18 @@ public class MTLibUtils {
      *
      * @param handler DY_onReceivedPackEventHandler 组装的数据包，视频包，音频包
      */
-    public static void addFullUdpPacketListeners(DY_FullUdpPacketEventHandler handler) {
+   /* public static void addFullUdpPacketListeners(DY_FullUdpPacketEventHandler handler) {
         if (UdpPacketListeners.contains(handler) == false) {
             UdpPacketListeners.add(handler);
         }
-    }
+    }*/
 
     /**
      * 取消处理组装好，但是没解析过的事件监听
      *
      * @param handler DY_onReceivedPackEventHandler 组装的数据包，视频包，音频包
      */
-    public static void removeFullUdpPacketListeners(DY_FullUdpPacketEventHandler handler) {
+   /* public static void removeFullUdpPacketListeners(DY_FullUdpPacketEventHandler handler) {
         if (handler == null) {
             UdpPacketListeners.clear();
         } else {
@@ -136,7 +137,7 @@ public class MTLibUtils {
                 UdpPacketListeners.remove(handler);
             }
         }
-    }
+    }*/
 
 
     /**

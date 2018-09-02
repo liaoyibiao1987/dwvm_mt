@@ -76,7 +76,7 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_start
         g_lib = NULL;
         return JNI_FALSE;
     }
-
+    xlog(XLOG_LEVEL_WARNING, "start():: new obj-ref Java_com_dy_dwvm_1mt_MTLib_started.\n");
     return JNI_TRUE;
 }
 

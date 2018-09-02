@@ -12,6 +12,7 @@ import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -257,6 +258,8 @@ public class AvcDecoder extends Thread {
                     continue;
                 }
                 frame = mFrmList.poll();
+                byte[] clbuff = new byte[frame.getMdataSize()];
+                System.arraycopy(frame.getmData(), 0, clbuff, 0, frame.getMdataSize());
                 //Log.d("mmmmmmmmmmmmmmttt", Arrays.toString(frame.getmData()));
                 try {
                     //1 准备填充器
@@ -273,7 +276,7 @@ public class AvcDecoder extends Thread {
                         if (byteBuffer == null) {
                             continue;
                         }
-                        byteBuffer.put(frame.getmData(), 0, frame.getMdataSize());
+                        byteBuffer.put(clbuff, 0, clbuff.length);
                         /*int value = frame.getmData()[4] & 0x0f;
                         if (value == 7 || value == 8) {
                             m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, MediaCodec.BUFFER_FLAG_CODEC_CONFIG);
@@ -283,16 +286,16 @@ public class AvcDecoder extends Thread {
                             m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, 0);
                         }*/
                         //3 把数据传给解码器
-                        m_decoder.queueInputBuffer(inIndex, 0, frame.getMdataSize(), 0, 0);
+                        m_decoder.queueInputBuffer(inIndex, 0, clbuff.length, 0, 0);
                     } else {
                         continue;
                     }
                 } catch (Exception es) {
-                    isRunning = false;
-                    isPause = true;
-                    LogUtils.e("AvcDecoder dequeueInputBuffer error", es);
+                    /*isRunning = false;
+                    isPause = true;*/
+                    LogUtils.e("AvcDecoder dequeueInputBuffer error", es.getMessage());
                 }
-                SystemClock.sleep(25);
+                SystemClock.sleep(10);
                 //这里可以根据实际情况调整解码速度
                 /*long sleep = mFrmList.size() > 20 ? 10 : 20;
                 SystemClock.sleep(sleep);*/
@@ -316,9 +319,9 @@ public class AvcDecoder extends Thread {
                         decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
                     }
                 } catch (Exception es) {
-                    isRunning = false;
-                    isPause = true;
-                    LogUtils.e("AvcDecoder dequeueOutputBuffer error", es);
+                    /*isRunning = false;
+                    isPause = true;*/
+                    LogUtils.e("AvcDecoder dequeueOutputBuffer error", es.getMessage());
                     break;
                 }
             }

@@ -19,7 +19,7 @@ import java.util.Set;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/4.
- * PS: Not easy to write code, please indicate.
+ * PS: AnalysingUtils
  */
 public class AnalysingUtils {
     private static int pollingCount;
@@ -68,7 +68,13 @@ public class AnalysingUtils {
     }
 
     public static void removeRecvedCommandListeners(NWCommandEventHandler handler) {
-        eventListeners.remove(handler);
+        if (handler == null) {
+            eventListeners.clear();
+        } else {
+            if (eventListeners.contains(handler) == false) {
+                eventListeners.remove(handler);
+            }
+        }
     }
 
     protected static void notifieRecvedCommands(NWCommandEventArg arg) {
@@ -105,6 +111,10 @@ public class AnalysingUtils {
         isRunning = true;
     }
 
+    /**
+     * 调用setOnReceiveFullPacket来监听从DataPackShell收取到的所有经过组合解析的报文.
+     * 将初略组合的ReceivePackEntity进一步分析为NetWorkCommand深度组合包.
+     */
     private static void setReceiveFull() {
         DataPackShell.setOnReceiveFullPacket(new DataPackShell.OnReciveFullPacketListener() {
             @Override
