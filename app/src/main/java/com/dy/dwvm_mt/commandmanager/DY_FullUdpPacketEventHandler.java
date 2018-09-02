@@ -1,6 +1,6 @@
 package com.dy.dwvm_mt.commandmanager;
 
-import com.dy.dwvm_mt.Comlibs.DataPackShell;
+import com.dy.dwvm_mt.comlibs.DataPackShell;
 
 import java.util.EventListener;
 

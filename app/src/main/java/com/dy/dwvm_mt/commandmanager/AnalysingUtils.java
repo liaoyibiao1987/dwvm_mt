@@ -2,8 +2,8 @@ package com.dy.dwvm_mt.commandmanager;
 
 import android.util.Log;
 
-import com.dy.dwvm_mt.Comlibs.DataPackShell;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.DataPackShell;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.messagestructs.ReceivePackEntity;
 import com.dy.dwvm_mt.messagestructs.s_CMDReply;

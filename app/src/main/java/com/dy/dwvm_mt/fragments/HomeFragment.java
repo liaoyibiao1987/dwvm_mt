@@ -1,36 +1,25 @@
 package com.dy.dwvm_mt.fragments;
 
 import android.Manifest;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.PixelFormat;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 
-import com.dy.dwvm_mt.Comlibs.AvcDecoder;
-import com.dy.dwvm_mt.Comlibs.AvcEncoder;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.MTMainActivity;
+import com.dy.dwvm_mt.comlibs.AvcDecoder;
+import com.dy.dwvm_mt.comlibs.AvcEncoder;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.R;
-import com.dy.dwvm_mt.commandmanager.CommandUtils;
-import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.userview.DYImageButton;
-import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
-import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

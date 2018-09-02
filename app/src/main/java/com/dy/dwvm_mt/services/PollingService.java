@@ -8,14 +8,13 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.EncoderManager;
-import com.dy.dwvm_mt.Comlibs.EnumPageState;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
+import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.EncoderManager;
+import com.dy.dwvm_mt.comlibs.EnumPageState;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
+import com.dy.dwvm_mt.comlibs.LoginExtMessageDissector;
 import com.dy.dwvm_mt.DY_VideoPhoneActivity;
-import com.dy.dwvm_mt.TestActivity;
 import com.dy.dwvm_mt.broadcasts.NetworkChangeReceiver;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
@@ -157,7 +156,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                         String loginPSW = LocalSetting.getLoginPSW();
                         String telNumber = LocalSetting.getTelNumber();
                         CommandUtils.sendLoginData(loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort());
-                        LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPor: %S", loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort()));
+                        LogUtils.d(String.format("开始重新登录 ID: %s  PSW: %s  TEL: %s  ZONE: %s  DDNSIPPort: %S", loginID, loginPSW, telNumber, "", CommandUtils.getDDNSIPPort()));
                     } else if (s_statesMsg.Types == s_messageBase.DDNS_StatesMsg.LoginOffline) {
                         LogUtils.d("设备已在另一处登录,被迫下线。请检查电脑是否拥有多个网络地址!");
                     }

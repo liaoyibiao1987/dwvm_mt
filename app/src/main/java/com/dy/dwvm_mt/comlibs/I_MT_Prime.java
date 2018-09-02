@@ -1,4 +1,4 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
 public interface I_MT_Prime {
     void installCallback(MTLibCallback instance);

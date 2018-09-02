@@ -1,14 +1,16 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
-import com.dy.dwvm_mt.utilcode.util.CacheDoubleUtils;
-import com.dy.javastruct.Constants;
+import com.dy.dwvm_mt.utilcode.util.CacheMemoryUtils;
+import com.dy.dwvm_mt.utilcode.util.SPUtils;
+
+import java.lang.invoke.ConstantCallSite;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/10.
  * PS: Not easy to write code, please indicate.
  */
 public final class LocalSetting {
-    public static final String SPUtilsName = "DYMT";
+    public static final String SPUtilsName = "DYSP";
 
     public static final String Cache_Name_LoginID = "Cache_Name_LoginID";
     public static final String Cache_Name_Password = "Cache_Name_Password";
@@ -16,9 +18,7 @@ public final class LocalSetting {
     public static final String Cache_Name_CallingTelNumber = "Cache_Name_CallingTelNumber";
     public static final String Cache_Name_PSIPPort = "Cache_Name_PSIPPort";
 
-    private static String loginID = "";
-    private static String loginPSW = "";
-    private static String telNumber = "";
+    public static final String StartLoginType = "StartLoginType";
 
     private static boolean isLogined;
     private static boolean isLocalTel;
@@ -29,21 +29,15 @@ public final class LocalSetting {
     private static int callState;
     private static int meetingID;
 
-    private static CacheDoubleUtils cacheDoubleUtils;
+    private static SPUtils spUtils =  SPUtils.getInstance(SPUtilsName);
+    private static CacheMemoryUtils cacheMemoryUtils = CacheMemoryUtils.getInstance();
 
     public static void SetInformationByLoginResult(LoginExtMessageDissector.LoginExtMessage loginExtMessage) {
         setAffiliateToPS(loginExtMessage.getPSIPPort());
         setDeviceId(loginExtMessage.getDeviceId());
         setForcePSTranspond(loginExtMessage.isForcePSTranspond());
         setIsLocalTel(loginExtMessage.isLocalTel());
-        getCacheDoubleUtils().put(Cache_Name_PSIPPort, loginExtMessage.getPSIPPort());
-    }
-
-    public static CacheDoubleUtils getCacheDoubleUtils() {
-        if (cacheDoubleUtils == null) {
-            cacheDoubleUtils = CacheDoubleUtils.getInstance();
-        }
-        return cacheDoubleUtils;
+        cacheMemoryUtils.put(Cache_Name_PSIPPort, loginExtMessage.getPSIPPort());
     }
 
     public static void ResetInformation() {
@@ -54,33 +48,36 @@ public final class LocalSetting {
         deviceId = -1;
         LoginTimeElapse = -1;
     }
+    public static SPUtils getDYSPUtil(){
+        return spUtils;
+    }
 
     public static String getPSIPPort() {
-        return getCacheDoubleUtils().getString(Cache_Name_PSIPPort);
+        return cacheMemoryUtils.get(Cache_Name_PSIPPort);
     }
 
     public static String getLoginID() {
-        return loginID;
+       return spUtils.getString(Cache_Name_LoginID);
     }
 
     public static void setLoginID(String loginID) {
-        LocalSetting.loginID = loginID;
+        spUtils.put(Cache_Name_LoginID,loginID);
     }
 
     public static String getLoginPSW() {
-        return loginPSW;
+        return spUtils.getString(Cache_Name_Password);
     }
 
     public static void setLoginPSW(String loginPSW) {
-        LocalSetting.loginPSW = loginPSW;
+        spUtils.put(Cache_Name_Password,loginPSW);
     }
 
     public static String getTelNumber() {
-        return telNumber;
+        return spUtils.getString(Cache_Name_TelNumber);
     }
 
     public static void setTelNumber(String telNumber) {
-        LocalSetting.telNumber = telNumber;
+        spUtils.put(Cache_Name_TelNumber,telNumber);
     }
 
     public static boolean isIsLogined() {

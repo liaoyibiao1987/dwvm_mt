@@ -2,19 +2,13 @@ package com.dy.dwvm_mt.commandmanager;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
-import com.dy.dwvm_mt.Comlibs.DataPackShell;
-import com.dy.dwvm_mt.Comlibs.EnumPageState;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
+import com.dy.dwvm_mt.comlibs.EnumPageState;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.messagestructs.s_MT_TelState;
 import com.dy.dwvm_mt.messagestructs.s_MT_Tel_ValidCode;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
-import com.dy.dwvm_mt.utilcode.util.CacheMemoryUtils;
-import com.dy.dwvm_mt.utilcode.util.ConvertUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.NetworkUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
@@ -22,8 +16,6 @@ import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import com.dy.javastruct.JavaStruct;
 
 import java.nio.ByteOrder;
-import java.sql.Struct;
-import java.util.List;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/27.

@@ -1,4 +1,4 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
 
 import android.content.Context;
@@ -14,6 +14,7 @@ import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.services.PollingService;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
+import com.dy.dwvm_mt.utilcode.util.SPUtils;
 
 public abstract class BaseActivity extends AppCompatActivity {
     public static final String MT_AUTOSTARTCAMERA_ACTION = "dy.dymt.AUTOSTARTCAMERA";
@@ -21,11 +22,11 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static final String MT_VP_PAGE_OPENTYPE = "dy.dymt.VP_PAGE_OPENTYPE";
     public static final int MT_VIDEOPHONE_STARTUPTYPE_CALLING = 1;
     public static final int MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK = 2;
-
+    protected static SPUtils spUtils;
     public static final int REQUESTCODE = 1;
 
     static {
-
+        spUtils = SPUtils.getInstance(LocalSetting.SPUtilsName);
         MTLibUtils.Initialisation();
     }
 
@@ -43,6 +44,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
         return super.dispatchTouchEvent(ev);
     }
+
     // Return whether touch the view.
     private boolean isShouldHideKeyboard(View v, MotionEvent event) {
         if (v != null && (v instanceof EditText)) {

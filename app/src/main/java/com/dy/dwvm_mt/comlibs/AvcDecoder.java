@@ -1,32 +1,19 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.util.Log;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.dy.dwvm_mt.utilcode.util.FileIOUtils;
-import com.dy.dwvm_mt.utilcode.util.FileUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.ThreadUtils;
 import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**

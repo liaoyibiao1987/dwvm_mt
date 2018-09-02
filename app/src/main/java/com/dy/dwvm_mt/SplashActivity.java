@@ -6,9 +6,7 @@ import android.os.Bundle;
 
 import com.dy.dwvm_mt.utilcode.util.SPUtils;
 
-import java.io.BufferedOutputStream;
-
-import static com.dy.dwvm_mt.Comlibs.LocalSetting.SPUtilsName;
+import static com.dy.dwvm_mt.comlibs.LocalSetting.SPUtilsName;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -20,10 +18,10 @@ public class SplashActivity extends AppCompatActivity {
         /**
          *如果用户不是第一次使用则直接调转到显示界面,否则调转到引导界面
          */
-        if (true) {
-            startActivity(new Intent(this, GuideActivity.class));
+        if (isFirstUse) {
+            startActivity(new Intent(this, GuideActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
         } else {
-            startActivity(new Intent(this, DY_LoginActivity.class));
+            startActivity(new Intent(this, DY_LoginActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
         }
         spUtils.put("isFirstUse", false);
         finish();

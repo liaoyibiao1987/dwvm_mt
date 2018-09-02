@@ -1,11 +1,10 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;

@@ -20,8 +20,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.AvcEncoder;
+import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.AvcEncoder;
 
 import java.nio.ByteBuffer;
 import java.util.List;

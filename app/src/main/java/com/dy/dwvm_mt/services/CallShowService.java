@@ -20,18 +20,14 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.MTMainActivity;
 import com.dy.dwvm_mt.R;
-import com.dy.dwvm_mt.TestActivity;
 import com.dy.dwvm_mt.broadcasts.AutoStartReceiver;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
-
-import java.lang.reflect.Method;
 
 public class CallShowService extends Service {
     private static final int CallShowServiceFOREGROUND_ID = 0x201801;
@@ -189,7 +185,7 @@ public class CallShowService extends Service {
                             LogUtils.d("PhoneStateListener CALL_STATE_IDLE");
                             outgoingTelNumber = "";
                             COMMINGTELNUMBER = "";
-                            LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, "");
+                            LocalSetting.getDYSPUtil().put(LocalSetting.Cache_Name_CallingTelNumber, "");
                             //dismiss();//关闭来电秀
                             break;
 
@@ -266,7 +262,7 @@ public class CallShowService extends Service {
                                     /*PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
                                     PhoneUtils.answerRingingCall(CallShowService.this);*/
 
-                                    String calling = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_CallingTelNumber);
+                                    String calling = LocalSetting.getDYSPUtil().getString(LocalSetting.Cache_Name_CallingTelNumber);
                                     LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
                                     CommandUtils.sendVerifyCode(calling, calling);
 

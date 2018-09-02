@@ -1,7 +1,7 @@
 package com.dy.dwvm_mt.commandmanager;
 
-import com.dy.dwvm_mt.Comlibs.DataPackShell;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.DataPackShell;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.MTLib;
 import com.dy.dwvm_mt.messagestructs.NetWorkCommand;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -54,7 +54,7 @@ public class MTLibUtils {
                 public void doNWCommandHandler(NWCommandEventArg arg) {
                     NetWorkCommand command = arg.getEventArg();
                     System.out.print("MT-SEND DATA LEN : " + command.getData().length + " \r\n DATA: " + StringUtils.toHexBinary(command.getData()));
-                    //LogUtils.e("收到回应包了：" + command);
+                    //LogUtils.d("收到包了：" + command);
                 }
             });
             CommandUtils.initSetupAdapter(m_mtLib);

@@ -9,9 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -24,19 +22,16 @@ import android.support.v7.widget.Toolbar;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.FrameLayout;
 
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.I_MT_Prime;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.fragments.DialTabFragment;
-import com.dy.dwvm_mt.fragments.HomeFragment;
-import com.dy.dwvm_mt.utilcode.constant.PermissionConstants;
-import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
@@ -45,6 +40,8 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+
+import static com.dy.dwvm_mt.comlibs.LocalSetting.StartLoginType;
 
 public class MTMainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, NWCommandEventHandler {
@@ -183,6 +180,11 @@ public class MTMainActivity extends BaseActivity
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);
                 getApplication().startActivity(intent2);*/
+                LocalSetting.ResetInformation();
+                Intent startLogin = new Intent(this, DY_LoginActivity.class)
+                        .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        .putExtra(StartLoginType, 1);
+                startActivity(startLogin);
                 break;
             case R.id.nav_calling:
             default:

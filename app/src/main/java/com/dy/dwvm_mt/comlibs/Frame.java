@@ -1,6 +1,4 @@
-package com.dy.dwvm_mt.Comlibs;
-
-import java.util.Arrays;
+package com.dy.dwvm_mt.comlibs;
 
 public final class Frame {
     private byte[] mData;

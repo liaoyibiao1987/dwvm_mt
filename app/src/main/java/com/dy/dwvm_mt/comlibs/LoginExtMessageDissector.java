@@ -1,9 +1,8 @@
-package com.dy.dwvm_mt.Comlibs;
+package com.dy.dwvm_mt.comlibs;
 
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.utilcode.util.ConvertUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.StringUtils;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/10.

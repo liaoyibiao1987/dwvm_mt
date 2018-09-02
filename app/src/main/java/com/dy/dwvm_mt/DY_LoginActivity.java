@@ -1,14 +1,13 @@
 package com.dy.dwvm_mt;
 
 import android.Manifest;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.opengl.Visibility;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,9 +18,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
-import com.dy.dwvm_mt.Comlibs.LoginExtMessageDissector;
+import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
+import com.dy.dwvm_mt.comlibs.LoginExtMessageDissector;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
@@ -30,10 +29,12 @@ import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.CrashUtils;
+import com.dy.dwvm_mt.utilcode.util.IntentUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
+import com.dy.javastruct.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,7 @@ import static android.Manifest.permission.CALL_PHONE;
 import static android.Manifest.permission.DISABLE_KEYGUARD;
 import static android.Manifest.permission.MODIFY_AUDIO_SETTINGS;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static com.dy.dwvm_mt.comlibs.LocalSetting.StartLoginType;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/7/9.
@@ -52,7 +54,8 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
  */
 
 public class DY_LoginActivity extends BaseActivity implements NWCommandEventHandler {
-    private boolean isFirstLaunch = true;
+
+    private static final int LOADVIEW = 904;
 
     @BindView(R.id.txt_login_id)
     EditText EtLoginID;
@@ -93,23 +96,76 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     //申请权限后的返回码
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;
 
+    Handler handler;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             CrashUtils.init();
         }
-
         Log.d("东耀视频会议系统", "开始运行");
-        setContentView(R.layout.activity_login);
-        initSetting();
-        ButterKnife.bind(this);
         AnalysingUtils.addRecvedCommandListeners(this);
+        int startType = getIntent().getIntExtra(StartLoginType, 0);
+        if (startType == 0) {
+            viewSwitch();
+        } else {
+            fillView();
+        }
+
+    }
+
+    private void viewSwitch() {
+        if (LocalSetting.isIsLogined() == true) {
+            Intent intent = new Intent();
+            intent.setClass(this, MTMainActivity.class);
+            ActivityUtils.startActivity(intent);
+            finish();
+        } else {
+            if (StringUtils.isTrimEmpty(LocalSetting.getLoginID()) == true ||
+                    StringUtils.isTrimEmpty(LocalSetting.getLoginPSW()) == true ||
+                    StringUtils.isTrimEmpty(LocalSetting.getTelNumber()) == true) {
+                fillView();
+            } else {
+                CommandUtils.sendLoginData(LocalSetting.getLoginID(), LocalSetting.getLoginPSW(), LocalSetting.getTelNumber(), "", CommandUtils.getDDNSIPPort());
+                /*handler = new Handler() {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        Log.i("DYMT LOGIN Handler", "hanlder handleMessage: " + Thread.currentThread().getName());
+                        switch (msg.what) {
+                            case LOADVIEW:
+                                if (LocalSetting.isIsLogined() == false) {
+                                    fillView();
+                                }
+                                break;
+                        }
+                    }
+                };
+                Message message = new Message();
+                message.what = LOADVIEW;
+                handler.sendMessageDelayed(message,3000L);*/
+                handler = new Handler();
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (LocalSetting.isIsLogined() == false) {
+                            fillView();
+                        }
+                    }
+                }, 3000);
+            }
+        }
+    }
+
+    private void fillView() {
         requestMyPermission();
+        setContentView(R.layout.activity_login);
+        ButterKnife.bind(this);
 
         EtLoginID.setText(LocalSetting.getLoginID());
-        EtLoginPsw.setText(LocalSetting.getLoginPSW());
         EtLoginID.setSelection(EtLoginID.getText().length());
+
+        EtLoginPsw.setText(LocalSetting.getLoginPSW());
         EtLoginPsw.setSelection(EtLoginPsw.getText().length());
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
@@ -126,6 +182,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         } else {
             EtTelNumber.setText(LocalSetting.getTelNumber());
         }
+
         btnAuthAlert.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -145,42 +202,23 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         }*/
         //onResume 天然激活两次
         super.onResume();
-        initSetting();
         if (StringUtils.isTrimEmpty(LocalSetting.getLoginID()) == false
                 && StringUtils.isTrimEmpty(LocalSetting.getLoginPSW()) == false
                 && StringUtils.isTrimEmpty(LocalSetting.getTelNumber()) == false) {
-            if (isFirstLaunch == false)
-                btnLogin.callOnClick();
+
         }
     }
 
-    private void initSetting() {
-        String id = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_LoginID);
-        if (StringUtils.isTrimEmpty(id) == false) {
-            LocalSetting.setLoginID(id);
-        }
-        String password = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_Password);
-        if (StringUtils.isTrimEmpty(password) == false) {
-            LocalSetting.setLoginPSW(password);
-        }
-        String telNumber = LocalSetting.getCacheDoubleUtils().getString(LocalSetting.Cache_Name_TelNumber);
-        if (StringUtils.isTrimEmpty(telNumber) == false) {
-            LocalSetting.setTelNumber(telNumber);
-        }
-    }
 
     private void onLoginClicked() {
         String loginID = EtLoginID.getText().toString();
         String psw = EtLoginPsw.getText().toString();
         String telNumber = EtTelNumber.getText().toString();
-        String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_LoginID, loginID);
-        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_Password, psw);
-        LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_TelNumber, telNumber);
-
+        LocalSetting.setLoginID(loginID);
+        LocalSetting.setLoginPSW(psw);
         LocalSetting.setTelNumber(telNumber);
 
-        CommandUtils.sendLoginData(loginID, psw, telNumber, "", ddnsIPAndPort);
+        CommandUtils.sendLoginData(loginID, psw, telNumber, "", CommandUtils.getDDNSIPPort());
     }
 
     @Override
@@ -284,7 +322,6 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        isFirstLaunch = false;
         AnalysingUtils.removeRecvedCommandListeners(this);
     }
 }

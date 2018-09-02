@@ -2,7 +2,6 @@ package com.dy.dwvm_mt.fragments;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.DialogFragment;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +10,6 @@ import android.media.ToneGenerator;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Trace;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -30,18 +28,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 
 import com.android.phone.common.dialpad.DialpadKeyButton;
 import com.android.phone.common.dialpad.DialpadView;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.R;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
 import java.util.HashSet;
-import java.util.List;
 
 import static android.content.ContentValues.TAG;
 import static com.dy.dwvm_mt.BuildConfig.DEBUG;
@@ -369,7 +365,8 @@ public class DialTabFragment extends Fragment implements View.OnClickListener, V
             handleDialButtonClickWithEmptyDigits();
         } else {
             final String number = mDigits.getText().toString();
-            LocalSetting.getCacheDoubleUtils().put(LocalSetting.Cache_Name_CallingTelNumber, number);
+
+            LocalSetting.getDYSPUtil().put(LocalSetting.Cache_Name_CallingTelNumber, number);
             // "persist.radio.otaspdial" is a temporary hack needed for one carrier's automated
             // test equipment.
             // TODO: clean it up.

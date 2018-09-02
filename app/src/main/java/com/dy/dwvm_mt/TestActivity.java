@@ -9,10 +9,10 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 
-import com.dy.dwvm_mt.Comlibs.AvcDecoder;
-import com.dy.dwvm_mt.Comlibs.AvcEncoder;
-import com.dy.dwvm_mt.Comlibs.BaseActivity;
-import com.dy.dwvm_mt.Comlibs.LocalSetting;
+import com.dy.dwvm_mt.comlibs.AvcDecoder;
+import com.dy.dwvm_mt.comlibs.AvcEncoder;
+import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.DY_AVPacketEventHandler;
@@ -22,7 +22,6 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
-import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
