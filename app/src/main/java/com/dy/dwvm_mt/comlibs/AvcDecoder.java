@@ -1,11 +1,13 @@
 package com.dy.dwvm_mt.comlibs;
 
+import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceView;
 
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
@@ -50,7 +52,7 @@ public class AvcDecoder extends Thread {
      */
 
     private MediaCodec m_decoder = null;
-    private SurfaceView m_sufcaeViewer;
+    private SurfaceTexture m_sufcaeViewer;
     private int m_width;
     private int m_height;
     private int m_rotation = 90;
@@ -67,9 +69,9 @@ public class AvcDecoder extends Thread {
     private static final int M_YUVQUEUESIZE = 50;
     private ArrayBlockingQueue<Frame> mFrmList = new ArrayBlockingQueue<>(M_YUVQUEUESIZE);
 
-    public AvcDecoder(SurfaceView surfaceView) {
+    public AvcDecoder(SurfaceTexture surfaceView) {
         m_sufcaeViewer = surfaceView;
-        m_sufcaeViewer.setKeepScreenOn(true);
+        //m_sufcaeViewer.setKeepScreenOn(true);
     }
 
     private synchronized boolean decoderStart(String codecName, int width, int height) {
@@ -105,7 +107,11 @@ public class AvcDecoder extends Thread {
 
             //*************************全面屏手机两次加载sufcaeViewer和强制拉伸，不能在onCreate去传入Holder和Surface************************/
             Log.w("DYMTTTTTTT", " m_sufcaeViewer.getHolder().getSurface()");
-            m_decoder.configure(mediaFormat, m_sufcaeViewer.getHolder().getSurface(), null, 0);
+            m_sufcaeViewer.setDefaultBufferSize(width, height);
+            Surface surface0 = new Surface(m_sufcaeViewer);
+            //m_decoder.configure(mediaFormat, m_sufcaeViewer.getHolder().getSurface(), null, 0);
+            m_decoder.configure(mediaFormat, surface0, null, 0);
+
             m_decoder.start();
 
         } catch (Exception e) {

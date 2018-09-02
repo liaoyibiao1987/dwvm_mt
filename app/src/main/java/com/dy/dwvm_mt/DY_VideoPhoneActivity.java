@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
+import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v4.app.ActivityCompat;
@@ -16,6 +17,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -43,7 +45,27 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
-public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder.Callback, DY_AVPacketEventHandler {
+public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
+
+    @Override
+    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+
+    }
 
     private class PhoneStateReceive extends BroadcastReceiver {
         @Override
@@ -66,7 +88,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
     @BindView(R.id.surfaceCameraPreview)
     protected SurfaceView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
-    protected SurfaceView m_surfaceDecoderShow;
+    protected TextureView m_surfaceDecoderShow;
     @BindView(R.id.btn_freehand)
     protected DYImageButton m_btn_freehand;
     @BindView(R.id.btn_endcall)
@@ -124,12 +146,14 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         startAll();
 
         //m_surfaceDecoderShow.setZOrderOnTop(true);
-        m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
-        m_surfaceDecoderShow.getHolder().addCallback(this);
+        m_surfaceDecoderShow.setSurfaceTextureListener(this);
+
+       /* m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
+        m_surfaceDecoderShow.getHolder().addCallback(this);*/
         //m_surfaceDecoderShow.getHolder().setFixedSize(480, 680);
         m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
-        m_surfaceCameraPreview.getHolder().addCallback(this);
+        //m_surfaceCameraPreview.getHolder().addCallback(this);
 
         m_btn_endcall.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -262,7 +286,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
     private boolean decoderStart() {
         try {
             LogUtils.d("decoderStart begining...");
-            decodeVideoThread = new AvcDecoder(m_surfaceDecoderShow);
+            decodeVideoThread = new AvcDecoder(m_surfaceDecoderShow.getSurfaceTexture());
             decodeVideoThread.start();
             MTLibUtils.addRecvedAVFrameListeners(this);
             return true;
@@ -298,35 +322,6 @@ public class DY_VideoPhoneActivity extends BaseActivity implements SurfaceHolder
         super.onPause();
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        LogUtils.d("surfaceCreated");
-        if (holder == (m_surfaceDecoderShow.getHolder())) {
-            if (decoderStart() == false) {
-                LogUtils.e("MT 打开解码：", "打开解码失败");
-                return;
-            } else {
-                m_IsDecoderStart = true;
-                LogUtils.e("MT 打开解码成功");
-            }
-        } else if (holder == (m_surfaceCameraPreview.getHolder())) {
-            if (encoderStart(m_surfaceCameraPreview) == false) {
-                LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
-                return;
-            } else {
-                m_IsEncoderStart = true;
-                LogUtils.e("MT 打开摄像头、编码成功");
-            }
-        }
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-    }
 
     @Override
     public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {

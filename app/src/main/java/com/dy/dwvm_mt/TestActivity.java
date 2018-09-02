@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 
@@ -54,7 +55,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     protected SurfaceView m_surfacetestencoder;
 
     @BindView(R.id.surface_test_decoder)
-    protected SurfaceView m_surfacetestdecoder;
+    protected TextureView m_surfacetestdecoder;
 
     @BindView(R.id.btn_setSpeakerON1)
     protected Button btnsetSpeakerON1;
@@ -96,7 +97,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btn_testdecoder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startDecoder(m_surfacetestdecoder.getHolder());
+                startDecoder();
             }
         });
 
@@ -106,7 +107,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btntestappendBuffs.setOnClickListener(this);
 
         m_surfacetestencoder.getHolder().addCallback(this);
-        m_surfacetestdecoder.getHolder().addCallback(this);
+        //m_surfacetestdecoder.getHolder().addCallback(this);
 
         btn_testopencamare.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,8 +127,8 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         });
     }
 
-    public void startDecoder(SurfaceHolder holder) {
-        avcDecoder = new AvcDecoder(m_surfacetestdecoder);
+    public void startDecoder() {
+        avcDecoder = new AvcDecoder(m_surfacetestdecoder.getSurfaceTexture());
         avcDecoder.start();
         MTLibUtils.addRecvedAVFrameListeners(this);
     }
@@ -249,13 +250,13 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        if (holder == (m_surfacetestdecoder.getHolder())) {
+       /* if (holder == (m_surfacetestdecoder.getHolder())) {
             if (avcDecoder != null) {
                 avcDecoder.decoderStop();
                 avcDecoder = null;
             }
 
-        } else if (holder == (m_surfacetestencoder.getHolder())) {
+        } else*/ if (holder == (m_surfacetestencoder.getHolder())) {
             if (avcEncoder != null) {
                 avcEncoder.endEncoder();
                 avcEncoder = null;
