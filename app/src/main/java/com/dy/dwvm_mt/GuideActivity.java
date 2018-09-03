@@ -4,16 +4,20 @@ import android.content.Intent;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.dy.dwvm_mt.adapters.GuideAdapter;
+import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
 import java.util.ArrayList;
 
-public class GuideActivity extends AppCompatActivity  implements ViewPager.OnPageChangeListener {
+public class GuideActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener {
     private ViewPager vPager;
     private GuideAdapter vpAdapter;
     private static int[] imgs = {R.drawable.welcomepage1, R.drawable.welcomepage2, R.drawable.welcomepage3};
@@ -41,10 +45,87 @@ public class GuideActivity extends AppCompatActivity  implements ViewPager.OnPag
 
     }
 
+
+    private class MySimpleOnGestureListener implements GestureDetector.OnGestureListener {
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            ToastUtils.showLong("onDown");
+            return true;
+        }
+
+        @Override
+        public void onShowPress(MotionEvent e) {
+
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+            ToastUtils.showLong("onScroll");
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+
+        }
+
+        private int verticalMinDistance = 20;
+        private int minVelocity = 0;
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            ToastUtils.showLong("滑动手势");
+            if (e1.getX() - e2.getX() > verticalMinDistance && Math.abs(velocityX) > minVelocity) {
+
+                // 切换Activity
+                // Intent intent = new Intent(ViewSnsActivity.this, UpdateStatusActivity.class);
+                // startActivity(intent);
+            } else if (e2.getX() - e1.getX() > verticalMinDistance && Math.abs(velocityX) > minVelocity) {
+                Intent intent = new Intent(GuideActivity.this, DY_LoginActivity.class);//跳转到主界面
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+            }
+            /*if (velocityX < 0) {
+                //快速向左滑动
+            } else {
+            }*/
+            return true;
+        }
+    }
+
+    private final String getActionName(int action) {
+        String name = "";
+        switch (action) {
+            case MotionEvent.ACTION_DOWN: {
+                name = "ACTION_DOWN";
+                break;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                name = "ACTION_MOVE";
+                break;
+            }
+            case MotionEvent.ACTION_UP: {
+                name = "ACTION_UP";
+                break;
+            }
+            default:
+                break;
+        }
+        return name;
+    }
+
     protected void initView() {
         //设置每一张图片都填充窗口
         ViewPager.LayoutParams mParams = new ViewPager.LayoutParams();
         imageViews = new ArrayList<ImageView>();
+        //final GestureDetector mGestureDetector = new GestureDetector(this, new MySimpleOnGestureListener());
 
         for (int i = 0; i < imgs.length; i++) {
             ImageView iv = new ImageView(this);
@@ -54,15 +135,16 @@ public class GuideActivity extends AppCompatActivity  implements ViewPager.OnPag
             imageViews.add(iv);
             if (i == imgs.length - 1) {
                 //为最后一张图片添加点击事件
-                iv.setOnTouchListener(new View.OnTouchListener() {
+                /*iv.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        Intent toMainActivity = new Intent(GuideActivity.this, MainActivity.class);//跳转到主界面
-                        startActivity(toMainActivity);
+                        Log.i(getClass().getName(), "onTouch-----" + getActionName(event.getAction()));
+                        mGestureDetector.onTouchEvent(event);
+                        // 一定要返回true，不然获取不到完整的事件
                         return true;
 
                     }
-                });
+                });*/
             }
 
         }
@@ -83,14 +165,25 @@ public class GuideActivity extends AppCompatActivity  implements ViewPager.OnPag
         initDots();
     }
 
+    private int mViewPagerIndex = 0;
+
     @Override
-    public void onPageScrolled(int x, float y, int z) {
+    public void onPageScrolled(int position, float y, int z) {
         for (int i = 0; i < dotViews.length; i++) {
-            if (x == i) {
+            if (position == i) {
                 dotViews[i].setSelected(true);
             } else {
                 dotViews[i].setSelected(false);
             }
+        }
+        //ToastUtils.showLong("向右手势" + mViewPagerIndex + position);
+        if (mViewPagerIndex == dotViews.length - 1 && mViewPagerIndex == position) {
+            Intent intent = new Intent(GuideActivity.this, DY_LoginActivity.class);//跳转到主界面
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        } else {
+
         }
     }
 
@@ -100,7 +193,9 @@ public class GuideActivity extends AppCompatActivity  implements ViewPager.OnPag
     }
 
     @Override
-    public void onPageScrollStateChanged(int i) {
-
+    public void onPageScrollStateChanged(int state) {
+        if (state == 1) {//state有三种状态下文会将，当手指刚触碰屏幕时state的值为1，我们就在这个时候给mViewPagerIndex 赋值。
+            mViewPagerIndex = vPager.getCurrentItem();
+        }
     }
 }

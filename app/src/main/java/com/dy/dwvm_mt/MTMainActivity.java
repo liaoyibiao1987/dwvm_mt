@@ -172,7 +172,7 @@ public class MTMainActivity extends BaseActivity
             case R.id.nav_settings:
                 break;
             case R.id.nav_share:
-                Intent intent = new Intent(this, TestActivity.class);
+                Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
                 startActivity(intent);
                 return true;
             case R.id.nav_logout:
@@ -185,6 +185,7 @@ public class MTMainActivity extends BaseActivity
                         .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         .putExtra(StartLoginType, 1);
                 startActivity(startLogin);
+                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 break;
             case R.id.nav_calling:
             default:

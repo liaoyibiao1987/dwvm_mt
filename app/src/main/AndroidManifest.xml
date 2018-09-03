@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.dy.dwvm_mt">
+    package="com.dy.dwvm_mt"
+    android:versionCode="@integer/mtversioncode"
+    android:versionName="@string/app_versionname">
 
     <meta-data
         android:name="android.max_aspect"
@@ -46,36 +48,41 @@
         android:icon="@mipmap/appico"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".MTMainActivity"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:configChanges="keyboardHidden|orientation"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".TestActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:label="@string/app_name" />
         <activity
             android:name=".DY_VideoPhoneActivity"
             android:configChanges="keyboardHidden|orientation"
             android:excludeFromRecents="true"
             android:label="@string/app_name"
-            android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+            android:launchMode="singleTask"/>
         <activity
             android:name=".DY_LoginActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
-            android:launchMode="singleTask"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+            android:launchMode="singleTask"></activity>
+        <activity
+            android:name=".GuideActivity"
+            android:launchMode="singleTask" />
+        <activity
+            android:name=".SplashActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:label="@string/app_name"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -167,9 +174,6 @@
                 <action android:name=".services.PollingService" />
             </intent-filter>
         </service>
-
-        <activity android:name=".GuideActivity" />
-        <activity android:name=".SplashActivity"></activity>
     </application>
 
 </manifest>

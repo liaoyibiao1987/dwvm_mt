@@ -242,7 +242,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
                             Intent intent = new Intent();
                             intent.setClass(this, MTMainActivity.class);
                             ActivityUtils.startActivity(intent);
-
+                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                             finish();
                         } else {
                             LocalSetting.ResetInformation();

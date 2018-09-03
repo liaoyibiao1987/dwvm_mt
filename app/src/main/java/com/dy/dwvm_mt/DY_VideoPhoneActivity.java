@@ -45,27 +45,8 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
-public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
+public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEventHandler, SurfaceHolder.Callback, TextureView.SurfaceTextureListener {
 
-    @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-
-    }
-
-    @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-
-    }
-
-    @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
-        return false;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
-
-    }
 
     private class PhoneStateReceive extends BroadcastReceiver {
         @Override
@@ -153,7 +134,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketE
         //m_surfaceDecoderShow.getHolder().setFixedSize(480, 680);
         m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
-        //m_surfaceCameraPreview.getHolder().addCallback(this);
+        m_surfaceCameraPreview.getHolder().addCallback(this);
 
         m_btn_endcall.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -163,7 +144,8 @@ public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketE
                     stopAll();
                     PhoneUtils.telcomInvok(DY_VideoPhoneActivity.this, "endCall");
                     Intent intent = new Intent(DY_VideoPhoneActivity.this, MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ActivityUtils.startActivity(intent);
+                    startActivity(intent);
+                    finish();
                 } catch (Exception ex) {
                     LogUtils.e("initPhoneStateListener" + ex.toString());
                 }
@@ -173,10 +155,10 @@ public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketE
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
-                if (decodeVideoThread != null) {
+                /*if (decodeVideoThread != null) {
                     decodeVideoThread.testswitch();
-                }
-                //PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
+                }*/
+                PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
             }
         });
     }
@@ -322,6 +304,63 @@ public class DY_VideoPhoneActivity extends BaseActivity implements  DY_AVPacketE
         super.onPause();
     }
 
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        LogUtils.d("surfaceCreated");
+        /*if (holder == (m_surfaceDecoderShow.getHolder())) {
+            if (decoderStart() == false) {
+                LogUtils.e("MT 打开解码：", "打开解码失败");
+                return;
+            } else {
+                m_IsDecoderStart = true;
+                LogUtils.e("MT 打开解码成功");
+            }
+        } else*/
+        if (holder == (m_surfaceCameraPreview.getHolder())) {
+            if (encoderStart(m_surfaceCameraPreview) == false) {
+                LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
+                return;
+            } else {
+                m_IsEncoderStart = true;
+                LogUtils.e("MT 打开摄像头、编码成功");
+            }
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+    }
+
+
+    @Override
+    public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
+        if (decoderStart() == false) {
+            LogUtils.e("MT 打开解码：", "打开解码失败");
+            return;
+        } else {
+            m_IsDecoderStart = true;
+            LogUtils.e("MT 打开解码成功");
+        }
+    }
+
+    @Override
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
+
+    }
+
+    @Override
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surfaceTexture) {
+        return false;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surfaceTexture) {
+
+    }
 
     @Override
     public long onReceivedVideoFrame(long localDeviceId, String remoteDeviceIpPort, long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, long frameType, String videoCodec, int imageResolution, int width, int height, byte[] frameBuffer, int frameSize) {
