@@ -23,7 +23,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <SurfaceView
+    <TextureView
         android:id="@+id/surfaceCameraPreview"
         android:layout_width="115dp"
         android:layout_height="156dp"

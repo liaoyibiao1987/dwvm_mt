@@ -36,6 +36,7 @@ import com.dy.dwvm_mt.userview.DYImageButton;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
+import com.dy.dwvm_mt.utilcode.util.ScreenUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
 import butterknife.BindView;
@@ -45,7 +46,7 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
-public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEventHandler, SurfaceHolder.Callback, TextureView.SurfaceTextureListener {
+public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
 
 
     private class PhoneStateReceive extends BroadcastReceiver {
@@ -67,7 +68,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
     }
 
     @BindView(R.id.surfaceCameraPreview)
-    protected SurfaceView m_surfaceCameraPreview;
+    protected TextureView m_surfaceCameraPreview;
     @BindView(R.id.surfaceDecoderShow)
     protected TextureView m_surfaceDecoderShow;
     @BindView(R.id.btn_freehand)
@@ -105,14 +106,24 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_videophone);
-        ButterKnife.bind(this);
-        //setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
         final Window win = getWindow();
         win.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
+        //如果判断有刘海屏不让填充到状态栏
+        if (ScreenUtils.hasNotchScreen(this)) {
+            win.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
+        } else {
+            win.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        }
+
+        setContentView(R.layout.activity_videophone);
+        ButterKnife.bind(this);
+        //setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -128,13 +139,14 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
 
         //m_surfaceDecoderShow.setZOrderOnTop(true);
         m_surfaceDecoderShow.setSurfaceTextureListener(this);
+        m_surfaceCameraPreview.setSurfaceTextureListener(this);
 
        /* m_surfaceDecoderShow.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
         m_surfaceDecoderShow.getHolder().addCallback(this);*/
         //m_surfaceDecoderShow.getHolder().setFixedSize(480, 680);
-        m_surfaceCameraPreview.setZOrderOnTop(true);
+        /*m_surfaceCameraPreview.setZOrderOnTop(true);
         m_surfaceCameraPreview.getHolder().setFormat(PixelFormat.TRANSLUCENT);//设置画布  背景透明
-        m_surfaceCameraPreview.getHolder().addCallback(this);
+        m_surfaceCameraPreview.getHolder().addCallback(this);*/
 
         m_btn_endcall.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -234,7 +246,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         }
     }
 
-    private boolean encoderStart(SurfaceView surfaceView) {
+    private boolean encoderStart(SurfaceTexture surfaceView) {
         // create encoder
         LogUtils.d("encoderStart begining...");
         try {
@@ -304,10 +316,10 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         super.onPause();
     }
 
-    @Override
+    /*@Override
     public void surfaceCreated(SurfaceHolder holder) {
         LogUtils.d("surfaceCreated");
-        /*if (holder == (m_surfaceDecoderShow.getHolder())) {
+        *//*if (holder == (m_surfaceDecoderShow.getHolder())) {
             if (decoderStart() == false) {
                 LogUtils.e("MT 打开解码：", "打开解码失败");
                 return;
@@ -315,7 +327,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
                 m_IsDecoderStart = true;
                 LogUtils.e("MT 打开解码成功");
             }
-        } else*/
+        } else*//*
         if (holder == (m_surfaceCameraPreview.getHolder())) {
             if (encoderStart(m_surfaceCameraPreview) == false) {
                 LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
@@ -333,18 +345,30 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-    }
+    }*/
 
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-        if (decoderStart() == false) {
-            LogUtils.e("MT 打开解码：", "打开解码失败");
-            return;
-        } else {
-            m_IsDecoderStart = true;
-            LogUtils.e("MT 打开解码成功");
+        if (surfaceTexture.equals(m_surfaceDecoderShow.getSurfaceTexture())) {
+            if (decoderStart() == false) {
+                LogUtils.e("MT 打开解码：", "打开解码失败");
+                return;
+            } else {
+                m_IsDecoderStart = true;
+                LogUtils.e("MT 打开解码成功");
+            }
+        } else if (surfaceTexture.equals(m_surfaceCameraPreview.getSurfaceTexture())) {
+            LogUtils.d("surfaceCreated");
+            if (encoderStart(m_surfaceCameraPreview.getSurfaceTexture()) == false) {
+                LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
+                return;
+            } else {
+                m_IsEncoderStart = true;
+                LogUtils.e("MT 打开摄像头、编码成功");
+            }
         }
+
     }
 
     @Override

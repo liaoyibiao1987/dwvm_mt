@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.dy.dwvm_mt"
-    android:versionCode="@integer/mtversioncode"
-    android:versionName="@string/app_versionname">
+    package="com.dy.dwvm_mt">
+  <!--  android:versionCode="@integer/mtversioncode"  改这里没用 必须修改build.gradle
+    android:versionName="@string/app_versionname">-->
 
     <meta-data
         android:name="android.max_aspect"

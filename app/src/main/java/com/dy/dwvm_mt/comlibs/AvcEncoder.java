@@ -1,6 +1,7 @@
 package com.dy.dwvm_mt.comlibs;
 
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
@@ -252,17 +253,21 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
         return true;
     }
 
-    public final boolean startPerViewer(SurfaceView m_surfaceCameraPreview) {
+    public final boolean startPerViewer(SurfaceTexture m_surfaceCameraPreview) {
         // start preview & capture
         try {
             // bind to viewer
-            SurfaceHolder rawSurfaceHolder = m_surfaceCameraPreview.getHolder();
+            /*SurfaceHolder rawSurfaceHolder = m_surfaceCameraPreview.getHolder();
             if (rawSurfaceHolder != null) {
                 //rawSurfaceHolder.addCallback(this); // if call on onCreate(), add this line and implements SurfaceHolder.Callback
                 //rawSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
                 m_cam.setPreviewDisplay(rawSurfaceHolder);
+                m_cam.setPreviewTexture(m_surfaceCameraPreview);
                 m_cam.setDisplayOrientation(90);
-            }
+            }*/
+
+            m_cam.setPreviewTexture(m_surfaceCameraPreview);
+            m_cam.setDisplayOrientation(90);
             // malloc buffer
             m_rawBuffer = new byte[m_iRawWidth * m_iRawHeight * 3 / 2];
             // add callback buffer

@@ -36,11 +36,12 @@ public class CallShowService extends Service {
     private PhoneStateListener phoneStateListener;
     private TelephonyManager telephonyManager;
     public static boolean isRunning = false;//是否正在运行
-    private int phoneState = TelephonyManager.CALL_STATE_IDLE;//收到的话机状态
+    //private int phoneState = TelephonyManager.CALL_STATE_IDLE;//收到的话机状态
     private boolean isEnable = true;//是否启用服务
     private boolean isFloatShown = false;
 
-    private static String COMMINGTELNUMBER = "";
+    private static String COMMINGTELNUMBER = "";//主叫号码
+    private static String OPPOSITENUMBER = "";//对端号码（可能是主叫或者被叫）
     private String outgoingTelNumber = "";
 
     private ConstraintLayout mFloatLayout;
@@ -176,14 +177,15 @@ public class CallShowService extends Service {
             @Override
             public void onCallStateChanged(int state, String incomingNumber) {
                 super.onCallStateChanged(state, incomingNumber);
-                phoneState = state;
+                //phoneState = state;
                 LocalSetting.setCallState(state);
-                int callState = s_messageBase.TelStates.Idle;
+                int DDNSCallState = s_messageBase.TelStates.Idle;
                 if (isEnable) {//启用
                     switch (state) {
                         case TelephonyManager.CALL_STATE_IDLE://待机时（即无电话时,挂断时会调用）
                             LogUtils.d("PhoneStateListener CALL_STATE_IDLE");
-                            outgoingTelNumber = "";
+                            //outgoingTelNumber = "";
+                            OPPOSITENUMBER = "";
                             COMMINGTELNUMBER = "";
                             LocalSetting.getDYSPUtil().put(LocalSetting.Cache_Name_CallingTelNumber, "");
                             //dismiss();//关闭来电秀
@@ -191,9 +193,9 @@ public class CallShowService extends Service {
 
                         case TelephonyManager.CALL_STATE_RINGING://响铃(来电)
                             COMMINGTELNUMBER = incomingNumber;
-                            callState = s_messageBase.TelStates.Ring;
+                            DDNSCallState = s_messageBase.TelStates.Ring;
                             //dismiss();
-                            LogUtils.d("PhoneStateListener CALL_STATE_RINGING incomingNumber ->" + COMMINGTELNUMBER);//来电号码
+                            LogUtils.d("PhoneStateListener CALL_STATE_RINGING", COMMINGTELNUMBER);//来电号码
                            /* try {
                                 String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
                                 //CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
@@ -206,15 +208,17 @@ public class CallShowService extends Service {
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
-                                LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK incomingNumber ->" + COMMINGTELNUMBER);//来电号码
-                                if (StringUtils.isTrimEmpty(incomingNumber) == true) {
-                                    callState = s_messageBase.TelStates.Offhook;
+                                OPPOSITENUMBER = incomingNumber;
+                                //COMMINGTELNUMBER 有振铃的摘机，即为被叫摘机
+                                if (StringUtils.isTrimEmpty(COMMINGTELNUMBER) == true) {
+                                    DDNSCallState = s_messageBase.TelStates.Offhook;
+                                    LocalSetting.getDYSPUtil().put(LocalSetting.Cache_Name_CallingTelNumber, OPPOSITENUMBER);
                                 } else {
-                                    callState = s_messageBase.TelStates.CalledOffhook;
+                                    DDNSCallState = s_messageBase.TelStates.CalledOffhook;
                                 }
-                                LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK", incomingNumber);
+                                LogUtils.d("PhoneStateListener CALL_STATE_OFFHOOK", COMMINGTELNUMBER, OPPOSITENUMBER);//来电号码
                             } catch (Exception es) {
-                                LogUtils.e("PhoneStateListener CALL_STATE_OFFHOOK error" + es);
+                                LogUtils.e("PhoneStateListener CALL_STATE_OFFHOOK", es);
                             }
 
                             break;
@@ -222,18 +226,17 @@ public class CallShowService extends Service {
                             break;
                     }
                 }
-                CommandUtils.sendTelState(callState, LocalSetting.getMeetingID(), null);
-                LogUtils.d("当前电话状态", callState);
-                if (callState == s_messageBase.TelStates.CalledOffhook) {
+                CommandUtils.sendTelState(DDNSCallState, LocalSetting.getMeetingID(), null);
+                LogUtils.d("当前电话状态", DDNSCallState);
+                if (DDNSCallState == s_messageBase.TelStates.CalledOffhook) {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
                                 Thread.sleep(500);
+                                CommandUtils.sendVerifyCode(COMMINGTELNUMBER, COMMINGTELNUMBER);
                                 //被叫发送验证码,ddns模拟成主叫
-                                String calling = COMMINGTELNUMBER;
-                                LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
-                                CommandUtils.sendVerifyCode(calling, calling);
+                                LogUtils.d("PhoneStateListener callShow send VerifyCode :", COMMINGTELNUMBER);
                             } catch (Exception es) {
                                 LogUtils.e("PhoneStateListener sendVerifyCode error" + es);
                             }
@@ -243,7 +246,7 @@ public class CallShowService extends Service {
                 }
             }
 
-            private void callShow() {
+          /*  private void callShow() {
                 if (isFloatShown == false) {
                     SystemClock.sleep(500);// 睡0.5秒是为了让悬浮窗显示在360或别的悬浮窗口的上方
                     if (phoneState != TelephonyManager.CALL_STATE_IDLE) {
@@ -259,17 +262,17 @@ public class CallShowService extends Service {
                             @Override
                             public void onClick(View v) {
                                 try {
-                                    /*PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
-                                    PhoneUtils.answerRingingCall(CallShowService.this);*/
+                                    *//*PhoneUtils.telcomInvok(getBaseContext(), "answerRingingCall");
+                                    PhoneUtils.answerRingingCall(CallShowService.this);*//*
 
                                     String calling = LocalSetting.getDYSPUtil().getString(LocalSetting.Cache_Name_CallingTelNumber);
                                     LogUtils.d("PhoneStateListener callShow send VerifyCode :", calling);
                                     CommandUtils.sendVerifyCode(calling, calling);
 
-                                    /* Intent dialogIntent = new Intent(getBaseContext(), TestActivity.class);
-                                     *//*.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);*//*
-                                    getApplication().startActivity(dialogIntent);*/
+                                    *//* Intent dialogIntent = new Intent(getBaseContext(), TestActivity.class);
+             *//**//*.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            .putExtra(BaseActivity.MT_VP_PAGE_OPENTYPE, BaseActivity.MT_VIDEOPHONE_STARTUPTYPE_OFFHOOK);*//**//*
+                                    getApplication().startActivity(dialogIntent);*//*
 
                                 } catch (Exception es) {
                                     LogUtils.e("mFloatButton error: " + es);
@@ -293,7 +296,7 @@ public class CallShowService extends Service {
                 } catch (Exception ex) {
                     LogUtils.e("dismiss error :" + ex.toString());
                 }
-            }
+            }*/
         };
         //设置监听器
         telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);

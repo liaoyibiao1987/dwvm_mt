@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.EnumPageState;
 import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.comlibs.LoginExtMessageDissector;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
@@ -195,6 +196,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
 
     @Override
     protected void onResume() {
+        CommandUtils.PageState = EnumPageState.Login;
         /*try {
             throw new NullPointerException();
         } catch (NullPointerException e1) {
@@ -228,29 +230,31 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             switch (cmd) {
                 case s_messageBase.DeviceCMD.WVM_CMD_DDNS_LOGIN_RESULT:
                     try {
-                        s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
-                        LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
-
-                        if (loginResult.getDwErrorCode() == 0) {
-                            ToastUtils.showShort("登录成功");
-
-                            int ddnsID = arg.getEventArg().getHeader().dwSrcId;
-                            String ddnsIP = arg.getEventArg().getIPPort();
-                            LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
-                            ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
-                            LogUtils.d("loginResult.getDwLoginTimeElapse" + loginResult.getDwLoginTimeElapse());
-                            Intent intent = new Intent();
-                            intent.setClass(this, MTMainActivity.class);
-                            ActivityUtils.startActivity(intent);
-                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-                            finish();
-                        } else {
-                            LocalSetting.ResetInformation();
-                            ToastUtils.showShort("登录失败");
+                        if (CommandUtils.PageState == EnumPageState.Login) {
+                            s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
+                            LogUtils.d("DY_LoginActivity WVM_CMD_DDNS_LOGIN_RESULT", loginResult.getDwDeviceId());
+                            if (loginResult.getDwErrorCode() == 0) {
+                                int ddnsID = arg.getEventArg().getHeader().dwSrcId;
+                                String ddnsIP = arg.getEventArg().getIPPort();
+                                LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);
+                                ReWriteInformation(ddnsID, ddnsIP, loginExtMessage);
+                                LogUtils.d("DY_LoginActivity WVM_CMD_DDNS_LOGIN_RESULT", loginResult.getDwLoginTimeElapse());
+                                if (LocalSetting.isIsLogined() == false) {
+                                    LocalSetting.setIsLogined(true);
+                                    ToastUtils.showShort("登录成功");
+                                    Intent intent = new Intent();
+                                    intent.setClass(this, MTMainActivity.class);
+                                    ActivityUtils.startActivity(intent);
+                                    finish();
+                                }
+                            } else {
+                                LocalSetting.ResetInformation();
+                                ToastUtils.showShort("登录失败");
+                            }
+                            startPolling(loginResult.getDwErrorCode(), loginResult.getDwLoginTimeElapse());
                         }
-                        startPolling(loginResult.getDwErrorCode(), loginResult.getDwLoginTimeElapse());
                     } catch (Exception es) {
-                        LogUtils.e("TestActivity : Analytic package error :" + es);
+                        LogUtils.e("DY_LoginActivity WVM_CMD_DDNS_LOGIN_RESULT error :" + es);
                     }
                     break;
             }

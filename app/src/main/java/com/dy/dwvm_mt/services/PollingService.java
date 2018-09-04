@@ -127,7 +127,6 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
                         s_loginResultDDNS loginResult = arg.getEventArg().Param(s_loginResultDDNS.class);
                         LogUtils.d("Device ID：" + loginResult.getDwDeviceId());
                         if (loginResult.getDwErrorCode() == 0) {
-                            ToastUtils.showShort("登录成功");
                             int ddnsID = arg.getEventArg().getHeader().dwSrcId;
                             String ddnsIP = arg.getEventArg().getIPPort();
                             LoginExtMessageDissector.LoginExtMessage loginExtMessage = LoginExtMessageDissector.getLoginExtMessage(loginResult);

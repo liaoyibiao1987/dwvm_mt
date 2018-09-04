@@ -1,6 +1,7 @@
 package com.dy.dwvm_mt;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,7 +35,7 @@ import butterknife.ButterKnife;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/28.
  * PS: Not easy to write code, please indicate.
  */
-public class TestActivity extends BaseActivity implements NWCommandEventHandler, View.OnClickListener, DY_AVPacketEventHandler, SurfaceHolder.Callback {
+public class TestActivity extends BaseActivity implements NWCommandEventHandler, View.OnClickListener, DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
 
     @BindView(R.id.btn_test_login)
     Button btn_testlogin;
@@ -52,7 +53,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     protected Button btn_testdecoder;
 
     @BindView(R.id.surface_test_encoder)
-    protected SurfaceView m_surfacetestencoder;
+    protected TextureView m_surfacetestencoder;
 
     @BindView(R.id.surface_test_decoder)
     protected TextureView m_surfacetestdecoder;
@@ -106,8 +107,8 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btnsetSpeakerON3.setOnClickListener(this);
         btntestappendBuffs.setOnClickListener(this);
 
-        m_surfacetestencoder.getHolder().addCallback(this);
-        //m_surfacetestdecoder.getHolder().addCallback(this);
+        m_surfacetestencoder.setSurfaceTextureListener(this);
+        m_surfacetestdecoder.setSurfaceTextureListener(this);
 
         btn_testopencamare.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,7 +122,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btn_testencoder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                avcEncoder.startPerViewer(m_surfacetestencoder);
+                avcEncoder.startPerViewer(m_surfacetestencoder.getSurfaceTexture());
                 avcEncoder.start();
             }
         });
@@ -239,28 +240,34 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
     }
 
     @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
 
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
 
     }
 
     @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-       /* if (holder == (m_surfacetestdecoder.getHolder())) {
+    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+        if (surface == (m_surfacetestdecoder.getSurfaceTexture())) {
             if (avcDecoder != null) {
                 avcDecoder.decoderStop();
                 avcDecoder = null;
             }
 
-        } else*/ if (holder == (m_surfacetestencoder.getHolder())) {
+        } else if (surface == (m_surfacetestencoder.getSurfaceTexture())) {
             if (avcEncoder != null) {
                 avcEncoder.endEncoder();
                 avcEncoder = null;
             }
         }
+        return true;
+    }
+
+    @Override
+    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+
     }
 }

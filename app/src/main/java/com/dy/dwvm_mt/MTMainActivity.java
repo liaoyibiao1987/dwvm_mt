@@ -25,9 +25,11 @@ import android.view.MenuItem;
 import android.widget.FrameLayout;
 
 import com.dy.dwvm_mt.comlibs.BaseActivity;
+import com.dy.dwvm_mt.comlibs.EnumPageState;
 import com.dy.dwvm_mt.comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
+import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
@@ -63,10 +65,6 @@ public class MTMainActivity extends BaseActivity
     private List<String> permissionsList = new ArrayList<String>();
     //申请权限后的返回码
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;
-
-    private I_MT_Prime m_mt_Lib;
-
-
     FragmentManager fragmentManager;
 
     @BindView(R.id.toolbar)
@@ -86,6 +84,7 @@ public class MTMainActivity extends BaseActivity
         setContentView(R.layout.activity_mtmain);
         ButterKnife.bind(this);
         requestMyPermission();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
 
         fragmentManager = getSupportFragmentManager();
 
@@ -115,7 +114,6 @@ public class MTMainActivity extends BaseActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        m_mt_Lib = MTLibUtils.getBaseMTLib();
         navigationView.setNavigationItemSelectedListener(this);
         AnalysingUtils.addRecvedCommandListeners(this);
         try {
@@ -134,6 +132,12 @@ public class MTMainActivity extends BaseActivity
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        CommandUtils.PageState = EnumPageState.Normal;
+        super.onResume();
     }
 
     @Override
@@ -172,7 +176,7 @@ public class MTMainActivity extends BaseActivity
             case R.id.nav_settings:
                 break;
             case R.id.nav_share:
-                Intent intent = new Intent(this, DY_VideoPhoneActivity.class);
+                Intent intent = new Intent(this, TestActivity.class);
                 startActivity(intent);
                 return true;
             case R.id.nav_logout:

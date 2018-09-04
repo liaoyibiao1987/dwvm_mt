@@ -6,6 +6,7 @@ package com.dy.dwvm_mt.comlibs;
  */
 public enum EnumPageState {
     Normal,
+    Login,
     VideoPhone,
     Meeting
 }
