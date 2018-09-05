@@ -116,4 +116,6 @@ dependencies {
     implementation project(':javastruct')
     implementation project(':phone.common')
     implementation 'fr.baloomba:viewpagerindicator:2.4.2'
+    implementation('com.github.hotchemi:permissionsdispatcher:3.1.0') { exclude module: 'support-v13' }
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.1.0'
 }

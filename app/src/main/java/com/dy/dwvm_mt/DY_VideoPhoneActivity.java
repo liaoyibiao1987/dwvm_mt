@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
@@ -41,13 +42,26 @@ import com.dy.dwvm_mt.utilcode.util.ToastUtils;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.RuntimePermissions;
 
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
+@RuntimePermissions
 public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
 
+
+   /* @NeedsPermission(Manifest.permission.CAMERA)
+    void sss() {
+    }*/
+
+   /* @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        DY_VideoPhoneActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+    }*/
 
     private class PhoneStateReceive extends BroadcastReceiver {
         @Override
