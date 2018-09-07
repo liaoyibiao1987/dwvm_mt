@@ -103,7 +103,8 @@ android {
         }
     }
 }
-
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+def AAVersion = "4.3.1"
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation 'junit:junit:4.12'
@@ -116,6 +117,15 @@ dependencies {
     implementation project(':javastruct')
     implementation project(':phone.common')
     implementation 'fr.baloomba:viewpagerindicator:2.4.2'
+
+    //implementation 'com.github.hotchemi:permissionsdispatcher:4.0.0-alpha1'
     implementation('com.github.hotchemi:permissionsdispatcher:3.1.0') { exclude module: 'support-v13' }
     annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:3.1.0'
+
+    /*implementation "com.github.hotchemi:permissionsdispatcher:2.1.1"
+    implementation "org.androidannotations:androidannotations-api:$AAVersion"
+    annotationProcessor "com.github.hotchemi:permissionsdispatcher-processor:2.1.1"
+    annotationProcessor "org.androidannotations:androidannotations:$AAVersion"
+    annotationProcessor "com.github.AleksanderMielczarek:AndroidAnnotationsPermissionsDispatcherPlugin:2.1.1"*/
+
 }
