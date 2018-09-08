@@ -86,6 +86,7 @@ double get_current_us(void);
 #define THREAD_PROC(proc, context)          void* proc(void* context)
 #define THREAD_CREATE(pt, proc, context)    (0 == pthread_create(&pt, NULL, proc, (void*)context))
 #define THREAD_CLOSE(pt)                    if(0!=pt) {void* pt_rtn = NULL; pthread_join(pt, &pt_rtn); pthread_detach(pt); pt=0;}
+#define THREAD_SET_NAME(pt, name)           if(0!=pt) {pthread_setname_np(pt,name); xlog(XLOG_LEVEL_NORMAL,"thread (0x%lx/%lu) name (%s)\n",pt,pt,name);}
 #define WAIT_AND_TERMINATE_THREAD(pt, t, s) THREAD_CLOSE(pt); pt = 0;
 
 //

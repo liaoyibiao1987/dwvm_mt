@@ -99,12 +99,13 @@ void xlog(int iLevel, const char *szFormat, ...)
     if (iLevel >= g_iLevel)
     {
         char sz[640] = {""};
+        char* psz = sz;
         va_list ArgumentList;
         size_t len = 0;
 
         if (g_bShowLevel)
         {
-            sprintf(sz, "[LV%d] ", iLevel);
+            psz += sprintf(psz, "[LV%d] ", iLevel);
         }
         if (g_bShowTime)
         {
@@ -112,32 +113,40 @@ void xlog(int iLevel, const char *szFormat, ...)
             struct tm *lt = localtime(&t);
             if (lt)
             {
-                sprintf(sz + strlen(sz), "[%04d-%02d-%02d %02d:%02d:%02d] ", 1900 + lt->tm_year, 1 + lt->tm_mon,
+                psz += sprintf(psz, "[%04d-%02d-%02d %02d:%02d:%02d] ", 1900 + lt->tm_year, 1 + lt->tm_mon,
                         lt->tm_mday, lt->tm_hour, lt->tm_min, lt->tm_sec);
             }
             else
             {
-                sprintf(sz + strlen(sz), "[%lu] ", t);
+                psz += sprintf(psz, "[%lu] ", t);
             }
         }
 #ifdef WIN32
-            if(1)
-            {
-                const DWORD dwPid = GetCurrentProcessId();
-                const DWORD dwTid = GetCurrentThreadId();
-                sprintf(sz + strlen(sz), "[PID %4lu][TID %4lu] ", dwPid, dwTid);
-            }
+        if(1)
+        {
+            const DWORD dwPid = GetCurrentProcessId();
+            const DWORD dwTid = GetCurrentThreadId();
+            psz += sprintf(psz, "[PID %4lu][TID %4lu] ", dwPid, dwTid);
+        }
 #endif
-
+        // 内容
         va_start(ArgumentList, szFormat);
-        vsprintf(sz + strlen(sz), szFormat, ArgumentList);
+        const int iMaxLen = (int)(sizeof(sz) - 5 - (psz - sz));
+        int iPrintLen = vsnprintf(psz, iMaxLen, szFormat, ArgumentList);
+        if (iPrintLen < 0 || iPrintLen >= iMaxLen)
+        {
+            iPrintLen = iMaxLen - 1;
+        }
+        psz += iPrintLen;
+        *psz = 0;
         va_end(ArgumentList);
 
-        len = strlen(sz);
-        if (len > 0 && '\n' != sz[len - 1] && '\r' != sz[len - 1])
+        // 行尾加上回车符
+        if ((psz-sz) >= 1 && *(psz-1) != '\r' && *(psz-1) != '\n')
         {
-            sz[len] = '\n';
-            sz[len + 1] = '\0';
+            *psz = '\n';
+            psz++;
+            *psz = 0;
         }
 
 #ifdef WIN32

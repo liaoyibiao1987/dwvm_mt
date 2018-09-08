@@ -96,7 +96,7 @@ BOOL CMTLibInstance::Start(
     //
     // alloc session list
     //
-    if (!m_sessionList.Create(sizeof(T_SESSION), MAX_SESSION_NUMBER, 0, sizeof(T_SESSION::ID)))
+    if (!m_sessionList.Create(sizeof(T_SESSION), MAX_SESSION_NUMBER, 0, sizeof(T_SESSION_ID)))
     {
         xlog(XLOG_LEVEL_ERROR, "CMTLibInstance::Start() failed: can not create session-list\n");
         Stop();
@@ -124,6 +124,7 @@ BOOL CMTLibInstance::Start(
     //
     m_bToStopThread = FALSE;
     THREAD_CREATE(m_hAutoDeleteThread, Thread_AutoDeleteSession, this);
+    THREAD_SET_NAME(m_hAutoDeleteThread, "DWVM_LibInstance_AutoDeleteSession");
 
     return TRUE;
 }
@@ -191,16 +192,20 @@ BOOL CMTLibInstance::SetDeviceName(const char *szDeviceName)
     return TRUE;
 }
 
-bool CMTLibInstance::ResetDeviceID(int *dwLocalDeviceId){
-    if (NULL == dwLocalDeviceId)
+BOOL CMTLibInstance::SetDeviceId(DWORD dwLocalDeviceId)
+{
+    if (0 == dwLocalDeviceId || GET_DEVICE_TYPE(dwLocalDeviceId) != WVM_DEVICE_TYPE_MT)
     {
+        xlog(XLOG_LEVEL_ERROR, "CMTLibInstance::SetDeviceId() failed: invalidate localDeviceId: 0x%08X\n", dwLocalDeviceId);
         return FALSE;
-    } else{
-        m_dwLocalDeviceId = *dwLocalDeviceId;
-        DWVM_SetLocalDeviceId(m_sock,*dwLocalDeviceId);
-        return TRUE;
     }
+
+    DWVM_SetLocalDeviceId(m_sock, dwLocalDeviceId);
+    m_dwLocalDeviceId = dwLocalDeviceId;
+
+    return TRUE;
 }
+
 int CMTLibInstance::SendUdpPacketToDevice(
     DWORD dwPacketType,
     DWORD dwNeedReplay,
@@ -306,7 +311,7 @@ int CMTLibInstance::SendOneFrameToDevice(
     //
     // make session id
     //
-    T_SESSION::ID sessionId;
+    T_SESSION_ID sessionId;
     memset(&sessionId, 0, sizeof(sessionId));
     sessionId.eDir = SESSION_SENDER;
     sessionId.iLocalChannelIndex = iLocalEncoderChannelIndex;
@@ -483,7 +488,7 @@ int CMTLibInstance::OnReceivedNetPacket1(T_DWVM_JNI_ENV *pJava, DWORD dwFromIp, 
     {
         // 对方请求重发视频、音频包
         T_WVM_VA_RESEND *r = (T_WVM_VA_RESEND *) (((char *) pData) + hdr->dwSize);
-        T_SESSION::ID sessionId;
+        T_SESSION_ID sessionId;
         memset(&sessionId, 0, sizeof(sessionId));
         sessionId.eMedia = (WVM_FRAMETYPE_AUDIO == r->Session.dwFrameType) ? SESSION_AUDIO : SESSION_VIDEO;
         sessionId.eDir = SESSION_SENDER;
@@ -506,7 +511,7 @@ int CMTLibInstance::OnReceivedNetPacket1(T_DWVM_JNI_ENV *pJava, DWORD dwFromIp, 
     {
         // 对方请求统计信息
         T_WVM_VA_POLLING *r = (T_WVM_VA_POLLING *) (((char *) pData) + hdr->dwSize);
-        T_SESSION::ID sessionId;
+        T_SESSION_ID sessionId;
         memset(&sessionId, 0, sizeof(sessionId));
         sessionId.eMedia = (WVM_FRAMETYPE_AUDIO == r->Session.dwFrameType) ? SESSION_AUDIO : SESSION_VIDEO;
         sessionId.eDir = SESSION_SENDER;
@@ -520,7 +525,7 @@ int CMTLibInstance::OnReceivedNetPacket1(T_DWVM_JNI_ENV *pJava, DWORD dwFromIp, 
             CFrameSender *pSender = pSession->pSessionObj->GetSender();
             if (pSender)
             {
-                pSender->Reply(m_sock, m_dwNetEncryptMode, (DWORD) hdr->dwSrcId, dwFromIp, wFromPort, r);
+                pSender->Reply(m_sock, m_dwNetEncryptMode, (DWORD) hdr->dwSrcId, dwFromIp, wFromPort, (DWORD) hdr->dwDestId, r);
             }
         }
         return 0;
@@ -536,7 +541,7 @@ int CMTLibInstance::OnReceivedNetPacket1(T_DWVM_JNI_ENV *pJava, DWORD dwFromIp, 
     {
         // 接收端回馈来的统计信息
         T_WVM_VA_REPLY *pReply = (T_WVM_VA_REPLY *) (((char *) pData) + hdr->dwSize);
-        T_SESSION::ID sessionId;
+        T_SESSION_ID sessionId;
         memset(&sessionId, 0, sizeof(sessionId));
         sessionId.eMedia = (WVM_FRAMETYPE_AUDIO == pReply->Polling.Session.dwFrameType) ? SESSION_AUDIO : SESSION_VIDEO;
         sessionId.eDir = SESSION_RECEIVER;
@@ -667,7 +672,7 @@ BOOL CMTLibInstance::OnReceivedVideoAudioPacket(
     //
     // make session id
     //
-    T_SESSION::ID sessionId;
+    T_SESSION_ID sessionId;
     memset(&sessionId, 0, sizeof(sessionId));
     if (WVM_FRAMETYPE_VIDEO_P == pFrameHdr->Session.dwFrameType || WVM_FRAMETYPE_VIDEO_I == pFrameHdr->Session.dwFrameType)
     {
@@ -767,6 +772,7 @@ BOOL CMTLibInstance::OnReceivedVideoAudioPacket(
 
 void CMTLibInstance::OnAutoDeleteSessionThread()
 {
+    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
     while(1)
     {
         // 10 seconds timer

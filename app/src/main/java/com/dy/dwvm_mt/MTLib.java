@@ -104,7 +104,7 @@ public class MTLib implements I_MT_Prime {
     public native boolean setDeviceName(String deviceName);
 
     @Override
-    public native boolean resetDeviceID(int deviceID);
+    public native boolean setDeviceId(long deviceID);
 
     @Override
     public native int dataEncrypt(byte[] srcData, int srcSize, byte[] destData);

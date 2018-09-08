@@ -133,7 +133,7 @@ BOOL CRestructPacket::Push(void *pPacket, int nPacketLen, CXSimpleChain::_node *
     T_WVM_VA_BLOCK_HEADER *hdr = (T_WVM_VA_BLOCK_HEADER *) pPacket;
     if (pPacket == NULL || nPacketLen <= sizeof(T_WVM_VA_BLOCK_HEADER))
     {
-        //xlog(XLOG_LEVEL_NORMAL, "---PUSH: error: pPacket=%08X, nPacketLen=%d\n", pPacket, nPacketLen);
+        xlog(XLOG_LEVEL_NORMAL, "[CRestructPacket::Push][%p]: error: pPacket=%08X, nPacketLen=%d\n", this, pPacket, nPacketLen);
         return FALSE;
     }
 
@@ -150,7 +150,7 @@ BOOL CRestructPacket::Push(void *pPacket, int nPacketLen, CXSimpleChain::_node *
     //
     if (hdr->frm_seq <= m_nLastFrameSeq)
     {
-        // xlog(XLOG_LEVEL_NORMAL, "################ PUSH: frm_seq=%6d, last=%6d\n", hdr->frm_seq, m_nLastFrameSeq);
+        //xlog(XLOG_LEVEL_NORMAL, "[CRestructPacket::Push][%p]: frm_seq=%6d, last=%6d\n", this, hdr->frm_seq, m_nLastFrameSeq);
 
         if (hdr->frm_seq <= 30) // 从新从头发送的数据
         {
@@ -308,7 +308,7 @@ BOOL CRestructPacket::Pop(void *pFrame, int nBufferSize, int *pActualSize, bool 
             break;
         }
 
-        xlog(XLOG_LEVEL_NORMAL, "################ POP: delete timeout packet, pkt_seq=%d!", NODE_PKTSEQ(nodHead));
+		xlog(XLOG_LEVEL_NORMAL, "[CRestructPacket::Pop][%p] delete timeout (%u ms) packet, pkt_seq=%d!", this, m_timeout, NODE_PKTSEQ(nodHead));
 
         //#if defined(_DEBUG)
         //	PrintChainSeq(&m_chainFrame, "Del Timeout:");
@@ -325,7 +325,7 @@ void CRestructPacket::ClearFrameChain()
 {
     CXAutoLock lock(m_lock);
 
-    // xlog(XLOG_LEVEL_NORMAL, "################ Clear cache! (last-pkt-seq = %d)\n", m_nLastPktSeq);
+	//xlog(XLOG_LEVEL_NORMAL, "[CRestructPacket::ClearFrameChain][%p] Clear cache! (last-pkt-seq = %d)\n", this, m_nLastPktSeq);
     // PrintChainSeq(&m_chainFrame, "#### ");
 
     CXSimpleChain::_node *nod = NULL;
@@ -736,7 +736,7 @@ void CRestructPacket::DeleteFirstCrashIfSecondWhole()
     // 如果第2帧完整，就删除第1帧
     if (nodHead2 != NULL && IsWholeFrame(nodHead2))
     {
-        xlog(XLOG_LEVEL_NORMAL, "################ DeleteFirstCrashIfSecondWhole: del one frame\n");
+		xlog(XLOG_LEVEL_NORMAL, "[CRestructPacket::DeleteFirstCrashIfSecondWhole][%p]: del one frame\n", this);
 
         m_nLastFrameSeq = NODE_FRMSEQ(nodHead);
         RemoveOneFrame(NULL, 0, &m_nLastPktSeq);

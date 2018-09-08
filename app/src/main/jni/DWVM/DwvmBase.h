@@ -52,8 +52,7 @@ typedef struct
     WORD wReserve;        // 保留参数，目前等于0
     struct T_NET_STAT        // OUT 3个步骤各自的统计情况
     {
-        int iPktSendCnt;
-        //   总共发送的网络包数量
+        int iPktSendCnt; //   总共发送的网络包数量
         int iPktAckCnt;    //   收到的网络应答包的数量
         int iPktSize;    //   每个网络包的大小，单位：字节
         double dbResponse;    //   平均响应时间，单位：毫秒
@@ -359,9 +358,9 @@ public:
     BOOL Resend(
         SOCKET s,
         DWORD dwNetEncryptMode,
-        DWORD dwSrcDeviceId,
-        DWORD dwSrcIp,
-        WORD wSrcPort,
+			DWORD  dwToDeviceId,
+			DWORD  dwToIp,
+			WORD   wToPort,
         T_WVM_VA_RESEND *pResend);
 
     // 处理接收方的统计请求（即命令 WVM_CMD_PS_VA_POLLING）
@@ -371,19 +370,38 @@ public:
         DWORD dwSrcDeviceId,
         DWORD dwSrcIp,
         WORD wSrcPort,
+			DWORD  dwDestDeviceId,
         T_WVM_VA_POLLING *pPolling);
 
     // 获取一些状态
-    __inline DWORD GetLastFrameTime()
-    { return m_dwLastFrameTime; }
+	__inline DWORD GetLastFrameTime() { return m_dwLastFrameTime; }
+
+	// 获取统计信息
+	BOOL GetStatText(char* szText);
 
 protected:
     CTimingCache m_cache;
     int m_iCacheSecond;
+	DWORD			m_dwSenderDeviceId;
     DWORD m_dwFrameCount;
     DWORD m_dwBlockCount;
     DWORD m_dwLastFrameTime;
     HANDLE m_hLock;
+	// 控制重发包的频率
+	DWORD			m_dwResendLimit_StartTick;
+	DWORD			m_dwResendLimit_AvgSendPackets;
+	DWORD			m_dwResendLimit_SendPackets;
+	DWORD			m_dwResnedLimit_ResendPackets;
+	// 统计信息
+	DWORD			m_dwStatStartTick;
+	DWORD			m_dwStatMaxFrameSize;
+	DWORD			m_dwStatFrames;
+	DWORD			m_dwStatBytes0;
+	DWORD			m_dwStatBytes1;
+	DWORD			m_dwStatPackets0;
+	DWORD			m_dwStatPackets1;
+	DWORD			m_dwStatErrorCount0;
+	DWORD			m_dwStatErrorCount1;
 };
 
 //
@@ -395,7 +413,6 @@ class CFrameReceiver
 {
 public:
     CFrameReceiver();
-
     ~CFrameReceiver();
 
     // 组包（即处理命令 WVM_CMD_PS_VA_FRAME）
@@ -424,35 +441,23 @@ public:
     void ClearCache();
 
     // 设定发送“重发请求包”的时间间隔，单位：毫秒。默认为 LAN:100ms, WAN:1000ms
-    __inline void SetResendInterlace(DWORD dwNew)
-    { m_dwResendInterlaceMs = dwNew; }
-
-    __inline DWORD GetResendInterlace()
-    { return m_dwResendInterlaceMs; }
+	__inline void SetResendInterlace(DWORD dwNew) { m_dwResendInterlaceMs = dwNew; }
+	__inline DWORD GetResendInterlace() { return m_dwResendInterlaceMs; }
 
     // 获取网络传输的实时状态
     void GetRealtimeStatus(T_DWVM_NET_REALTIME_STATUS *pStatus);
 
     // 获取一些状态
-    __inline DWORD GetLastPktTime()
-    { return m_dwLastPktTime; }
-
-    __inline DWORD GetLastFrameTime()
-    { return m_dwLastFrameTime; }
-
-    __inline DWORD GetLastSrcIp()
-    { return m_dwLastSrcIp; }
-
-    __inline WORD GetLastSrcPort()
-    { return m_wLastSrcPort; }
-
-    __inline T_WVM_VA_FRAME_HEADER *GetLastFrameHeader()
-    { return &m_LastPushFrame; }
-
+	__inline DWORD GetLastPktTime() { return m_dwLastPktTime; }
+	__inline DWORD GetLastFrameTime() { return m_dwLastFrameTime; }
+	__inline DWORD GetLastSrcIp() { return m_dwLastSrcIp; }
+	__inline WORD  GetLastSrcPort() { return m_wLastSrcPort; }
+	__inline T_WVM_VA_FRAME_HEADER* GetLastFrameHeader() { return &m_LastPushFrame; }
     BOOL GetStatusString(char *pszStatus);
-
     DWORD GetCachePktNumber();  // 获取缓存中的小包数
     DWORD GetCacheDataTimeMs(); // 获取缓存中的毫秒数
+	// 获取统计信息
+	BOOL GetStatText(char* szText);
 
 protected:
     CRestructPacket *m_pRestruct;        // 组包类
@@ -473,6 +478,15 @@ protected:
     //
     T_WVM_VA_POLLING m_Polling;            // 发送给服务器的polling包
     T_DWVM_NET_REALTIME_STATUS m_RealtimeStatus;    // 统计的最终结果
+	DWORD	m_dwStatStartTick;
+	DWORD	m_dwStatMaxFrameSize;
+	DWORD	m_dwStatMaxResendCnt;
+	DWORD	m_dwStatFrames;
+	DWORD	m_dwStatBytes0;
+	DWORD	m_dwStatBytes1;
+	DWORD	m_dwStatPackets0;
+	DWORD	m_dwStatPackets1;
+	DWORD	m_dwStatResendQueryCnt;
 };
 
 //
@@ -520,7 +534,6 @@ class CTcpSenderOverUdp
 {
 public:
     CTcpSenderOverUdp();
-
     virtual ~CTcpSenderOverUdp();
 
     // 更新参数

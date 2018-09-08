@@ -102,6 +102,10 @@ android {
             path "CMakeLists.txt" //编译后so文件的名字
         }
     }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
 }
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 def AAVersion = "4.3.1"

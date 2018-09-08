@@ -47,11 +47,12 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceName
 
 /*
  * Class:     com_dy_dwvm_mt_MTLib
- * Method:    resetDeviceID
- * Signature: ()Z
+ * Method:    setDeviceId
+ * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_resetDeviceID
-        (JNIEnv *env, jobject, jint deviceID);
+JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceId
+    (JNIEnv *, jobject, jlong);
+
 /*
  * Class:     com_dy_dwvm_mt_MTLib
  * Method:    dataEncrypt

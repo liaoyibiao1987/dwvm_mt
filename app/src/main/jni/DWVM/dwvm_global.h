@@ -33,7 +33,7 @@
 #define WVM_MTU                        (1400)    // 公网发包的最大长度为1500，减去IP头(20字节)和UDP头(8字节)。应该为1472，但为能广泛适应不同的路由器，适当地减小了一点
 #define WVM_MAX_UDP_PACKET_SIZE        (WVM_MTU - sizeof(T_WVM_PACKET_HEADER) - sizeof(T_WVM_PS_TRANSMIT) - (sizeof(DWORD)*WVM_MAX_PS_DEST_NUMBER))    // UDP包的最大长度
 #define WVM_MAX_DEVICE_EXT_SIZE        (WVM_MAX_UDP_PACKET_SIZE - sizeof(T_WVM_PACKET_HEADER) - sizeof(T_WVM_DDNS_TABLE_RESULT))    // 设备扩展信息的最大长度
-#define WVM_MAX_RESEND_PKT_NUM        (8)        // 一次最多重发Video/Audio包数
+#define WVM_MAX_RESEND_PKT_NUM        (32)        // 一次最多重发Video/Audio包数
 #define WVM_MAX_FILE_NAME_LEN        (256)    // 文件名的最大长度，包括全路径名，和最后的结束符\0
 
 //

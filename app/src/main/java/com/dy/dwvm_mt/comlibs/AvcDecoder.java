@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceView;
 
+import com.dy.dwvm_mt.utilcode.util.FileIOUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.TimeUtils;
 
@@ -130,7 +131,6 @@ public class AvcDecoder extends Thread {
     public void decoderStop() {
         LogUtils.d("Decoder stop...");
         isRunning = false;
-        seekFrames = 0;
         decoderRelease();
         SystemClock.sleep(20);
         mFrmList = null;
@@ -155,19 +155,16 @@ public class AvcDecoder extends Thread {
     }
 
     File file = new File(Environment.getExternalStorageDirectory() + "/DY", TimeUtils.getNowString(new SimpleDateFormat("yyyy_MM_dd_HH")) + ".h264");
-    int seekFrames = 0;
-
     private boolean isopen = true;
 
     public void testswitch() {
         isopen = !isopen;
+        m_decodeWaitKeyFrame = true;
     }
 
     public boolean decoderOneVideoFrame(String codecName, int width, int height, byte[] dataBuffer, int dataSize, long frameType) {
         //LogUtils.d(String.format("codecName %s, width %d, height %d, frameType %d", codecName, width, height, frameType));
         // if no decoder, create it
-        //FileIOUtils.writeFileFromBytesByStream(file, dataBuffer, true);
-        Log.d("writeFileFromBytes", "isopen " + isopen + "  " + TimeUtils.getNowString());
         if (isopen == true) {
             if (isRunning == true && isPause == false) {
                 if (m_decoder == null) {
@@ -205,14 +202,22 @@ public class AvcDecoder extends Thread {
                 if (mFrmList.size() >= M_YUVQUEUESIZE) {
                     mFrmList.poll();
                 }
-                seekFrames++;
-                Log.d("DDDDDD seekFrames : " + seekFrames, TimeUtils.getNowString());
-                if (seekFrames > 5) {
-                    Frame frame = new Frame(dataBuffer, dataSize, frameType);
-                    mFrmList.offer(frame);
-                }
-                Log.d("TTTTTTTTTTTTT END : " + mFrmList.size(), TimeUtils.getNowString());
+                Frame frame = new Frame(dataBuffer, dataSize, frameType);
+                mFrmList.offer(frame);
+                //Log.d("Inserted frame" + mFrmList.size(), TimeUtils.getNowString());
             }
+        } else {
+            // wait key-frame at first
+            if (m_decodeWaitKeyFrame) {
+                if (0 != frameType) //0- I frame, 1- P frame
+                {
+                    return true;
+                } else {
+                    m_decodeWaitKeyFrame = false;
+                }
+            }
+            FileIOUtils.writeFileFromBytesByStream(file, dataBuffer, true);
+            Log.d("Begin into frame array", "isopen " + isopen + "  " + TimeUtils.getNowString());
         }
         return true;
     }
@@ -254,7 +259,7 @@ public class AvcDecoder extends Thread {
         //解码后的数据，包含每一个buffer的元数据信息，例如偏差，在相关解码器中有效的数据大小
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         while (isRunning) {
-            if (isPause == false) {
+            if (isPause == false && isopen == true) {
                 if (mFrmList.isEmpty()) {
                     try {
                         Thread.sleep(50);
@@ -297,8 +302,6 @@ public class AvcDecoder extends Thread {
                         continue;
                     }
                 } catch (Exception es) {
-                    /*isRunning = false;
-                    isPause = true;*/
                     LogUtils.e("AvcDecoder dequeueInputBuffer error", es.getMessage());
                 }
                 SystemClock.sleep(10);
@@ -308,7 +311,7 @@ public class AvcDecoder extends Thread {
                 //4 开始解码
                 try {
                     int decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
-                    Log.w("DYTTTTTTTTTTTTTT", info.presentationTimeUs / 1000 + " vs " + System.currentTimeMillis() / 1000);
+                    //Log.w("DYTTTTTTTTTTTTTT", info.presentationTimeUs / 1000 + " vs " + System.currentTimeMillis() / 1000);
                     while (decodeOutputBufferIndex >= 0) {
                         //帧控制
                    /* while (info.presentationTimeUs / 1000 > System.currentTimeMillis() - startMs) {
@@ -325,8 +328,6 @@ public class AvcDecoder extends Thread {
                         decodeOutputBufferIndex = m_decoder.dequeueOutputBuffer(info, 0);
                     }
                 } catch (Exception es) {
-                    /*isRunning = false;
-                    isPause = true;*/
                     LogUtils.e("AvcDecoder dequeueOutputBuffer error", es.getMessage());
                     break;
                 }

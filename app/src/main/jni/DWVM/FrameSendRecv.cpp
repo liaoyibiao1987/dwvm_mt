@@ -48,16 +48,13 @@ BOOL CTimingCache::Add(
     }
 
     // 把超过时间的小包，从 m_data 移动到 m_idle
-    const time_t tCurrTime = time(NULL);
-    CXSimpleChain::_node *pNode = NULL;
-    while (NULL != (pNode = m_data.PeekHead()))
-    {
-        if (((int) (tCurrTime - pNode->timestamp)) <= m_iCacheSecond)
-        {
-            break;
-        }
-        m_idle.AddToTail(m_data.RemoveFromHead());
-    }
+	const time_t tCurrTime = time(NULL);
+	CXSimpleChain::_node* pNode = NULL;
+	while((pNode = m_data.PeekHead()) != NULL &&
+          (int)(tCurrTime - pNode->timestamp) > m_iCacheSecond)
+	{
+		m_idle.AddToTail( m_data.RemoveFromHead() );
+	}
 
     // 从 m_idle 获取一个空白buffer，如果失败，再从新分配一个
     pNode = m_idle.RemoveFromHead();
@@ -98,7 +95,7 @@ int CTimingCache::Get(    // 返回值：0表示读取失败，>0 表示读取�
             pBlockHdr = (T_WVM_VA_BLOCK_HEADER *) (((char *) pNode->data) + sizeof(T_WVM_VA_FRAME_HEADER));
             if (pNode->data && pkt_seq == pBlockHdr->pkt_seq)
             {
-                memcpy(pData, pNode->data, pNode->sizeActual);
+                memcpy(pData, pNode->data, (size_t)pNode->sizeActual);
                 return (int) pNode->sizeActual;
             }
             pNode = m_data.PeekNext(pNode);
@@ -168,7 +165,8 @@ int CTimingCache::Stat(T_WVM_VA_REPLY *pStat)
             {
                 pBlockHdr = (T_WVM_VA_BLOCK_HEADER *) (((char *) pNode->data) + sizeof(T_WVM_VA_FRAME_HEADER));
                 if (pBlockHdr->pkt_seq < pStat->Polling.dwPktSeqBegin)
-                { ;
+                {
+                	;
                 }
                 else if (pBlockHdr->pkt_seq > pStat->Polling.dwPktSeqEnd)
                 {
@@ -181,8 +179,7 @@ int CTimingCache::Stat(T_WVM_VA_REPLY *pStat)
                     if (0 != pBlockHdr->resend_cnt)
                     {
                         pStat->dwSendPackets_1 += pBlockHdr->resend_cnt;
-                        pStat->dwSendBytes_1 +=
-                            pBlockHdr->resend_cnt * (sizeof(T_WVM_PACKET_HEADER) + pNode->sizeActual);
+                        pStat->dwSendBytes_1 += pBlockHdr->resend_cnt * (sizeof(T_WVM_PACKET_HEADER) + pNode->sizeActual);
                     }
                 }
             }
@@ -205,9 +202,27 @@ CFrameSender::CFrameSender(int iCacheSecond) :
     m_hLock = CXAutoLock::Create();
 
     m_iCacheSecond = iCacheSecond;
+	m_dwSenderDeviceId = 0;
     m_dwFrameCount = 0;
     m_dwBlockCount = 0;
     m_dwLastFrameTime = timeGetTime();
+
+	// 控制重发包的频率
+	m_dwResendLimit_StartTick = timeGetTime();
+	m_dwResendLimit_AvgSendPackets = 128;
+	m_dwResendLimit_SendPackets = 0;
+	m_dwResnedLimit_ResendPackets = 0;
+
+	// 统计信息
+	m_dwStatStartTick = 0;
+	m_dwStatMaxFrameSize = 0;
+	m_dwStatFrames = 0;
+	m_dwStatBytes0 = 0;
+	m_dwStatBytes1 = 0;
+	m_dwStatPackets0 = 0;
+	m_dwStatPackets1 = 0;
+	m_dwStatErrorCount0 = 0;
+	m_dwStatErrorCount1 = 0;
 }
 
 CFrameSender::~CFrameSender()
@@ -245,7 +260,6 @@ BOOL CFrameSender::Send(
         xlog(XLOG_LEVEL_ERROR, "CFrameSender::Send(): header StartCode error: %08X", pStreamHdr->Code);
         return FALSE;
     }
-
     const int iFrameLen = pStreamHdr->HeadSize + pStreamHdr->BufferSize;
 
     DWORD dwFrameType = 0;
@@ -302,6 +316,14 @@ BOOL CFrameSender::Send(
         return FALSE;
     }
 
+	m_dwStatFrames ++;
+	if((DWORD)iFrameLen > m_dwStatMaxFrameSize)
+	{
+		m_dwStatMaxFrameSize = (DWORD)iFrameLen;
+	}
+
+	m_dwSenderDeviceId = dwSrcDeviceId;
+
     memset(Buffer, 0, sizeof(T_WVM_VA_FRAME_HEADER) + sizeof(T_WVM_VA_BLOCK_HEADER));
 
     pFrameHdr->Session.dwSrcDeviceEncoderChannelIndex = dwSrcEncoderChannelIndex;
@@ -310,7 +332,7 @@ BOOL CFrameSender::Send(
     pFrameHdr->Session.dwFrameType = dwFrameType;
     pFrameHdr->bVideoOnlySendKeyFrame = bVideoOnlySendKeyFrame;
 
-    pBlockHdr->time_stamp = 0;
+    pBlockHdr->time_stamp = timeGetTime();
     pBlockHdr->frm_seq = ++m_dwFrameCount;
     pBlockHdr->frm_pkt_num = (WORD) iPktNum;
     pBlockHdr->is_independent = (BYTE) ((WVM_FRAMETYPE_VIDEO_P == dwFrameType) ? 0 : 1);
@@ -329,18 +351,45 @@ BOOL CFrameSender::Send(
 
         memcpy(pBlockData, pSrc, (size_t) iBlockLen);
 
-        // 发送
-        DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_FRAME, 0, dwDestDeviceId, dwDestIp, wDestPort, Buffer, iSendLen,
-                             dwNetEncryptMode, dwSrcDeviceId);
-
         // 缓存
         if (m_iCacheSecond > 0)
         {
             m_cache.Add(Buffer, iSendLen);
         }
 
+		// 随机丢包，测试重发效果
+		const BOOL bTestLost = FALSE;//(0 == (((DWORD)rand()) % 20));
+
+		// 发送
+		if(bTestLost)
+		{
+			xlog(XLOG_LEVEL_NORMAL, "### [SENDER_%p] TEST LOST seq = %u (in frame #%u pkt %u/%u)\n", this, pBlockHdr->pkt_seq, pBlockHdr->frm_seq, pBlockHdr->frm_pkt_seq, pBlockHdr->frm_pkt_num);
+		}
+		else
+		{
+			if(0 == DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_FRAME, 0, dwDestDeviceId, dwDestIp, wDestPort, Buffer, iSendLen, dwNetEncryptMode, m_dwSenderDeviceId))
+			{
+				m_dwStatErrorCount0 ++;
+			}
+		}
+
         pSrc += iBlockLen;
         iRemain -= iBlockLen;
+			
+		m_dwStatBytes0 += iBlockLen;
+		m_dwStatPackets0 ++;
+
+		m_dwResendLimit_SendPackets ++;
+	}
+
+	// 控制重发包的频率
+	const DWORD dwCurrentTick = timeGetTime();
+	if((dwCurrentTick - m_dwResendLimit_StartTick) >= 1000)
+	{
+		m_dwResendLimit_StartTick = dwCurrentTick;
+		m_dwResendLimit_AvgSendPackets = m_dwResendLimit_SendPackets;
+		m_dwResendLimit_SendPackets = 0;
+		m_dwResnedLimit_ResendPackets = 0;
     }
 
     m_dwLastFrameTime = timeGetTime();
@@ -351,15 +400,15 @@ BOOL CFrameSender::Send(
 // 处理接收方的重发请求（即命令 WVM_CMD_PS_VA_RESEND）
 BOOL CFrameSender::Resend(
     SOCKET s,
-    DWORD dwNetEncryptMode,
-    DWORD dwSrcDeviceId,
-    DWORD dwSrcIp,
-    WORD wSrcPort,
+    DWORD  dwNetEncryptMode,
+    DWORD  dwToDeviceId,
+    DWORD  dwToIp,
+    WORD   wToPort,
     T_WVM_VA_RESEND *pResend)
 {
     CXAutoLock lk(m_hLock);
 
-    if (m_iCacheSecond <= 0)
+	if(m_iCacheSecond <= 0 || 0 == m_dwSenderDeviceId)
     {
         return FALSE;
     }
@@ -367,26 +416,80 @@ BOOL CFrameSender::Resend(
     {
         return FALSE;
     }
+	const DWORD dwCurrTime = timeGetTime();
 
-    BYTE Buffer[WVM_MTU];
-    const int iCnt = (pResend->dwPacketNum < WVM_MAX_RESEND_PKT_NUM) ? (pResend->dwPacketNum)
-                                                                     : (WVM_MAX_RESEND_PKT_NUM);
-    for (int i = 0; i < iCnt; i++)
-    {
-        const int iLen = m_cache.Get(pResend->dwPacketSeqArray[i], Buffer);
-        if (iLen > 0)
+	// 最多允许重发多少个包：控制在正常包的 1/10
+	const DWORD dwMaxResendPercent = 10;
+	const DWORD dwAvgPacktes = max(m_dwResendLimit_AvgSendPackets, 128);
+	const DWORD dwMaxResendPackets = dwAvgPacktes * dwMaxResendPercent / 100;
+
+	// Debug：打印重发信息
+	//char szLog[1024] = {""};
+	//char* pszLog = szLog;
+	//if(1)
+	//{
+	//	pszLog += sprintf(pszLog, "### [SENDER_%p] recv resend-query, num=%u, seq=", this, pResend->dwPacketNum);
+	//	const int iShowCnt = (pResend->dwPacketNum < 8) ? (pResend->dwPacketNum) : (8);
+	//	for(int i=0; i<iShowCnt; i++)
+	//	{
+	//		char pPacket[1600];
+	//		const int iLen = m_cache.Get(pResend->dwPacketSeqArray[i], pPacket);
+	//		if(iLen > 0)
+	//		{
+	//			T_WVM_VA_FRAME_HEADER* pFrameHdr = (T_WVM_VA_FRAME_HEADER*) pPacket;
+	//			T_WVM_VA_BLOCK_HEADER* pBlockHdr = (T_WVM_VA_BLOCK_HEADER*) &pFrameHdr[1];
+	//			pszLog += sprintf(pszLog, " [%u] %u ms NO.%u", pResend->dwPacketSeqArray[i], dwCurrTime - pBlockHdr->time_stamp, pBlockHdr->resend_cnt+1);
+	//		}
+	//	}
+	//	pszLog += sprintf(pszLog, "\n### [SENDER_%p] resend to decoder_%08X, ip %s:%u, limit=%u/%u, seq=", this, dwToDeviceId, socket_getstring(dwToIp), wToPort, m_dwResnedLimit_ResendPackets, dwMaxResendPackets);
+	//}
+
+	char aPacket[1600];
+	const int iCnt = (pResend->dwPacketNum < WVM_MAX_RESEND_PKT_NUM) ? (pResend->dwPacketNum) : (WVM_MAX_RESEND_PKT_NUM);
+	for(int i=0; i<iCnt && m_dwResnedLimit_ResendPackets < dwMaxResendPackets; i++)
+	{
+		const int iLen = m_cache.Get(pResend->dwPacketSeqArray[i], aPacket);
+		if(iLen > 0)
         {
+			T_WVM_VA_FRAME_HEADER* pFrameHdr = (T_WVM_VA_FRAME_HEADER*) aPacket;
+			T_WVM_VA_BLOCK_HEADER* pBlockHdr = (T_WVM_VA_BLOCK_HEADER*) &pFrameHdr[1];
+
+			// 限制单个包的重发次数
+			if(pBlockHdr->resend_cnt >= 3)
+            {
+				continue;
+			}
             // 记录被重发的次数
-            T_WVM_VA_FRAME_HEADER *pFrameHdr = (T_WVM_VA_FRAME_HEADER *) Buffer;
-            T_WVM_VA_BLOCK_HEADER *pBlockHdr = (T_WVM_VA_BLOCK_HEADER *) &pFrameHdr[1];
             pBlockHdr->resend_cnt++;
 
+			// 重发包的生命周期
+			if((dwCurrTime - pBlockHdr->time_stamp) > 3000)//3000,1200
+			{
+				continue;
+			}
+
             // 发送
-            //DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_FRAME, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, Buffer, iLen, dwNetEncryptMode, dwSrcDeviceId);
-            DWVM_SendNetPacket(TRUE, s, WVM_CMD_PS_VA_FRAME, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, Buffer, iLen,
-                               dwNetEncryptMode);
+			if(0 == DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_FRAME, 0, dwToDeviceId, dwToIp, wToPort, aPacket, iLen, dwNetEncryptMode, m_dwSenderDeviceId))
+			{
+				m_dwStatErrorCount0 ++;
+			}
+			else
+			{
+				//pszLog += sprintf(pszLog, " [%u]", pResend->dwPacketSeqArray[i]);
+			}
+
+			m_dwStatBytes1 += iLen;
+			m_dwStatPackets1 ++;
+
+			m_dwResnedLimit_ResendPackets ++;
+		}
+		else
+		{
+			m_dwStatErrorCount1 ++;
         }
     }
+
+	//xlog(XLOG_LEVEL_NORMAL,"%s",szLog);
 
     return TRUE;
 }
@@ -398,6 +501,7 @@ BOOL CFrameSender::Reply(
     DWORD dwSrcDeviceId,
     DWORD dwSrcIp,
     WORD wSrcPort,
+		DWORD  dwDestDeviceId,
     T_WVM_VA_POLLING *pPolling)
 {
     CXAutoLock lk(m_hLock);
@@ -417,11 +521,41 @@ BOOL CFrameSender::Reply(
     m_cache.Stat(&r); // 统计
 
     // 发送
-    //DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_REPLY, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r), dwNetEncryptMode, dwSrcDeviceId);
-    DWVM_SendNetPacket(TRUE, s, WVM_CMD_PS_VA_REPLY, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r),
-                       dwNetEncryptMode);
+	DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_REPLY, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r), dwNetEncryptMode, dwDestDeviceId);
 
     return TRUE;
+}
+
+// 获取统计信息
+BOOL CFrameSender::GetStatText(char* szText)
+{
+	if(NULL == szText)
+	{
+		return FALSE;
+	}
+	const DWORD dwCurrTick = GetTickCount();
+	if(0 == m_dwStatStartTick || m_dwStatStartTick >= dwCurrTick)
+	{
+		m_dwStatStartTick = dwCurrTick;
+		return FALSE;
+	}
+	const double dbSeconds = (dwCurrTick - m_dwStatStartTick) / 1000.0;
+	sprintf(szText, "%.1f sec, %.1f fps, max frame %u, send %.2f kbps %.1f pps %u fail, resend %.2f kbps %.1f pps %u fail", 
+		dbSeconds, m_dwStatFrames / dbSeconds, m_dwStatMaxFrameSize,
+		(m_dwStatBytes0 * 8.0 / 1024.0) / dbSeconds, m_dwStatPackets0/dbSeconds, m_dwStatErrorCount0,
+		(m_dwStatBytes1 * 8.0 / 1024.0) / dbSeconds, m_dwStatPackets1/dbSeconds, m_dwStatErrorCount1);
+
+	// 还原
+	m_dwStatStartTick = GetTickCount();
+	m_dwStatMaxFrameSize = 0;
+	m_dwStatFrames = 0;
+	m_dwStatBytes0 = 0;
+	m_dwStatBytes1 = 0;
+	m_dwStatPackets0 = 0;
+	m_dwStatPackets1 = 0;
+	m_dwStatErrorCount0 = 0;
+	m_dwStatErrorCount1 = 0;
+	return TRUE;
 }
 
 //
@@ -449,6 +583,16 @@ CFrameReceiver::CFrameReceiver()
 
     memset(&m_Polling, 0, sizeof(m_Polling));
     memset(&m_RealtimeStatus, 0, sizeof(m_RealtimeStatus));
+
+	m_dwStatStartTick = 0;
+	m_dwStatMaxFrameSize = 0;
+	m_dwStatMaxResendCnt = 0;
+	m_dwStatFrames = 0;
+	m_dwStatBytes0 = 0;
+	m_dwStatBytes1 = 0;
+	m_dwStatPackets0 = 0;
+	m_dwStatPackets1 = 0;
+	m_dwStatResendQueryCnt = 0;
 }
 
 CFrameReceiver::~CFrameReceiver()
@@ -514,7 +658,7 @@ BOOL CFrameReceiver::Push(
         // 应该根据不同的网络情况赋值（网络延迟时间、丢包率、编码位率）
         // 这里假设是一般的公网情况：最多缓存640个包，最大延迟3秒
         const int iMaxPktNum = max(640, (WVM_MAX_VIDEO_FRAME_SIZE / 1024));
-        if (!m_pRestruct->Create(iMaxPktNum, 3000, 0))
+        if (!m_pRestruct->Create(iMaxPktNum, 3000, 0))//3000 or 1200
         {
             delete m_pRestruct;
             m_pRestruct = NULL;
@@ -522,6 +666,30 @@ BOOL CFrameReceiver::Push(
             return FALSE;
         }
     }
+
+	// 这个包是第几次被发送. 0为原发包，大于0为重复包
+	const T_WVM_VA_BLOCK_HEADER* pBlockHdr = (T_WVM_VA_BLOCK_HEADER*) &pFrame[1];
+	const BYTE cResendCnt = pBlockHdr->resend_cnt;
+	// 如果重发次数太多，需要调整重发间隔时间
+	if(cResendCnt >= 3)
+	{
+		xlog(XLOG_LEVEL_WARNING, "CFrameReceiver:: recv resend pkt: seq=%u, cnt=%u, resend_intl=%u ms\n", pBlockHdr->pkt_seq, cResendCnt, m_dwResendInterlaceMs);
+	}
+	// 统计信息
+	if(0 == cResendCnt)
+	{
+		m_dwStatPackets0 ++;
+		m_dwStatBytes0 += pFrame->dwFrameSize;
+	}
+	else
+	{
+		m_dwStatPackets1 ++;
+		m_dwStatBytes1 += pFrame->dwFrameSize;
+	}
+	if(m_dwStatMaxResendCnt < (DWORD)cResendCnt)
+	{
+		m_dwStatMaxResendCnt = (DWORD)cResendCnt;
+	}
 
     // 判断来源是否改变，如果改变，需要清除缓存
     if (pFrame->Session.dwSrcDeviceEncoderChannelIndex != m_LastPushFrame.Session.dwSrcDeviceEncoderChannelIndex ||
@@ -536,6 +704,16 @@ BOOL CFrameReceiver::Push(
         //	m_dwLastSrcIp, m_wLastSrcPort,
         //	dwSrcIp, wSrcPort);
         ClearCache();
+
+		m_dwStatStartTick = 0;
+		m_dwStatMaxFrameSize = 0;
+		m_dwStatMaxResendCnt = 0;
+		m_dwStatFrames = 0;
+		m_dwStatBytes0 = 0;
+		m_dwStatBytes1 = 0;
+		m_dwStatPackets0 = 0;
+		m_dwStatPackets1 = 0;
+		m_dwStatResendQueryCnt = 0;
     }
     // save frame header
     memcpy(&m_LastPushFrame, pFrame, sizeof(m_LastPushFrame));
@@ -543,15 +721,6 @@ BOOL CFrameReceiver::Push(
     m_dwLastSrcIp = dwSrcIp;
     m_wLastSrcPort = wSrcPort;
     m_dwLastPktTime = timeGetTime();
-
-    // 这个包是第几次被发送. 0为原发包，大于0为重复包
-    const T_WVM_VA_BLOCK_HEADER *pBlockHdr = (T_WVM_VA_BLOCK_HEADER *) &pFrame[1];
-    const BYTE cResendCnt = pBlockHdr->resend_cnt;
-    // xy:TODO: 如果重发次数太多，需要调整重发间隔时间
-    if (cResendCnt >= 3)
-    {
-        xlog(XLOG_LEVEL_WARNING, "CFrameReceiver:: recv resend pkt: seq=%u, cnt=%u\n", pBlockHdr->pkt_seq, cResendCnt);
-    }
 
     // push
     const BOOL bResult = m_pRestruct->Push(&pFrame[1], pFrame->dwFrameSize);
@@ -575,7 +744,7 @@ BOOL CFrameReceiver::Push(
         }
     }
     const DWORD dwNow = timeGetTime();
-    if ((dwNow - m_dwResendPrevMs) >= m_dwResendInterlaceMs)
+	if((dwNow - m_dwResendPrevMs) > (m_dwResendInterlaceMs+3)) // 多3个毫秒，防止边界时间的请求重发
     {
         m_dwResendPrevMs = dwNow;
 
@@ -596,18 +765,21 @@ BOOL CFrameReceiver::Push(
             *pLostSeqCount = iLostPackets;
         }
 
-        if (iLostPackets >= WVM_MAX_RESEND_PKT_NUM) // xy:TODO: LAN和WAN要区别对待?
+		if(iLostPackets >= WVM_MAX_RESEND_PKT_NUM)
         {
-            m_pRestruct->ClearFrameChain();
+			xlog(XLOG_LEVEL_NORMAL, "[%p] CFrameReceiver::Push() lost-pkt too many (%d) >= %d (MyId=%08X,SenderId=%08X)\n", this, iLostPackets, WVM_MAX_RESEND_PKT_NUM, dwDestDeviceId, dwSrcDeviceId);
         }
-        else if (iLostPackets > 0)
+		if(iLostPackets > 0)
         {
             T_WVM_VA_RESEND r;
             memset(&r, 0, sizeof(r));
             r.Session = pFrame->Session;
             r.dwPacketNum = (DWORD) ((iLostPackets > WVM_MAX_RESEND_PKT_NUM) ? WVM_MAX_RESEND_PKT_NUM : iLostPackets);
             memcpy(r.dwPacketSeqArray, dwLostPackets, sizeof(DWORD) * r.dwPacketNum);
-            DWVM_SendNetPacket(TRUE, s, WVM_CMD_PS_VA_RESEND, 0, dwDestDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r), 0);
+			DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_RESEND, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r), 0, dwDestDeviceId);
+			// 统计信息
+			m_dwStatResendQueryCnt += r.dwPacketNum;
+            //xlog(XLOG_LEVEL_NORMAL, "[%p] CFrameReceiver::Push() query resend-pkt num %d (intl %u ms)\n", this, iLostPackets, m_dwResendInterlaceMs);
         }
     }
 
@@ -640,8 +812,7 @@ BOOL CFrameReceiver::Push(
         m_RealtimeStatus.dwRecvFrames = m_RealtimeStatus.Detail.dwRecvFrames;
         m_RealtimeStatus.Detail.dwRecvFrames = 0;
 
-        DWVM_SendNetPacket(TRUE, s, WVM_CMD_PS_VA_POLLING, 0, dwDestDeviceId, dwSrcIp, wSrcPort, &m_Polling,
-                           sizeof(m_Polling), 0);
+		DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_POLLING, 0, dwDestDeviceId, dwSrcIp, wSrcPort, &m_Polling, sizeof(m_Polling), 0, dwDestDeviceId);
 
         m_Polling.dwPktSeqBegin = 0;
         m_Polling.dwRecvPackets_0 = 0;
@@ -731,7 +902,13 @@ BOOL CFrameReceiver::Pop(
         return FALSE;
     }
     m_iFrameValidSize = iValidSize;
+	// 统计信息
     m_RealtimeStatus.Detail.dwRecvFrames++;
+	if(m_dwStatMaxFrameSize < (DWORD)iValidSize)
+	{
+		m_dwStatMaxFrameSize = (DWORD)iValidSize;
+	}
+	m_dwStatFrames ++;
 
     // 成功获取
     if (ppFramePtr)
@@ -812,19 +989,15 @@ BOOL CFrameReceiver::OnReply(T_WVM_VA_REPLY *pReply)
     m_RealtimeStatus.Detail = *pReply;
     m_RealtimeStatus.Detail.Polling.dwReceiveMs = timeGetTime();
     m_RealtimeStatus.dwStatTimeMs = m_RealtimeStatus.Detail.Polling.dwStatTimeMs;
-    m_RealtimeStatus.dwDelayTimeMs =
-        m_RealtimeStatus.Detail.Polling.dwReceiveMs - m_RealtimeStatus.Detail.Polling.dwSendingMs;
+	m_RealtimeStatus.dwDelayTimeMs = m_RealtimeStatus.Detail.Polling.dwReceiveMs - m_RealtimeStatus.Detail.Polling.dwSendingMs;
     m_RealtimeStatus.dwSendPackets = m_RealtimeStatus.Detail.dwSendPackets_0 + m_RealtimeStatus.Detail.dwSendPackets_1;
     m_RealtimeStatus.dwSendBytes = m_RealtimeStatus.Detail.dwSendBytes_0 + m_RealtimeStatus.Detail.dwSendBytes_1;
-    m_RealtimeStatus.dwRecvPackets =
-        m_RealtimeStatus.Detail.Polling.dwRecvPackets_0 + m_RealtimeStatus.Detail.Polling.dwRecvPackets_1;
-    m_RealtimeStatus.dwRecvBytes =
-        m_RealtimeStatus.Detail.Polling.dwRecvBytes_0 + m_RealtimeStatus.Detail.Polling.dwRecvBytes_1;
+	m_RealtimeStatus.dwRecvPackets = m_RealtimeStatus.Detail.Polling.dwRecvPackets_0 + m_RealtimeStatus.Detail.Polling.dwRecvPackets_1;
+	m_RealtimeStatus.dwRecvBytes = m_RealtimeStatus.Detail.Polling.dwRecvBytes_0 + m_RealtimeStatus.Detail.Polling.dwRecvBytes_1;
 
     // 根据响应时间，动态调整重发间隔时间。并控制范围在 10 ~ 1000 毫秒
-    m_dwResendInterlaceMs = (m_RealtimeStatus.dwDelayTimeMs < 10) ? (10) : ((m_RealtimeStatus.dwDelayTimeMs > 1000)
-                                                                            ? (1000)
-                                                                            : (m_RealtimeStatus.dwDelayTimeMs));
+	const DWORD dwAckTimeMs = (m_RealtimeStatus.dwDelayTimeMs < 10) ? (10) : ((m_RealtimeStatus.dwDelayTimeMs > 1000) ? (1000) : (m_RealtimeStatus.dwDelayTimeMs));
+	m_dwResendInterlaceMs = min(dwAckTimeMs*3/2, 1000); // 重发时间间隔，设定为应答时间的1.5倍
 
     return TRUE;
 }
@@ -878,11 +1051,61 @@ BOOL CFrameReceiver::GetStatusString(char *pszStatus)
 
 DWORD CFrameReceiver::GetCachePktNumber() // 获取缓存中的小包数
 {
+	if(NULL == m_pRestruct)
+	{
+		return 0;
+	}
     return (DWORD) m_pRestruct->GetFrameChainLen();
 }
 
 DWORD CFrameReceiver::GetCacheDataTimeMs() // 获取缓存中的毫秒数
 {
+	if(NULL == m_pRestruct)
+	{
+		return 0;
+	}
     const DWORD dwFirstPacketTime = m_pRestruct->GetFirstPacketTime();
     return (0 == dwFirstPacketTime) ? 0 : (timeGetTime() - dwFirstPacketTime);
+}
+
+// 获取统计信息
+BOOL CFrameReceiver::GetStatText(char* szText)
+{
+	CXAutoLock lk(m_hLock);
+
+	if(NULL == szText || NULL == m_pRestruct)
+	{
+		return FALSE;
+	}
+	const DWORD dwCurrTick = GetTickCount();
+	if(0 == m_dwStatStartTick || m_dwStatStartTick >= dwCurrTick)
+	{
+		m_dwStatStartTick = dwCurrTick;
+		return FALSE;
+	}
+	const double dbSeconds = (dwCurrTick - m_dwStatStartTick) / 1000.0;
+	sprintf(szText, 
+		"%.1f sec, %.1f fps, from %s:%u encoder %08X_#%d, "\
+		"max frame %u, max resend-cnt %u, "\
+		"recv %.2f kbps %.1f pps, "\
+		"recv-resend %.2f kbps %.1f pps, "\
+		"query-resend %.1f pps, "\
+		"cache %d pkt %u ms, timeout %u ms, resend-intl %u ms", 
+		dbSeconds, m_dwStatFrames / dbSeconds, socket_getstring(m_dwLastSrcIp), m_wLastSrcPort, m_dwLastSrcID, m_LastPushFrame.Session.dwSrcDeviceEncoderChannelIndex,
+		m_dwStatMaxFrameSize, m_dwStatMaxResendCnt,
+		(m_dwStatBytes0 * 8.0 / 1024.0) / dbSeconds, m_dwStatPackets0/dbSeconds,
+		(m_dwStatBytes1 * 8.0 / 1024.0) / dbSeconds, m_dwStatPackets1/dbSeconds, 
+		m_dwStatResendQueryCnt/dbSeconds,
+		GetCachePktNumber(), GetCacheDataTimeMs(), m_pRestruct->GetTimeout(), m_dwResendInterlaceMs);
+
+	m_dwStatStartTick = dwCurrTick;
+	m_dwStatMaxFrameSize = 0;
+	m_dwStatMaxResendCnt = 0;
+	m_dwStatFrames = 0;
+	m_dwStatBytes0 = 0;
+	m_dwStatBytes1 = 0;
+	m_dwStatPackets0 = 0;
+	m_dwStatPackets1 = 0;
+	m_dwStatResendQueryCnt = 0;
+	return TRUE;
 }

@@ -97,6 +97,7 @@ BOOL CBigCustomDataSender::Push(void *pData, int iDataLen, DWORD dwCustomID, SOC
         {
             return FALSE;
         }
+        THREAD_SET_NAME(m_hThread, "DWVM_BigCustomData_Sender");
     }
 
     return TRUE;
@@ -109,6 +110,8 @@ void CBigCustomDataSender::OnSenderThread()
     memset(PacketBuffer, 0, sizeof(PacketBuffer));
 
     const int iMaxPktLen = min(1024, WVM_MTU) - sizeof(T_WVM_PACKET_HEADER) - sizeof(T_WVM_BIG_CUSTOM_DATA_HEADER);
+
+    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
 
     while (!m_bToExit)
     {

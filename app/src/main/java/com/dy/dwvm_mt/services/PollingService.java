@@ -106,7 +106,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
             CommandUtils.setDDNSDEVICEID(ddnsID);
             CommandUtils.setDDNSIPPort(ddnsIP);
             I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
-            mtlib.resetDeviceID(localDeviceID);
+            mtlib.setDeviceId(localDeviceID);
 
             LocalSetting.SetInformationByLoginResult(loginExtMessage);
         } catch (Exception es) {

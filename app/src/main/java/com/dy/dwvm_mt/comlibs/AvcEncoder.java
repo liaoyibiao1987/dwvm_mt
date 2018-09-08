@@ -42,7 +42,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
 
     private long pts = 0;
     private long generateIndex = 0;
-    private int m_framerate = 20;
+    private int m_framerate = 10;
     private int TIMEOUT_USEC = 12000;
 
 
@@ -389,7 +389,8 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             startEncoder();
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight); // 1024 kbps
+            LogUtils.d("set MediaFormat.KEY_BIT_RATE", m_iRawWidth * m_iRawHeight);
+            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 3 / 2); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);

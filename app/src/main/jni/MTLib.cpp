@@ -76,7 +76,7 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_start
         g_lib = NULL;
         return JNI_FALSE;
     }
-    xlog(XLOG_LEVEL_WARNING, "start():: new obj-ref Java_com_dy_dwvm_1mt_MTLib_started.\n");
+
     return JNI_TRUE;
 }
 
@@ -138,25 +138,28 @@ JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceName
 
     return JNI_TRUE;
 }
+
 /*
  * Class:     com_dy_dwvm_mt_MTLib
- * Method:    setDeviceName
- * Signature: (Ljava/lang/String;)Z
+ * Method:    setDeviceId
+ * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_resetDeviceID
-        (JNIEnv *env, jobject, int jlong1DeviceID)
+JNIEXPORT jboolean JNICALL Java_com_dy_dwvm_1mt_MTLib_setDeviceId
+    (JNIEnv *env, jobject, jlong localDeviceId)
 {
     if (g_lib == NULL)
     {
         return JNI_FALSE;
     }
-    if (!g_lib->ResetDeviceID(&jlong1DeviceID))
+
+    if (!g_lib->SetDeviceId((DWORD) (localDeviceId & 0x00000000FFFFFFFF)))
     {
         return JNI_FALSE;
     }
 
     return JNI_TRUE;
 }
+
 /*
  * Class:     com_dy_dwvm_mt_MTLib
  * Method:    dataEncrypt

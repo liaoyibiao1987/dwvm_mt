@@ -12,13 +12,7 @@
 //
 //==============================
 
-class m_FrameHeader;
-
-class m_FrameHeader;
-
-class m_szCodecName;
-
-CSession::CSession(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
+CSession::CSession(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
                    DWORD dwLocalDeviceId)
 {
     memset(m_szCodecName, 0, sizeof(m_szCodecName));
@@ -244,7 +238,7 @@ BOOL CSession::GetReceivedFrame(void **ppFrameData, int *pDataSize, int *pImageR
 //
 //==============================
 
-CSessionSender::CSessionSender(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
+CSessionSender::CSessionSender(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
                                DWORD dwLocalDeviceId) :
     CSession(sessionId, szCodecName, s, dwNetEncryptMode, dwLocalDeviceId)
 {
@@ -358,7 +352,7 @@ void CSessionSender::PopUnlock()
 //
 //==============================
 
-CSessionSenderH264::CSessionSenderH264(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
+CSessionSenderH264::CSessionSenderH264(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
                                        DWORD dwLocalDeviceId) :
     CSessionSender(sessionId, szCodecName, s, dwNetEncryptMode, dwLocalDeviceId)
 {
@@ -564,7 +558,7 @@ bool CSessionSenderH264::SetCodecInitData(void* pData, int iDataSize)
 //
 //==============================
 
-CSessionReceiver::CSessionReceiver(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
+CSessionReceiver::CSessionReceiver(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode,
                                    DWORD dwLocalDeviceId) :
     CSession(sessionId, szCodecName, s, dwNetEncryptMode, dwLocalDeviceId)
 {

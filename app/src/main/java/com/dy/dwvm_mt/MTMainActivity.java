@@ -42,29 +42,31 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
 
 import static com.dy.dwvm_mt.comlibs.LocalSetting.StartLoginType;
 
+@RuntimePermissions
 public class MTMainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, NWCommandEventHandler {
     //所需要申请的权限数组
-    /*private  String[] permissionsArray;*/
-    private String[] permissionsArray = new String[]{
-            android.Manifest.permission.WAKE_LOCK,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.CALL_PHONE,
+    /*
+    private static final String[] permissionsArray = new String[]{
+            ,
             //Manifest.permission.ANSWER_PHONE_CALLS,
             //Manifest.permission.PROCESS_OUTGOING_CALLS,
-            android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
-            android.Manifest.permission.ACCESS_NETWORK_STATE,
+
             //"android.permission.RECEIVE_USER_PRESENT",
-            android.Manifest.permission.CAMERA,
+
             // android.Manifest.permission.MODIFY_PHONE_STATE,
-            Manifest.permission.READ_SMS};
+    };
     //还需申请的权限列表
     private List<String> permissionsList = new ArrayList<String>();
     //申请权限后的返回码
-    private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;
+    private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;*/
     FragmentManager fragmentManager;
 
     @BindView(R.id.toolbar)
@@ -83,9 +85,7 @@ public class MTMainActivity extends BaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mtmain);
         ButterKnife.bind(this);
-        requestMyPermission();
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-
         fragmentManager = getSupportFragmentManager();
 
         //Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -109,19 +109,8 @@ public class MTMainActivity extends BaseActivity
                 //TODO do something you need
             }
         }
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
 
-        navigationView.setNavigationItemSelectedListener(this);
-        AnalysingUtils.addRecvedCommandListeners(this);
-        try {
-            Fragment fragment = DialTabFragment.class.newInstance();
-            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
-        } catch (Exception es) {
-            LogUtils.e("MTMainActivity onCreate error:" + es.toString());
-        }
+        MTMainActivityPermissionsDispatcher.requestAllPermissionWithPermissionCheck(this);
     }
 
     @Override
@@ -228,8 +217,50 @@ public class MTMainActivity extends BaseActivity
         return super.onKeyDown(keyCode, event);
     }
 
+    @NeedsPermission({Manifest.permission.WAKE_LOCK, Manifest.permission.READ_PHONE_STATE, Manifest.permission.CALL_PHONE, Manifest.permission.RECEIVE_BOOT_COMPLETED,
+            Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CAMERA, Manifest.permission.READ_SMS})
+    protected void requestAllPermission() {
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
 
-    private void requestMyPermission() {
+        navigationView.setNavigationItemSelectedListener(this);
+        AnalysingUtils.addRecvedCommandListeners(this);
+        try {
+            Fragment fragment = DialTabFragment.class.newInstance();
+            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        } catch (Exception es) {
+            LogUtils.e("MTMainActivity onCreate error:" + es.toString());
+        }
+    }
+
+    @OnShowRationale({Manifest.permission.WAKE_LOCK, Manifest.permission.READ_PHONE_STATE, Manifest.permission.CALL_PHONE, Manifest.permission.RECEIVE_BOOT_COMPLETED,
+            Manifest.permission.ACCESS_NETWORK_STATE, Manifest.permission.CAMERA, Manifest.permission.READ_SMS})
+    protected void showRationaleForCamera(final PermissionRequest request) {
+        new AlertDialog.Builder(this)
+                .setMessage("软件允许需要以上权限")
+                .setPositiveButton("允许", (dialog, button) -> request.proceed())
+                .setNegativeButton("拒绝", (dialog, button) -> request.cancel())
+                .show();
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        MTMainActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
+        /*if (requestCode == REQUESTCODE) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!shouldShowRequestPermissionRationale(Manifest.permission.PROCESS_OUTGOING_CALLS)) {
+                    AskForPermission();
+                }
+            }
+        }*/
+    }
+
+    /*private void requestMyPermission() {
         for (String permission : permissionsArray) {
             if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -252,20 +283,6 @@ public class MTMainActivity extends BaseActivity
             LogUtils.d("已经获得过了全部认证");
         }
     }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUESTCODE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (!shouldShowRequestPermissionRationale(Manifest.permission.PROCESS_OUTGOING_CALLS)) {
-                    AskForPermission();
-                }
-            }
-        }
-    }
-
     private void AskForPermission() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("需要特定权限需要设置!");
@@ -284,7 +301,7 @@ public class MTMainActivity extends BaseActivity
             }
         });
         builder.create().show();
-    }
+    }*/
 
     @Override
     public void doNWCommandHandler(NWCommandEventArg arg) {

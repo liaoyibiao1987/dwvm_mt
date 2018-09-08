@@ -49,13 +49,7 @@ import permissions.dispatcher.RuntimePermissions;
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/29.
  * PS: Not easy to write code, please indicate.
  */
-@RuntimePermissions
 public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEventHandler, TextureView.SurfaceTextureListener {
-
-
-   /* @NeedsPermission(Manifest.permission.CAMERA)
-    void sss() {
-    }*/
 
    /* @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -181,9 +175,9 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
-                /*if (decodeVideoThread != null) {
+                if (decodeVideoThread != null) {
                     decodeVideoThread.testswitch();
-                }*/
+                }
                 PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
             }
         });
@@ -409,7 +403,6 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         }
         return 1;
     }
-
 
     @Override
     public long onReceivedAudioFrame(long localDeviceId, String remoteDeviceIpPort,

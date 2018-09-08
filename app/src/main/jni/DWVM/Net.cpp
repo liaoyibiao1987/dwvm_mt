@@ -129,6 +129,8 @@ BOOL CNet::Create(
         Destroy();
         return FALSE;
     }
+    THREAD_SET_NAME(m_hRecvThread, "DWVM_Net_Recv");
+    THREAD_SET_NAME(m_hSendThread, "DWVM_Net_Send");
     // cb threads
     for (int j = 0; j < (int) m_dwCbThreadNumber; j++)
     {
@@ -137,6 +139,9 @@ BOOL CNet::Create(
         {
             break;
         }
+        char szName[64] = {""};
+        sprintf(szName, "DWVM_Net_Callback_%d", j);
+        THREAD_SET_NAME(m_hCbThread[j], szName);
     }
     if (INVALID_THREAD_HANDLE == m_hCbThread[0])
     {
@@ -250,6 +255,8 @@ void CNet::OnRecvThread()
     DWORD dwSum = 0;
     int i = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) RecvBuffer;
+
+    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
 
     while (INVALID_SOCKET != m_sock &&
            (iRecvLen = udp_receive(m_sock, RecvBuffer, sizeof(RecvBuffer), &dwFromIp, &wFromPort, TRUE)) > 0)
@@ -379,6 +386,8 @@ void CNet::OnCallbackThread()
     DWORD dwFromPort = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) Buffer;
 
+    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
+
     T_DWVM_JNI_ENV javaTodo;
     memset(&javaTodo, 0, sizeof(T_DWVM_JNI_ENV));
     // initialize java thread-env
@@ -432,6 +441,8 @@ void CNet::OnSendThread()
     DWORD dwDestPort = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) Buffer;
 
+    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
+
     while (m_SendFifo.IsInited())
     {
         while (m_SendFifo.Pop(Buffer, sizeof(Buffer), &iLen, (long *) &dwDestIp, (long *) &dwDestPort))
@@ -439,8 +450,8 @@ void CNet::OnSendThread()
             hdr->dwSendingTick = timeGetTime();
             if (udp_send(m_sock, Buffer, iLen, dwDestIp, (WORD) dwDestPort) <= 0)
             {
-                xlog(XLOG_LEVEL_ERROR, "Send NetPacket FAIL! len=%d, dest=%s:%lu", iLen,
-                     socket_getstring(dwDestIp), dwDestPort);
+                xlog(XLOG_LEVEL_ERROR, "Send NetPacket FAIL! len=%d, dest=%s:%lu, sock=%d, errno=%d\n",
+                     iLen, socket_getstring(dwDestIp), dwDestPort, m_sock, errno);
             }
             else
             {

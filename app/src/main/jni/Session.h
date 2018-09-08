@@ -31,15 +31,17 @@ class CSession;
 
 typedef struct
 {
-    struct ID
-    {
-        E_SESSION_MEDIA eMedia;
-        E_SESSION_DIR eDir;
-        int iLocalChannelIndex;
-        int iLocalImageResolution;
-        DWORD dwRemoteDeviceId;
-        int iRemoteChannelIndex;
-    } Id;
+    E_SESSION_MEDIA eMedia;
+    E_SESSION_DIR eDir;
+    int iLocalChannelIndex;
+    int iLocalImageResolution;
+    DWORD dwRemoteDeviceId;
+    int iRemoteChannelIndex;
+}T_SESSION_ID;
+
+typedef struct
+{
+    T_SESSION_ID Id;
     CSession *pSessionObj;
 } T_SESSION;
 
@@ -47,7 +49,7 @@ typedef struct
 class CSession
 {
 public:
-    CSession(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
+    CSession(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
 
     ~CSession();
 
@@ -89,7 +91,7 @@ protected:
 
 protected:
     char m_szCodecName[64];
-    T_SESSION::ID m_id;
+    T_SESSION_ID m_id;
     SOCKET m_sock;
     DWORD m_dwNetEncryptMode;
     DWORD m_dwLocalDeviceId;
@@ -102,7 +104,7 @@ protected:
 class CSessionSender : public CSession
 {
 public:
-    CSessionSender(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
+    CSessionSender(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
 
     ~CSessionSender();
 
@@ -126,7 +128,7 @@ protected:
 class CSessionSenderH264 : public CSessionSender
 {
 public:
-    CSessionSenderH264(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
+    CSessionSenderH264(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
 
     ~CSessionSenderH264();
 
@@ -151,7 +153,7 @@ protected:
 class CSessionReceiver : public CSession
 {
 public:
-    CSessionReceiver(T_SESSION::ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
+    CSessionReceiver(T_SESSION_ID sessionId, const char *szCodecName, SOCKET s, DWORD dwNetEncryptMode, DWORD dwSrcDeviceId);
 
     ~CSessionReceiver();
 

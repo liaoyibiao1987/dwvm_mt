@@ -88,7 +88,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             CommandUtils.setDDNSDEVICEID(ddnsID);
             CommandUtils.setDDNSIPPort(ddnsIP);
             I_MT_Prime mtlib = MTLibUtils.getBaseMTLib();
-            mtlib.resetDeviceID(localDeviceID);
+            mtlib.setDeviceId(localDeviceID);
 
             LocalSetting.SetInformationByLoginResult(loginExtMessage);
         } catch (Exception es) {
