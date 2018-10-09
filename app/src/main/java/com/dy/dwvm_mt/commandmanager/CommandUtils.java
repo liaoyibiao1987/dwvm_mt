@@ -22,7 +22,7 @@ import java.nio.ByteOrder;
  * PS: Not easy to write code, please indicate.
  */
 public class CommandUtils {
-    public static int MTPORT = 5007;
+    public static int MTPORT = 50007;
     private static String DDNSIP = "112.90.144.6";
     //private static String DDNSIP = "112.91.151.187";
     private static String DDNSPORT = "4998";

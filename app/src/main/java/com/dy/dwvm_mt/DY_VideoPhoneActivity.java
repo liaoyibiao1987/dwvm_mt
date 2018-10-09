@@ -16,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -409,5 +410,14 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
                                      long remoteDeviceId, int remoteEncoderChannelIndex, int localDecoderChannelIndex, String
                                              audioCodec, byte[] frameBuffer, int frameSize) {
         return 1;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK
+                && event.getAction() == KeyEvent.ACTION_DOWN) {
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }

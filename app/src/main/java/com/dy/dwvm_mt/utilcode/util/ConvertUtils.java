@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 /**
  * <pre>
@@ -148,8 +149,8 @@ public final class ConvertUtils {
      */
     public static short[] spitIntToUshort(final int data) {
         short[] ret = new short[2];
-        ret[1] = (short)(data & 0xFFFF);
-        ret[0] = (short)(data >> 16);
+        ret[1] = (short) (data & 0xFFFF);
+        ret[0] = (short) (data >> 16);
         return ret;
     }
 
@@ -157,11 +158,10 @@ public final class ConvertUtils {
      * mix ip&port to String.
      *
      * @param ipInt The ipInt value.
-     * @param port The port value.
+     * @param port  The port value.
      * @return String "xxx.xxx.xxx.xxx:xxxxxxx"
      */
-    public static String intIPToString(int ipInt, int port)
-    {
+    public static String intIPToString(int ipInt, int port) {
         StringBuilder sb = new StringBuilder();
         sb.append((ipInt >> 24) & 0xFF).append(".");
         sb.append((ipInt >> 16) & 0xFF).append(".");
@@ -681,5 +681,12 @@ public final class ConvertUtils {
             }
         }
         return true;
+    }
+
+    public static byte[] addByte(byte[] source, final byte[] target) {
+        int tempIndex = source.length;
+        source = Arrays.copyOf(source, source.length + target.length);//数组扩容
+        System.arraycopy(target, 0, source, tempIndex, target.length);
+        return source;
     }
 }

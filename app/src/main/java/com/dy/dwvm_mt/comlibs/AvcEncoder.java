@@ -6,6 +6,7 @@ import android.hardware.Camera;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -20,10 +21,18 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class AvcEncoder extends Thread implements Camera.PreviewCallback {
-    private static final int RAW_IMAGE_WIDTH_MIN = 640;
-    private static final int RAW_IMAGE_HEIGHT_MIN = 360;
-    private static final int RAW_IMAGE_WIDTH_MAX = 720;
-    private static final int RAW_IMAGE_HEIGHT_MAX = 576;
+    /* private static final int RAW_IMAGE_WIDTH_MIN = 640;
+     private static final int RAW_IMAGE_HEIGHT_MIN = 360;
+     private static final int RAW_IMAGE_WIDTH_MAX = 720;
+     private static final int RAW_IMAGE_HEIGHT_MAX = 576;*/
+   /* private static final int RAW_IMAGE_WIDTH_MIN = 1280;
+    private static final int RAW_IMAGE_HEIGHT_MIN = 720;
+    private static final int RAW_IMAGE_WIDTH_MAX = 1920;
+    private static final int RAW_IMAGE_HEIGHT_MAX = 1080;*/
+    private static final int RAW_IMAGE_WIDTH_MIN = 176;
+    private static final int RAW_IMAGE_HEIGHT_MIN = 144;
+    private static final int RAW_IMAGE_WIDTH_MAX = 352;
+    private static final int RAW_IMAGE_HEIGHT_MAX = 288;
     // === color format mapping table: Raw <--> Encode
     private static final int[] RAW_IMAGE_COLOR_TABLE = {ImageFormat.YUY2, ImageFormat.NV21, ImageFormat.YV12};
     private static final int[] RAW_IMAGE_BITS_TABLE = {16, 12, 12};
@@ -237,6 +246,8 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             camParams.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
             camParams.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);*/
             // setting
+            List<int[]> x = camParams.getSupportedPreviewFpsRange();
+            camParams.setPreviewFpsRange(x.get(0)[0], x.get(0)[1]);
             m_cam.setParameters(camParams);
             m_cam.setDisplayOrientation(180);
 
@@ -265,7 +276,6 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
                 m_cam.setPreviewTexture(m_surfaceCameraPreview);
                 m_cam.setDisplayOrientation(90);
             }*/
-
             m_cam.setPreviewTexture(m_surfaceCameraPreview);
             m_cam.setDisplayOrientation(90);
             // malloc buffer
@@ -383,6 +393,10 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
 
     }
 
+
+    private int framCount = 0;
+    private long startTick;
+
     @Override
     public void run() {
         try {
@@ -390,9 +404,10 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
             LogUtils.d("set MediaFormat.KEY_BIT_RATE", m_iRawWidth * m_iRawHeight);
+            //mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 3 / 2); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 3 / 2); // 1024 kbps
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
-            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2); // 2 seconds
+            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // 2 seconds
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
 
@@ -408,6 +423,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             Log.e("DecodeActivity", "Can't find video info!");
             return;
         }
+        startTick = System.currentTimeMillis();
         mEncoder.start();
 
 
@@ -455,11 +471,13 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
                     outputBufferIndex = mEncoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC);
                     // send to network
                     if (m_mtLib != null && m_mtLib.isWorking()) {
+                        framCount += iEncodeFrameSize;
+                        //System.out.println("\r\n" + String.format("m_iRawWidth:%d m_iRawHeight:%d iEncodeFrameSize:%d framCount:%d", m_iRawWidth, m_iRawHeight, iEncodeFrameSize, framCount));
                         m_mtLib.sendOneFrameToDevice(0, m_ldeviceID, 0, m_sremoteIPPort, MTLib.CODEC_VIDEO_H264,
                                 tmp_encodeFrameBuffer, iEncodeFrameSize, MTLib.IMAGE_RESOLUTION_D1, m_iRawWidth, m_iRawHeight);
                     }
                 }
-
+                //System.out.println("平均网速：" + framCount / (System.currentTimeMillis() - startTick) + "KB/S");
             } catch (Throwable t) {
                 t.printStackTrace();
             }
