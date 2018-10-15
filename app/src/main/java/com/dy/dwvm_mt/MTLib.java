@@ -161,4 +161,10 @@ public class MTLib implements I_MT_Prime {
             int imageWidth,
             int imageHeight
     );
+
+    public native String startTestNetSpeed(
+        long remoteDeviceId,
+        String remoteDeviceIpPort,
+        int testSeconds
+    );
 }

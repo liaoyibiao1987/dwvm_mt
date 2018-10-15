@@ -21,18 +21,18 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class AvcEncoder extends Thread implements Camera.PreviewCallback {
-    /* private static final int RAW_IMAGE_WIDTH_MIN = 640;
-     private static final int RAW_IMAGE_HEIGHT_MIN = 360;
-     private static final int RAW_IMAGE_WIDTH_MAX = 720;
-     private static final int RAW_IMAGE_HEIGHT_MAX = 576;*/
-   /* private static final int RAW_IMAGE_WIDTH_MIN = 1280;
+    private static final int RAW_IMAGE_WIDTH_MIN = 640;
+    private static final int RAW_IMAGE_HEIGHT_MIN = 360;
+    private static final int RAW_IMAGE_WIDTH_MAX = 720;
+    private static final int RAW_IMAGE_HEIGHT_MAX = 576;//*/
+    /*private static final int RAW_IMAGE_WIDTH_MIN = 1280;
     private static final int RAW_IMAGE_HEIGHT_MIN = 720;
     private static final int RAW_IMAGE_WIDTH_MAX = 1920;
-    private static final int RAW_IMAGE_HEIGHT_MAX = 1080;*/
-    private static final int RAW_IMAGE_WIDTH_MIN = 176;
+    private static final int RAW_IMAGE_HEIGHT_MAX = 1080;//*/
+    /*private static final int RAW_IMAGE_WIDTH_MIN = 176;
     private static final int RAW_IMAGE_HEIGHT_MIN = 144;
     private static final int RAW_IMAGE_WIDTH_MAX = 352;
-    private static final int RAW_IMAGE_HEIGHT_MAX = 288;
+    private static final int RAW_IMAGE_HEIGHT_MAX = 288;//*/
     // === color format mapping table: Raw <--> Encode
     private static final int[] RAW_IMAGE_COLOR_TABLE = {ImageFormat.YUY2, ImageFormat.NV21, ImageFormat.YV12};
     private static final int[] RAW_IMAGE_BITS_TABLE = {16, 12, 12};
@@ -51,7 +51,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
 
     private long pts = 0;
     private long generateIndex = 0;
-    private int m_framerate = 10;
+    private int m_framerate = 12; //xy//DEBUG: 修改这个编码帧率后，需要同步修改Net.cpp的CNet::OnSendThread()中的发包间隔时间
     private int TIMEOUT_USEC = 12000;
 
 
@@ -68,6 +68,8 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
     // Camera
     private Camera m_cam = null;
     private byte[] m_rawBuffer = null;
+
+    private long m_lPrevYuvFrameTimeMs = 0; //xy//DEBUG:控制编码帧率
 
     private Object m_yuvlocker = new Object();
     public ArrayBlockingQueue<byte[]> YUVQueue = new ArrayBlockingQueue<byte[]>(M_YUVQUEUESIZE);
@@ -403,13 +405,15 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             startEncoder();
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
-            LogUtils.d("set MediaFormat.KEY_BIT_RATE", m_iRawWidth * m_iRawHeight);
-            //mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 3 / 2); // 1024 kbps
-            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, m_iRawWidth * m_iRawHeight * 3 / 2); // 1024 kbps
+            int iBitRate = m_iRawWidth * m_iRawHeight * 3 / 2;
+            mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, iBitRate);
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
-            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // 2 seconds
+            mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // seconds
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
+            mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR); //xy//DEBUG:CBR
+            LogUtils.d("set MediaFormat.KEY_BIT_RATE", iBitRate);
+            Log.d("AvcEncoder", "encode-par: " + m_iRawWidth + " x " + m_iRawHeight + ", " + m_framerate + " fps, " + (iBitRate/1000) + " Kbps");
 
             mEncoder.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         } catch (Exception e) {
@@ -444,6 +448,13 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             input = YUVQueue.poll();
         }
         if (input != null) {
+            //xy//DEBUG:控制编码帧率
+            long lCurrTimeMs = System.currentTimeMillis();
+            if(lCurrTimeMs > m_lPrevYuvFrameTimeMs && (lCurrTimeMs-m_lPrevYuvFrameTimeMs) < (1000/m_framerate)) {
+                return;
+            }
+            m_lPrevYuvFrameTimeMs = lCurrTimeMs;
+
             try {
                 ByteBuffer[] inputBuffers = mEncoder.getInputBuffers();//获取到输入缓冲区
                 ByteBuffer[] outputBuffers = mEncoder.getOutputBuffers();//获取到输出缓冲区

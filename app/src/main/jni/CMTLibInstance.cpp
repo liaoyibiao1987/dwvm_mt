@@ -6,9 +6,11 @@
 #include "DWVM/dwvm_global.h"
 #include "DWVM/DwvmBase.h"
 #include "Session.h"
+#include "DWVM/Net.h"
 
 
 class m_sock;
+CNet *FindNetFromSocket(SOCKET s);
 
 CMTLibInstance::CMTLibInstance(JavaVM *javaVM, jobject javaObj) :
     m_sessionList()
@@ -21,6 +23,7 @@ CMTLibInstance::CMTLibInstance(JavaVM *javaVM, jobject javaObj) :
     m_iEncoderChannelNumber = 0;
     m_iDecoderChannelNumber = 0;
     m_dwNetEncryptMode = 0;
+    memset(&m_resTestSpeed,0,sizeof(m_resTestSpeed));
 
     m_hAutoDeleteThread = INVALID_THREAD_HANDLE;
     m_bToStopThread = FALSE;
@@ -845,4 +848,64 @@ void CMTLibInstance::OnAutoDeleteSessionThread()
             }
         }
     }
+}
+
+T_DWVM_TEST_NET_RESULT* CMTLibInstance::TestNetSpeed(
+    DWORD dwRemoteDeviceId,
+    const char* szRemoteDeviceIpPort,
+    int iTestSeconds)
+{
+    if(0 == dwRemoteDeviceId || NULL == szRemoteDeviceIpPort || iTestSeconds < 1 || iTestSeconds > 60)
+    {
+        xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): invalidate parameters");
+        return NULL;
+    }
+
+    //
+    // get ip & port from string
+    //
+    DWORD dwIp = 0;
+    WORD wPort = 0;
+    XGetIpPortFromString(szRemoteDeviceIpPort, &dwIp, &wPort);
+    if (0 == dwIp || 0 == wPort)
+    {
+        xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): get ip string failed.");
+        return NULL;
+    }
+
+    if (INVALID_SOCKET == m_sock)
+    {
+        xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): socket not created.");
+        return NULL;
+    }
+    CNet *pNet = FindNetFromSocket(m_sock);
+    if (NULL == pNet)
+    {
+        xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): invalidate socket.");
+        return NULL;
+    }
+
+    if(!pNet->StartTest(dwRemoteDeviceId, dwIp, wPort, (WORD)iTestSeconds))
+    {
+        xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): failed to call StartTest()");
+        return NULL;
+    }
+
+    // wait for test finished
+    while(true)
+    {
+        MY_SLEEP(1000);
+        m_resTestSpeed.dwSize = sizeof(m_resTestSpeed);
+        if(!pNet->GetTestStatus(&m_resTestSpeed))
+        {
+            xlog(XLOG_LEVEL_ERROR, "TestNetSpeed(): failed to get test-result");
+            return NULL;
+        }
+        if(m_resTestSpeed.wStep == 0)
+        {
+            break;
+        }
+    }
+
+    return &m_resTestSpeed;
 }

@@ -402,6 +402,7 @@ protected:
 	DWORD			m_dwStatPackets1;
 	DWORD			m_dwStatErrorCount0;
 	DWORD			m_dwStatErrorCount1;
+	DWORD           m_dwTestStatSenderPrevTimeMs;
 };
 
 //

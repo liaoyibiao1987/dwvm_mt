@@ -176,9 +176,9 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         m_btn_freehand.setOnCheckedChangeListener(new DYImageButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(DYImageButton buttonView, boolean isChecked) {
-                if (decodeVideoThread != null) {
+              /*  if (decodeVideoThread != null) {
                     decodeVideoThread.testswitch();
-                }
+                }*/
                 PhoneUtils.setSpeakerphoneOn(DY_VideoPhoneActivity.this, m_btn_freehand.isSelected());
             }
         });

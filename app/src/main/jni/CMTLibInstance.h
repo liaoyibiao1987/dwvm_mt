@@ -135,6 +135,12 @@ public:
         int iImageWidth,
         int iImageHeight);
 
+    T_DWVM_TEST_NET_RESULT* TestNetSpeed(
+        DWORD dwRemoteDeviceId,
+        const char* szRemoteDeviceIpPort,
+        int iTestSeconds);
+
+
 protected:
     static int OnReceivedNetPacket(
         T_DWVM_JNI_ENV *pJava,
@@ -192,6 +198,7 @@ protected:
     int m_iEncoderChannelNumber;
     int m_iDecoderChannelNumber;
     DWORD m_dwNetEncryptMode;
+    T_DWVM_TEST_NET_RESULT m_resTestSpeed;
 
     // session
     CXSimpleList3 m_sessionList;

@@ -31,6 +31,8 @@ import java.lang.reflect.Method;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static com.dy.dwvm_mt.commandmanager.MTLibUtils.getBaseMTLib;
+
 /**
  * Author by pingping, Email 327648349@qq.com, Date on 2018/6/28.
  * PS: Not easy to write code, please indicate.
@@ -113,8 +115,9 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         btn_testopencamare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                avcEncoder.setMTLib(MTLibUtils.getBaseMTLib());
-                avcEncoder.changeRemoter(LocalSetting.getDeviceId(), "127.0.0.1:" + CommandUtils.MTPORT);
+                avcEncoder.setMTLib(getBaseMTLib());
+                //avcEncoder.changeRemoter(LocalSetting.getDeviceId(), "127.0.0.1:" + CommandUtils.MTPORT);
+                avcEncoder.changeRemoter(33554432, "112.90.144.6:6001");
                 //avcEncoder.changeRemoter(0x04000000, "172.16.0.144:5004");
                 avcEncoder.cameraStart();
             }
@@ -171,6 +174,15 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
                 }
             }, 500);
         } else if (v.getId() == R.id.btn_setSpeakerON3) {
+
+            //DEBUG: 测试网络速度
+            //for(int i=0; i<1; i++)
+            //{
+            //    LogUtils.d("PS: BEGIN #" + (i+1));
+            //    String szTest1 = getBaseMTLib().startTestNetSpeed(0x02000000, "112.90.144.6:6001", 11);
+            //    LogUtils.d("PS: " + szTest1);
+            //}
+
             LogUtils.d("设置手机外放3", am.isSpeakerphoneOn());
             AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             if (audioManager.getMode() != AudioManager.MODE_IN_CALL) {

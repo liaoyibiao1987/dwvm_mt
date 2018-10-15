@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layoutAnimation xmlns:android="http://schemas.android.com/apk/res/android"
+    android:animation="@anim/test"
+    android:animationOrder="random"
+    android:delay="0.5"></layoutAnimation>
+
+<!-- 配合LayoutTransition调节ViewGroup容器中删除添加元素的动画效果-->
+
+<!--
+    前面我们说过ViewGroup在设置android:animateLayoutChanges="true"后在添加或者删除子view时可以启用系统带着的动画效果，但这种效果无法通过自定义动画去替换。
+    不过还好android官方为我们提供了LayoutTransition类，通过LayoutTransition就可以很容易为ViewGroup在添加或者删除子view设置自定义动画的过渡效果了。
+
+    LayoutTransition类用于当前布局容器中需要View添加，删除，隐藏，显示时设置布局容器子View的过渡动画。
+    也就是说利用LayoutTransition，可以分别为需添加或删除的View对象在移动到新的位置的过程添加过渡的动画效果。
+    我们可以通过setLayoutTransition()方法为布局容器ViewGroup设置LayoutTransition对象
+
+    -->
+
+

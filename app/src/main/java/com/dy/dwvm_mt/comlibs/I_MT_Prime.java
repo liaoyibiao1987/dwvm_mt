@@ -78,6 +78,12 @@ public interface I_MT_Prime {
             int imageHeight
     );
 
+    String startTestNetSpeed(
+            long remoteDeviceId,
+            String remoteDeviceIpPort,
+            int testSeconds
+    );
+
     public interface MTLibCallback {
         long onReceivedUdpPacket(
                 long localDeviceId,

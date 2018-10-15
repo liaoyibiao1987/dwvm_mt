@@ -101,6 +101,14 @@ JNIEXPORT jint JNICALL Java_com_dy_dwvm_1mt_MTLib_sendUdpPacketToDevice
 JNIEXPORT jint JNICALL Java_com_dy_dwvm_1mt_MTLib_sendOneFrameToDevice
     (JNIEnv *, jobject, jint, jlong, jint, jstring, jstring, jbyteArray, jint, jint, jint, jint);
 
+/*
+ * Class:     com_dy_dwvm_mt_MTLib
+ * Method:    startTestNetSpeed
+ * Signature: (JLjava/lang/String;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_dy_dwvm_1mt_MTLib_startTestNetSpeed
+    (JNIEnv *, jobject, jlong, jstring, jint);
+
 #ifdef __cplusplus
 }
 #endif

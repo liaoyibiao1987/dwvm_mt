@@ -98,7 +98,7 @@ void xlog(int iLevel, const char *szFormat, ...)
 
     if (iLevel >= g_iLevel)
     {
-        char sz[640] = {""};
+        char sz[2048] = {""};
         char* psz = sz;
         va_list ArgumentList;
         size_t len = 0;

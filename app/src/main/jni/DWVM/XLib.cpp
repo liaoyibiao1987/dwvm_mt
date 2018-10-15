@@ -354,16 +354,24 @@ UINT64 XMakeTime_U64(WORD wYear, WORD wMonth, WORD wDay, WORD wHour, WORD wMinut
 
 double get_current_ms(void)
 {
+#if 1
     struct timeval tv = {0, 0};
     gettimeofday(&tv, NULL);
     return (tv.tv_sec * 1000.0) + (tv.tv_usec / 1000.0);
+#else
+    return (clock()*1000.0/CLOCKS_PER_SEC);
+#endif
 }
 
 unsigned long get_current_ms2(void)
 {
+#if 1
     struct timeval tv = {0, 0};
     gettimeofday(&tv, NULL);
     return ((unsigned long) tv.tv_sec * 1000) + (tv.tv_usec / 1000);
+#else
+    return (unsigned long)(clock()*1000.0/CLOCKS_PER_SEC);
+#endif
 }
 
 double get_current_us(void)

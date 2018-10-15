@@ -1,6 +1,10 @@
 #include "DwvmBase.h"
 #include <time.h>
 #include "svStreamDef2.h"
+#include "dwvm_global.h"
+
+//#define TEST_STAT_SENDER    //DEBUG: 显示发送时的统计信息
+//#define TEST_STAT_RECEIVER  //DEBUG: 显示接收时的统计信息
 
 //
 // 缓存视频、音频小包
@@ -223,6 +227,7 @@ CFrameSender::CFrameSender(int iCacheSecond) :
 	m_dwStatPackets1 = 0;
 	m_dwStatErrorCount0 = 0;
 	m_dwStatErrorCount1 = 0;
+    m_dwTestStatSenderPrevTimeMs = 0;
 }
 
 CFrameSender::~CFrameSender()
@@ -303,8 +308,8 @@ BOOL CFrameSender::Send(
     // 当UDP的目标IP地址不在目前的arp活动表中，并且udp包大于1024时，每发一个UDP包都会导致OS等待arp回应、直到超时（4秒）
     // 但是如果udp包小于或者等于1024时，没有这个问题，udp包会被立即发送
     // 所以这里把最大长度限定在1024
-    static const int iMaxLen = min(1024, WVM_MTU) - sizeof(T_WVM_PACKET_HEADER) - sizeof(T_WVM_VA_FRAME_HEADER) -
-                               sizeof(T_WVM_VA_BLOCK_HEADER);
+    //DEBUG: Android版本把 min(1024, WVM_MTU) 修改为 WVM_MTU，以尽量减少包的数量
+    static const int iMaxLen = WVM_MTU - sizeof(T_WVM_PACKET_HEADER) - sizeof(T_WVM_VA_FRAME_HEADER) - sizeof(T_WVM_VA_BLOCK_HEADER);
     BYTE Buffer[WVM_MTU];
     T_WVM_VA_FRAME_HEADER *pFrameHdr = (T_WVM_VA_FRAME_HEADER *) Buffer;
     T_WVM_VA_BLOCK_HEADER *pBlockHdr = (T_WVM_VA_BLOCK_HEADER *) &pFrameHdr[1];
@@ -321,10 +326,12 @@ BOOL CFrameSender::Send(
 	{
 		m_dwStatMaxFrameSize = (DWORD)iFrameLen;
 	}
+	//xlog(XLOG_LEVEL_NORMAL, "[Sender_%p] send frame: type=%u, seq=%u", this, pStreamHdr->StreamType, pStreamHdr->dwOrder);
 
 	m_dwSenderDeviceId = dwSrcDeviceId;
 
-    memset(Buffer, 0, sizeof(T_WVM_VA_FRAME_HEADER) + sizeof(T_WVM_VA_BLOCK_HEADER));
+    memset(Buffer,0,sizeof(Buffer));
+    //memset(Buffer, 0, sizeof(T_WVM_VA_FRAME_HEADER) + sizeof(T_WVM_VA_BLOCK_HEADER));
 
     pFrameHdr->Session.dwSrcDeviceEncoderChannelIndex = dwSrcEncoderChannelIndex;
     pFrameHdr->Session.dwDestDeviceDecoderChannelIndex = dwDestDecoderChannelIndex;
@@ -343,7 +350,8 @@ BOOL CFrameSender::Send(
     for (int i = 0; i < iPktNum; i++)
     {
         const int iBlockLen = (iRemain > iMaxLen) ? (iMaxLen) : (iRemain);
-        const int iSendLen = sizeof(T_WVM_VA_FRAME_HEADER) + sizeof(T_WVM_VA_BLOCK_HEADER) + iBlockLen;
+        //DEBUG: 修改 "...+iBlockLen" 为 "...+iMaxLen"，以保证每个数据包的大小都是一样的，这样在Android 4G环境下可以减少丢包
+        const int iSendLen = sizeof(T_WVM_VA_FRAME_HEADER) + sizeof(T_WVM_VA_BLOCK_HEADER) + iMaxLen;//+ iBlockLen;
 
         pFrameHdr->dwFrameSize = sizeof(T_WVM_VA_BLOCK_HEADER) + iBlockLen;
         pBlockHdr->pkt_seq = ++m_dwBlockCount;
@@ -390,7 +398,19 @@ BOOL CFrameSender::Send(
 		m_dwResendLimit_AvgSendPackets = m_dwResendLimit_SendPackets;
 		m_dwResendLimit_SendPackets = 0;
 		m_dwResnedLimit_ResendPackets = 0;
+	}
+
+#ifdef TEST_STAT_SENDER
+	if((timeGetTime() - m_dwTestStatSenderPrevTimeMs) >= 2000)
+	{
+        char szStatText[512] = {""};
+        if (GetStatText(szStatText))
+        {
+            xlog(XLOG_LEVEL_NORMAL, "[Sender_%p] %s", this, szStatText);
+        }
+        m_dwTestStatSenderPrevTimeMs = timeGetTime();
     }
+#endif
 
     m_dwLastFrameTime = timeGetTime();
 
@@ -501,7 +521,7 @@ BOOL CFrameSender::Reply(
     DWORD dwSrcDeviceId,
     DWORD dwSrcIp,
     WORD wSrcPort,
-		DWORD  dwDestDeviceId,
+    DWORD  dwDestDeviceId,
     T_WVM_VA_POLLING *pPolling)
 {
     CXAutoLock lk(m_hLock);
@@ -767,9 +787,10 @@ BOOL CFrameReceiver::Push(
 
 		if(iLostPackets >= WVM_MAX_RESEND_PKT_NUM)
         {
-			xlog(XLOG_LEVEL_NORMAL, "[%p] CFrameReceiver::Push() lost-pkt too many (%d) >= %d (MyId=%08X,SenderId=%08X)\n", this, iLostPackets, WVM_MAX_RESEND_PKT_NUM, dwDestDeviceId, dwSrcDeviceId);
+			xlog(XLOG_LEVEL_NORMAL, "[Receiver_%p] CFrameReceiver::Push() lost-pkt too many (%d) >= %d (MyId=%08X,SenderId=%08X), to clear cache\n", this, iLostPackets, WVM_MAX_RESEND_PKT_NUM, dwDestDeviceId, dwSrcDeviceId);
+			m_pRestruct->ClearFrameChain();
         }
-		if(iLostPackets > 0)
+		else if(iLostPackets > 0)
         {
             T_WVM_VA_RESEND r;
             memset(&r, 0, sizeof(r));
@@ -779,7 +800,7 @@ BOOL CFrameReceiver::Push(
 			DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_RESEND, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &r, sizeof(r), 0, dwDestDeviceId);
 			// 统计信息
 			m_dwStatResendQueryCnt += r.dwPacketNum;
-            //xlog(XLOG_LEVEL_NORMAL, "[%p] CFrameReceiver::Push() query resend-pkt num %d (intl %u ms)\n", this, iLostPackets, m_dwResendInterlaceMs);
+            //xlog(XLOG_LEVEL_NORMAL, "[%p] CFrameReceiver::Push() query resend-pkt num %d (intl %u ms): %u ...\n", this, iLostPackets, m_dwResendInterlaceMs, r.dwPacketSeqArray[0]);
         }
     }
 
@@ -812,13 +833,33 @@ BOOL CFrameReceiver::Push(
         m_RealtimeStatus.dwRecvFrames = m_RealtimeStatus.Detail.dwRecvFrames;
         m_RealtimeStatus.Detail.dwRecvFrames = 0;
 
-		DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_POLLING, 0, dwDestDeviceId, dwSrcIp, wSrcPort, &m_Polling, sizeof(m_Polling), 0, dwDestDeviceId);
+        DWVM_SendNetPacketEx(TRUE, s, WVM_CMD_PS_VA_POLLING, 0, dwSrcDeviceId, dwSrcIp, wSrcPort, &m_Polling, sizeof(m_Polling), 0, dwDestDeviceId);
 
         m_Polling.dwPktSeqBegin = 0;
         m_Polling.dwRecvPackets_0 = 0;
         m_Polling.dwRecvBytes_0 = 0;
         m_Polling.dwRecvPackets_1 = 0;
         m_Polling.dwRecvBytes_1 = 0;
+
+#ifdef TEST_STAT_RECEIVER
+        char szStatText[512] = {""};
+        if(GetStatText(szStatText))
+        {
+            xlog(XLOG_LEVEL_NORMAL, "[Receiver_%p] %s", this, szStatText);
+        }
+        T_DWVM_NET_REALTIME_STATUS rtStatus;
+        GetRealtimeStatus(&rtStatus);
+        if(rtStatus.dwStatTimeMs != 0)
+        {
+            const double dbSeconds = rtStatus.dwStatTimeMs/1000.0;
+            xlog(XLOG_LEVEL_NORMAL, "[Receiver_%p] %.1f seconds, get whole-frame %.1f fps, delay %u ms, receive %.1f Kbps %.1f pps, Sender total send  %.1f Kbps %.1f pps ( send %.1f Kbps %.1f pps, resend %.1f Kbps %.1f pps)", this,
+                 dbSeconds, rtStatus.Detail.dwRecvFrames / dbSeconds, rtStatus.dwDelayTimeMs,
+                 rtStatus.dwRecvBytes*8.0/(dbSeconds*1000.0), rtStatus.dwRecvPackets/dbSeconds,
+                 rtStatus.dwSendBytes*8.0/(dbSeconds*1000.0), rtStatus.dwSendPackets/dbSeconds,
+                 rtStatus.Detail.dwSendBytes_0*8.0/(dbSeconds*1000.0), rtStatus.Detail.dwSendPackets_0 / dbSeconds,
+                 rtStatus.Detail.dwSendBytes_1*8.0/(dbSeconds*1000.0), rtStatus.Detail.dwSendPackets_1 / dbSeconds);
+        }
+#endif
     }
 
     return bResult;

@@ -4,6 +4,7 @@
 #include <string.h>
 #include "com_dy_dwvm_mt_MTLib.h"
 #include "CMTLibInstance.h"
+#include "DWVM/DwvmBase.h"
 
 CMTLibInstance *g_lib = NULL;
 
@@ -403,4 +404,55 @@ JNIEXPORT jint JNICALL Java_com_dy_dwvm_1mt_MTLib_sendOneFrameToDevice
 
     return g_lib->SendOneFrameToDevice(localEncoderChannelIndex, dwRemoteDeviceId, remoteDeviceDecoderChannelIndex,
                                        szIp, szCodec, pFrameData, frameBytes, imageResolution, imageWidth, imageHeight);
+}
+
+/*
+ * Class:     com_dy_dwvm_mt_MTLib
+ * Method:    startTestNetSpeed
+ * Signature: (JLjava/lang/String;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_dy_dwvm_1mt_MTLib_startTestNetSpeed
+    (JNIEnv *env, jobject,
+     jlong remoteDeviceId, jstring remoteDeviceIpPort, jint testSeconds)
+{
+    char szResult[512] = {""};
+    if (g_lib == NULL)
+    {
+        xlog(XLOG_LEVEL_ERROR, "startTestNetSpeed(): lib is NULL.");
+        return Char_to_JString(env, szResult);
+    }
+
+    DWORD dwRemoteDeviceId = (DWORD) (remoteDeviceId & 0x00000000FFFFFFFF);
+
+    CJStringToChar cjIp(env, remoteDeviceIpPort);
+    const char *szDestDeviceIpPort = cjIp;
+    if (szDestDeviceIpPort == NULL)
+    {
+        xlog(XLOG_LEVEL_ERROR, "startTestNetSpeed(): get ip string failed.");
+        return Char_to_JString(env, szResult);
+    }
+
+    T_DWVM_TEST_NET_RESULT* pResult = g_lib->TestNetSpeed(dwRemoteDeviceId, szDestDeviceIpPort, testSeconds);
+    if(NULL == pResult)
+    {
+        xlog(XLOG_LEVEL_ERROR, "startTestNetSpeed(): failed to call TestNetSpeed()");
+        return Char_to_JString(env, szResult);
+    }
+
+    char* psz = szResult;
+    psz += sprintf(psz, "[TestNetSpeed] remote %s:%u id 0x%08X, test %u sec:",
+                   socket_getstring(pResult->dwDestIp), pResult->wDestPort, pResult->dwDestDeviceId, pResult->wTestSecond);
+    for(int i=0; i<3; i++)
+    {
+        if(0 != pResult->Stat[i].iPktSendCnt)
+        {
+            const int iPktLost = pResult->Stat[i].iPktSendCnt - pResult->Stat[i].iPktAckCnt;
+            psz += sprintf(psz, " [#%d: packets %d/%d lost %d @ %.1f%%, %.1fKbps @ %uB @ %.1fms, ack %.1fms]",
+                           i+1, pResult->Stat[i].iPktSendCnt, pResult->Stat[i].iPktAckCnt,
+                           iPktLost, iPktLost*100.0/pResult->Stat[i].iPktSendCnt,
+                           (pResult->Stat[i].iPktSize*8.0*pResult->Stat[i].iPktAckCnt/1024.0)/(pResult->Stat[i].dbRunTime/1000.0),
+                           pResult->Stat[i].iPktSize, pResult->Stat[i].dbRunTime, pResult->Stat[i].dbResponse);
+        }
+    }
+    return Char_to_JString(env, szResult);
 }

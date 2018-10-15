@@ -10,6 +10,7 @@
 
 extern CXSimpleList g_listTcpTunnelOverUdp;
 
+//#define TEST_STAT_SEND //DEBUG: 统计发送包并每隔5秒显示一次
 #ifdef TEST_STAT_SEND
 static DWORD m_dwStatBeginTime = 0;
 static DWORD m_dwStatSendQueryBytes = 0;
@@ -129,8 +130,6 @@ BOOL CNet::Create(
         Destroy();
         return FALSE;
     }
-    THREAD_SET_NAME(m_hRecvThread, "DWVM_Net_Recv");
-    THREAD_SET_NAME(m_hSendThread, "DWVM_Net_Send");
     // cb threads
     for (int j = 0; j < (int) m_dwCbThreadNumber; j++)
     {
@@ -139,9 +138,6 @@ BOOL CNet::Create(
         {
             break;
         }
-        char szName[64] = {""};
-        sprintf(szName, "DWVM_Net_Callback_%d", j);
-        THREAD_SET_NAME(m_hCbThread[j], szName);
     }
     if (INVALID_THREAD_HANDLE == m_hCbThread[0])
     {
@@ -255,8 +251,6 @@ void CNet::OnRecvThread()
     DWORD dwSum = 0;
     int i = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) RecvBuffer;
-
-    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
 
     while (INVALID_SOCKET != m_sock &&
            (iRecvLen = udp_receive(m_sock, RecvBuffer, sizeof(RecvBuffer), &dwFromIp, &wFromPort, TRUE)) > 0)
@@ -386,8 +380,6 @@ void CNet::OnCallbackThread()
     DWORD dwFromPort = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) Buffer;
 
-    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
-
     T_DWVM_JNI_ENV javaTodo;
     memset(&javaTodo, 0, sizeof(T_DWVM_JNI_ENV));
     // initialize java thread-env
@@ -433,6 +425,17 @@ void CNet::OnCallbackThread()
     }
 }
 
+static void test_sleep_ms(DWORD dwSleepMs, int iTestCount = 100)
+{
+    const DWORD dwTime1 = timeGetTime();
+    for(int i=0; i<iTestCount; i++)
+    {
+        MY_SLEEP(dwSleepMs);
+    }
+    const DWORD dwUseMs = timeGetTime() - dwTime1;
+    xlog(XLOG_LEVEL_NORMAL, "%s(%u ms,%d times) use time %u ms avg %u ms", __func__, dwSleepMs, iTestCount, dwUseMs, dwUseMs/iTestCount);
+}
+
 void CNet::OnSendThread()
 {
     BYTE Buffer[WVM_MTU + 1024];
@@ -441,25 +444,57 @@ void CNet::OnSendThread()
     DWORD dwDestPort = 0;
     T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) Buffer;
 
-    xlog(XLOG_LEVEL_NORMAL, "thread func [%s] tid [%lu]\n", __func__, gettid());
+	// 限制发送的频率: 每 2~15 毫秒发送1个包
+	const double net_send_limit_PktInterlaceMsMin = 2.0;
+    const double net_send_limit_PktInterlaceMsMax = 15.0;
+	double dbPrevPktSendingMs = 0;
+    double dbInterlaceMs = 0;
+    double dbCurrMs = 0;
+    double dbStatMinInterlaceMs = net_send_limit_PktInterlaceMsMax;
+    //xlog(XLOG_LEVEL_NORMAL, "[%s] limit send (%.1f ~ %.1f) ms/pkt",__func__, net_send_limit_PktInterlaceMsMin,net_send_limit_PktInterlaceMsMax);
+
+    //DEBUG: 测试 MY_SLEEP() 的实际时间
+    //for(DWORD dwTestMs=1;dwTestMs<10;dwTestMs++)
+    //{
+    //    test_sleep_ms(dwTestMs);
+    //}
 
     while (m_SendFifo.IsInited())
     {
-        while (m_SendFifo.Pop(Buffer, sizeof(Buffer), &iLen, (long *) &dwDestIp, (long *) &dwDestPort))
+        if(m_SendFifo.GetCount() > 0)
         {
-            hdr->dwSendingTick = timeGetTime();
-            if (udp_send(m_sock, Buffer, iLen, dwDestIp, (WORD) dwDestPort) <= 0)
+            // 编码为12fps，即每80毫秒一帧
+            // 这里限定在70ms内平均发送完所有包
+            // 如果修改了编码帧率，需要同步修改这个参数 (70.0) //DEBUG
+            dbInterlaceMs = 70.0 / m_SendFifo.GetCount();
+            if(dbInterlaceMs < net_send_limit_PktInterlaceMsMin) dbInterlaceMs = net_send_limit_PktInterlaceMsMin;
+            if(dbInterlaceMs > net_send_limit_PktInterlaceMsMax) dbInterlaceMs = net_send_limit_PktInterlaceMsMax;
+            // 限制发送的频率，误差0.5毫秒
+            if((GetCpuMs() - dbPrevPktSendingMs) >= (dbInterlaceMs-0.5) &&
+                m_SendFifo.Pop(Buffer, sizeof(Buffer), &iLen, (long *) &dwDestIp, (long *) &dwDestPort))
             {
-                xlog(XLOG_LEVEL_ERROR, "Send NetPacket FAIL! len=%d, dest=%s:%lu, sock=%d, errno=%d\n",
-                     iLen, socket_getstring(dwDestIp), dwDestPort, m_sock, errno);
-            }
-            else
-            {
-#ifdef TEST_STAT_SEND
-                // 统计
-                m_dwStatSendActualNumber ++;
-                m_dwStatSendActualBytes += iLen;
-#endif
+                hdr->dwSendingTick = timeGetTime();
+                if (udp_send(m_sock, Buffer, iLen, dwDestIp, (WORD) dwDestPort) <= 0)
+                {
+                    xlog(XLOG_LEVEL_ERROR, "Send NetPacket FAIL! len=%d, dest=%s:%lu", iLen, socket_getstring(dwDestIp), dwDestPort);
+                }
+                else
+                {
+                    dbCurrMs = GetCpuMs();
+                    dbInterlaceMs = dbCurrMs - dbPrevPktSendingMs;
+                    dbPrevPktSendingMs = dbCurrMs;
+                    //DEBUG: 显示实际的最小间隔时间
+                    if(dbInterlaceMs < dbStatMinInterlaceMs)
+                    {
+                        xlog(XLOG_LEVEL_NORMAL, "[%s] min-send-interlace-ms: %1.f -> %1.f", __func__, dbStatMinInterlaceMs, dbInterlaceMs);
+                        dbStatMinInterlaceMs = dbInterlaceMs;
+                    }
+                    #ifdef TEST_STAT_SEND
+                    // 统计
+                    m_dwStatSendActualNumber ++;
+                    m_dwStatSendActualBytes += iLen;
+                    #endif
+                }
             }
         }
 
@@ -467,9 +502,13 @@ void CNet::OnSendThread()
         {
             Test_OnSendThread(Buffer);
         }
-        else
+        else if(m_SendFifo.GetCount() <= 0)
         {
-            MY_SLEEP(2);
+            usleep(2000);
+        }
+        else if(net_send_limit_PktInterlaceMsMin >= 1.0)
+        {
+            usleep(500);
         }
 
 #ifdef TEST_STAT_SEND
@@ -482,9 +521,17 @@ void CNet::OnSendThread()
         const DWORD dwMs = dwTick - m_dwStatBeginTime;
         if(dwMs >= 5000)
         {
-            xlog(XLOG_LEVEL_NORMAL, "NET SEND STAT: query %u Kbps %u pps, actual %u Kbps %u pps\n",
-                (m_dwStatSendQueryBytes*8*1000)/(1024*dwMs), m_dwStatSendQueryNumber*1000/dwMs,
-                (m_dwStatSendActualBytes*8*1000)/(1024*dwMs), m_dwStatSendActualNumber*1000/dwMs);
+            if(m_dwStatSendQueryNumber != 0 || m_dwStatSendActualNumber != 0)
+            {
+                xlog(XLOG_LEVEL_NORMAL,
+                     "NET SEND STAT: query %u Kbps %u pps %u Bpp, actual %u Kbps %u pps %u Bpp\n",
+                     m_dwStatSendQueryBytes * 8 / dwMs,
+                     m_dwStatSendQueryNumber * 1000 / dwMs,
+                     (0==m_dwStatSendQueryNumber) ? 0 : (m_dwStatSendQueryBytes / m_dwStatSendQueryNumber),
+                     m_dwStatSendActualBytes * 8 / dwMs,
+                     m_dwStatSendActualNumber * 1000 / dwMs,
+                     (0==m_dwStatSendActualNumber) ? 0 : (m_dwStatSendActualBytes / m_dwStatSendActualNumber));
+            }
             m_dwStatBeginTime = dwTick;
             m_dwStatSendQueryNumber = 0;
             m_dwStatSendQueryBytes = 0;
@@ -665,12 +712,12 @@ void CNet::Test_OnSendThread(BYTE *pTestBuffer)
 
         // 填充头信息
         T_WVM_PACKET_HEADER *hdr = (T_WVM_PACKET_HEADER *) pTestBuffer;
-        memset(hdr, 0, sizeof(T_WVM_PACKET_HEADER));
+        memset(hdr, ((BYTE)rand()), sizeof(T_WVM_PACKET_HEADER));
         hdr->dwStartCode = WVM_START_CODE;
         hdr->dwSize = sizeof(T_WVM_PACKET_HEADER);
         hdr->dwCmd = WVM_CMD_TEST_NET;
         hdr->dwSeq = m_dwSendPktSeq;
-        hdr->dwSendingTick = (DWORD) m_dbSendTick;
+        hdr->dwSendingTick = timeGetTime();
         hdr->dwReplyContext = m_Test.wStep; // 以当前的步骤号为context，不能为0
         hdr->dwSrcId = m_dwLocalDeviceId;
         hdr->dwDestId = m_Test.dwDestDeviceId;
@@ -706,7 +753,7 @@ void CNet::Test_OnRecvThread(T_WVM_REPLY *pr)
     }
     const int iStepIndex = ((int) wReplyStep) - 1;
 
-    const double dbResponse = GetCpuMs() - ((double) pr->dwSrcTick);
+    const double dbResponse = timeGetTime() - pr->dwSrcTick;
     // 有的包会在网络上延迟非常久，可能会是平均值的5倍。忽略这种情况，不计入平均值
     if (dbResponse < m_Test.Stat[iStepIndex].dbResponse * 5.0 || m_Test.Stat[iStepIndex].iPktAckCnt <= 0)
     {

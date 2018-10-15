@@ -8,6 +8,7 @@
 #if !defined(_WIN32) && !defined(WIN32)
 
 #include <unistd.h>
+#include <time.h>
 
 typedef int BOOL;
 typedef unsigned char BYTE;
@@ -42,6 +43,7 @@ typedef void *LPVOID;
 
 #ifndef MY_SLEEP
 #define MY_SLEEP(milli_sec) usleep(milli_sec*1000)
+//#define MY_SLEEP(milli_sec) {const clock_t nEnd = clock() + milli_sec * CLOCKS_PER_SEC / 1000; while(clock()<nEnd) usleep(1000);}
 #endif
 
 #endif
