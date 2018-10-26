@@ -51,7 +51,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
 
     private long pts = 0;
     private long generateIndex = 0;
-    private int m_framerate = 12; //xy//DEBUG: 修改这个编码帧率后，需要同步修改Net.cpp的CNet::OnSendThread()中的发包间隔时间
+    private int m_framerate = 14; //xy//DEBUG: 修改这个编码帧率后，需要同步修改Net.cpp的CNet::OnSendThread()中的发包间隔时间
     private int TIMEOUT_USEC = 12000;
 
 
@@ -406,12 +406,12 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             mEncoder = MediaCodec.createEncoderByType(MTLib.CODEC_VIDEO_H264);
             MediaFormat mediaFormat = MediaFormat.createVideoFormat(MTLib.CODEC_VIDEO_H264, m_iRawWidth, m_iRawHeight);
             int iBitRate = m_iRawWidth * m_iRawHeight * 3 / 2;
+            mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR); //xy//DEBUG:CBR
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, iBitRate);
             mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, m_framerate);
             mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1); // seconds
             mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, ENCODE_INPUT_COLOR_TABLE[m_iColorFormatIndex]);
             mediaFormat.setInteger(MediaFormat.KEY_ROTATION, 90);
-            mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE, MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR); //xy//DEBUG:CBR
             LogUtils.d("set MediaFormat.KEY_BIT_RATE", iBitRate);
             Log.d("AvcEncoder", "encode-par: " + m_iRawWidth + " x " + m_iRawHeight + ", " + m_framerate + " fps, " + (iBitRate/1000) + " Kbps");
 
@@ -494,7 +494,7 @@ public class AvcEncoder extends Thread implements Camera.PreviewCallback {
             }
         } else {
             try {
-                Thread.sleep(500);
+                Thread.sleep(40);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -463,10 +463,10 @@ void CNet::OnSendThread()
     {
         if(m_SendFifo.GetCount() > 0)
         {
-            // 编码为12fps，即每80毫秒一帧
-            // 这里限定在70ms内平均发送完所有包
-            // 如果修改了编码帧率，需要同步修改这个参数 (70.0) //DEBUG
-            dbInterlaceMs = 70.0 / m_SendFifo.GetCount();
+            // 编码为14fps，即每71毫秒一帧
+            // 这里限定在60ms内平均发送完所有包
+            // 如果修改了编码帧率，需要同步修改这个参数 (60.0) //DEBUG
+            dbInterlaceMs = 60.0 / m_SendFifo.GetCount();
             if(dbInterlaceMs < net_send_limit_PktInterlaceMsMin) dbInterlaceMs = net_send_limit_PktInterlaceMsMin;
             if(dbInterlaceMs > net_send_limit_PktInterlaceMsMax) dbInterlaceMs = net_send_limit_PktInterlaceMsMax;
             // 限制发送的频率，误差0.5毫秒

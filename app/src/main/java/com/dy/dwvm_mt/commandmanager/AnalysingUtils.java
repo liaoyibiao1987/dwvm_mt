@@ -63,11 +63,11 @@ public class AnalysingUtils {
      *
      * @param handler NWCommandEvent Handler
      */
-    public static void addRecvedCommandListeners(NWCommandEventHandler handler) {
+    public static void addReceivedCommandListeners(NWCommandEventHandler handler) {
         eventListeners.add(handler);
     }
 
-    public static void removeRecvedCommandListeners(NWCommandEventHandler handler) {
+    public static void removeReceivedCommandListeners(NWCommandEventHandler handler) {
         if (handler == null) {
             eventListeners.clear();
         } else {
@@ -139,14 +139,11 @@ public class AnalysingUtils {
 
                         s_headPack s_head = new s_headPack();
                         JavaStruct.unpack(s_head, rp.getBagBuffer());
-                        int SrcID = s_head.dwSrcId;//来源ID
-                        int dwReplyContext = s_head.dwReplyContext;//发送到设备的对方ID
-                        int dwSeq = s_head.dwSeq;
 
-                        if (dwReplyContext != 0) {
+                        if (s_head.dwReplyContext != 0) {////发送到设备的对方ID
                             s_CMDReply s_re = new s_CMDReply(20, s_head.dwCmd, s_head.dwSeq, s_head.dwSendingTick, s_head.dwReplyContext);
-                            byte[] Data = (byte[]) JavaStruct.pack(s_re);
-                            mtLib.sendUdpPacketToDevice2(s_messageBase.DeviceCMD.WVM_CMD_REPLY, 0, SrcID, srcIpPort, Data, Data.length);
+                            byte[] Data = JavaStruct.pack(s_re);
+                            mtLib.sendUdpPacketToDevice2(s_messageBase.DeviceCMD.WVM_CMD_REPLY, 0, s_head.dwSrcId, srcIpPort, Data, Data.length);
                         }
                     } else {
                         s_CMDReply s_reply = new s_CMDReply();                                  //回应包

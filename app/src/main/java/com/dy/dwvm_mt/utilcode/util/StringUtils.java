@@ -1,5 +1,7 @@
 package com.dy.dwvm_mt.utilcode.util;
 
+import android.text.TextUtils;
+
 /**
  * <pre>
  *     author: Blankj
@@ -201,5 +203,16 @@ public final class StringUtils {
             r.append(hexCode[(b & 0xF)] + " ");
         }
         return r.toString();
+    }
+
+
+
+    public static String formatPhoneNumber(String phoneNum) {
+        if (!TextUtils.isEmpty(phoneNum) && phoneNum.length() == 11) {
+            return phoneNum.substring(0, 3) + "-"
+                    + phoneNum.substring(3, 7) + "-"
+                    + phoneNum.substring(7);
+        }
+        return phoneNum;
     }
 }

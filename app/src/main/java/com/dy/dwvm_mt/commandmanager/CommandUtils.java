@@ -9,6 +9,7 @@ import com.dy.dwvm_mt.messagestructs.s_MT_TelState;
 import com.dy.dwvm_mt.messagestructs.s_MT_Tel_ValidCode;
 import com.dy.dwvm_mt.messagestructs.s_loginDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
+import com.dy.dwvm_mt.utilcode.util.ConvertUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.NetworkUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
@@ -104,7 +105,6 @@ public class CommandUtils {
 
         loginstruct.setDwDeviceId(0);
         loginstruct.setLoginType(0);
-        loginstruct.setDwDecoderChannelNumber(2);
         loginstruct.setSzDeviceName("MT".getBytes());
         loginstruct.setSzDeviceVersion("1.0.1".getBytes());
 
@@ -116,6 +116,9 @@ public class CommandUtils {
 
         loginstruct.setSzUsernameEncrypt(e_loginid);
         loginstruct.setSzPasswordEncrypt(e_loginpw);
+        //唯一登录用的小端模式
+        loginstruct.setDwEncoderChannelNumber(ConvertUtils.int2LH(64));
+        loginstruct.setDwDecoderChannelNumber(ConvertUtils.int2LH(2));
         loginstruct.setSzTelphoneCode(telNumber.getBytes());
         loginstruct.setSzTelphoneZone(telZone.getBytes());
         loginstruct.setLanIPAddr(NetworkUtils.getIPAddress(true).getBytes());

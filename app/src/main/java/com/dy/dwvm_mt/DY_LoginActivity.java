@@ -1,13 +1,15 @@
 package com.dy.dwvm_mt;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.job.JobInfo;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.dy.dwvm_mt.accessibilities.CallShowAccessibilityService;
 import com.dy.dwvm_mt.comlibs.BaseActivity;
 import com.dy.dwvm_mt.comlibs.EnumPageState;
 import com.dy.dwvm_mt.comlibs.LocalSetting;
@@ -28,14 +31,14 @@ import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.messagestructs.s_loginResultDDNS;
 import com.dy.dwvm_mt.messagestructs.s_messageBase;
+import com.dy.dwvm_mt.services.CallListenerService;
 import com.dy.dwvm_mt.utilcode.util.ActivityUtils;
 import com.dy.dwvm_mt.utilcode.util.CrashUtils;
-import com.dy.dwvm_mt.utilcode.util.IntentUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.PhoneUtils;
+import com.dy.dwvm_mt.utilcode.util.ServiceUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
-import com.dy.javastruct.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +100,7 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     //申请权限后的返回码
     private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;
 
-    Handler handler;
+    private Handler handler;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -106,14 +109,20 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
             CrashUtils.init();
         }
         Log.d("东耀视频会议系统", "登录界面开始运行");
-        AnalysingUtils.addRecvedCommandListeners(this);
+        AnalysingUtils.addReceivedCommandListeners(this);
         int startType = getIntent().getIntExtra(StartLoginType, 0);
+        startServices();
         if (startType == 0) {
             viewSwitch();
         } else {
             fillView();
         }
+        LogUtils.getConfig().setLog2FileSwitch(true);
+    }
 
+    private void startServices() {
+        Intent service = new Intent(this, CallListenerService.class);
+        this.startService(service);
     }
 
     private void viewSwitch() {
@@ -196,7 +205,6 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
 
     @Override
     protected void onResume() {
-        CommandUtils.PageState = EnumPageState.Login;
         /*try {
             throw new NullPointerException();
         } catch (NullPointerException e1) {
@@ -204,6 +212,8 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
         }*/
         //onResume 天然激活两次
         super.onResume();
+        checkAccessibilityService();
+        CommandUtils.PageState = EnumPageState.Login;
         if (StringUtils.isTrimEmpty(LocalSetting.getLoginID()) == false
                 && StringUtils.isTrimEmpty(LocalSetting.getLoginPSW()) == false
                 && StringUtils.isTrimEmpty(LocalSetting.getTelNumber()) == false) {
@@ -326,7 +336,25 @@ public class DY_LoginActivity extends BaseActivity implements NWCommandEventHand
     @Override
     protected void onDestroy() {
         System.out.println("\r\n登录界面结束运行\r\n");
-        AnalysingUtils.removeRecvedCommandListeners(this);
+        AnalysingUtils.removeReceivedCommandListeners(this);
         super.onDestroy();
+    }
+
+    private boolean checkAccessibilityService() {
+        if (ServiceUtils.isSettingOpen(CallShowAccessibilityService.class, this) == false) {
+            ToastUtils.showLong("请先开启\"东耀视频会议系统\"无障碍服务器");
+            Runnable rs = () -> {
+                try {
+                    Thread.sleep(2000);
+                    ServiceUtils.jumpToSetting(DY_LoginActivity.this);
+                } catch (Exception es) {
+                    LogUtils.e(es);
+                }
+
+            };
+            rs.run();
+            return false;
+        }
+        return true;
     }
 }

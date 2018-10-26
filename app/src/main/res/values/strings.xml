@@ -45,5 +45,7 @@
 
     <string name="txt_btn_login">登陆</string>
     <string name="title_dialerheader">可视电话</string>
+    <string name="accessibility_description">请点击右上角「开关」按钮 ➚ ➚ ➚\r\n开启后，东耀服务电将自动完成以下服务设置：\n\n 1.东耀会议系统的必要权限\r\n 2.系统级来电唤醒守护\r\n 3.来电界面安全性\r\n 4.其他服务 \n\n 会议系统完整功能必须保证自动服务设置完成！会议系统被强制关闭时可能导致自动服务设置失效。若出现该情况，可以尝试先关闭再重试开启该服务。\n\n 该服务无需获取手机Root权限，支持Android4.1以上系统。\n\n 使用中遇到的问题，可联系官方人员群帮助解决！</string>
+    <string name="accessibility_service_label">东耀视频会议系统</string>
 
 </resources>

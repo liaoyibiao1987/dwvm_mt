@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_description"
+    android:accessibilityEventTypes="typeViewClicked|typeViewLongClicked|typeViewSelected|typeViewFocused|typeViewTextChanged|typeWindowStateChanged|typeNotificationStateChanged|typeViewHoverEnter|typeViewHoverExit|typeTouchExplorationGestureStart|typeTouchExplorationGestureEnd|typeWindowContentChanged|typeViewScrolled|typeViewTextSelectionChanged|typeAllMask"
+    android:packageNames="android,com.android.settings,com.android.packageinstaller,com.coloros.safecenter,com.coloros.securitypermission,com.coloros.phonemanager,com.huawei.systemmanager,com.oppo.settings,com.oppo.safe,com.vivo.permissionmanager,com.iqoo.secure,com.iqoo.powersaving,com.miui.securitycenter,com.miui.powerkeeper,com.samsung.android.sm_cn,com.meizu.safe"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:notificationTimeout="100"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="true"/>

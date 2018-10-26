@@ -48,7 +48,7 @@ public class PollingService extends Service implements NWCommandEventHandler, Ne
             }
         }
 */
-        AnalysingUtils.addRecvedCommandListeners(this);
+        AnalysingUtils.addReceivedCommandListeners(this);
         NetworkChangeReceiver.getInstance().setOnNetWorkChange(this);
         EncoderManager.Init(MTLibUtils.getBaseMTLib());
         new Thread(new Runnable() {

@@ -380,7 +380,15 @@ public class DialTabFragment extends Fragment implements View.OnClickListener, V
             } else {
                 try {
                     CommandUtils.sendTelState(s_messageBase.TelStates.DialingNum, 0, "86" + number);
-                    Thread.sleep(100);
+                    new Thread(()->{
+                        try {
+                            Thread.sleep(5000);
+                            //可视电话流程需要先通报拨号状态，准备好数据才能进入主叫或者被叫摘机
+                            CommandUtils.sendTelState(s_messageBase.TelStates.Offhook, 0, "86" + number);
+                        }catch (Exception es){
+                            LogUtils.e("DialTabFragment handleDialButtonPressed Thread error" + es.toString());
+                        }
+                    }).start();
                     //CommandUtils.sendVerifyCode(number, number);
                 } catch (Exception e) {
                     LogUtils.e("DialTabFragment handleDialButtonPressed error" + e.toString());

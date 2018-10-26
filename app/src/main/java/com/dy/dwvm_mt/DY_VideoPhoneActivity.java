@@ -166,6 +166,7 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
                     PhoneUtils.telcomInvok(DY_VideoPhoneActivity.this, "endCall");
                     Intent intent = new Intent(DY_VideoPhoneActivity.this, MTMainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
+                    moveTaskToBack(true);
                     finish();
                 } catch (Exception ex) {
                     LogUtils.e("initPhoneStateListener" + ex.toString());
@@ -324,38 +325,6 @@ public class DY_VideoPhoneActivity extends BaseActivity implements DY_AVPacketEv
         }
         super.onPause();
     }
-
-    /*@Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        LogUtils.d("surfaceCreated");
-        *//*if (holder == (m_surfaceDecoderShow.getHolder())) {
-            if (decoderStart() == false) {
-                LogUtils.e("MT 打开解码：", "打开解码失败");
-                return;
-            } else {
-                m_IsDecoderStart = true;
-                LogUtils.e("MT 打开解码成功");
-            }
-        } else*//*
-        if (holder == (m_surfaceCameraPreview.getHolder())) {
-            if (encoderStart(m_surfaceCameraPreview) == false) {
-                LogUtils.e("MT 打开摄像头、编码：", "打开摄像头、编码失败");
-                return;
-            } else {
-                m_IsEncoderStart = true;
-                LogUtils.e("MT 打开摄像头、编码成功");
-            }
-        }
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-    }*/
-
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {

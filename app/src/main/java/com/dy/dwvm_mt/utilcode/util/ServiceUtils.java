@@ -5,6 +5,8 @@ import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.provider.Settings;
+import android.text.TextUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -158,6 +160,49 @@ public final class ServiceUtils {
      */
     public static boolean isServiceRunning(final Class<?> cls) {
         return isServiceRunning(cls.getName());
+    }
+
+    /**
+     * Return whether accessibility service is running.
+     *
+     * @param cls The accessibility service class.
+     * @return {@code true}: yes<br>{@code false}: no
+     */
+    public static boolean isSettingOpen(final Class<?> cls, Context cxt) {
+        try {
+            int enable = Settings.Secure.getInt(cxt.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 0);
+            if (enable != 1)
+                return false;
+            String services = Settings.Secure.getString(cxt.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (!TextUtils.isEmpty(services)) {
+                TextUtils.SimpleStringSplitter split = new TextUtils.SimpleStringSplitter(':');
+                split.setString(services);
+                while (split.hasNext()) { // 遍历所有已开启的辅助服务名
+                    if (split.next().equalsIgnoreCase(cxt.getPackageName() + "/" + cls.getName()))
+                        return true;
+                }
+            }
+        } catch (Throwable e) {//若出现异常，则说明该手机设置被厂商篡改了,需要适配
+            LogUtils.e("isSettingOpen: " + e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * 跳转到系统设置：开启辅助服务
+     */
+    public static void jumpToSetting(final Context cxt) {
+        try {
+            cxt.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+        } catch (Throwable e) {//若出现异常，则说明该手机设置被厂商篡改了,需要适配
+            try {
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                cxt.startActivity(intent);
+            } catch (Throwable e2) {
+                LogUtils.e("jumpToSetting: " + e2.getMessage());
+            }
+        }
     }
 
     /**

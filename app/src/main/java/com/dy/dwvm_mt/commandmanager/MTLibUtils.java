@@ -50,7 +50,7 @@ public class MTLibUtils {
             AnalysingUtils.setupMTLib(m_mtLib);
             AnalysingUtils.startReviceData();
             //此处只是全局注册后的全局打印收到的 DDNS 包
-            AnalysingUtils.addRecvedCommandListeners(new NWCommandEventHandler() {
+            AnalysingUtils.addReceivedCommandListeners(new NWCommandEventHandler() {
                 @Override
                 public void doNWCommandHandler(NWCommandEventArg arg) {
                     NetWorkCommand command = arg.getEventArg();

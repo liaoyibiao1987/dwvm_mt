@@ -29,6 +29,7 @@ import com.dy.dwvm_mt.messagestructs.s_messageBase;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.StringUtils;
 
+@Deprecated
 public class CallShowService extends Service {
     private static final int CallShowServiceFOREGROUND_ID = 0x201801;
     private static int NOTIFKEEPERIID = 0x111;
@@ -82,15 +83,14 @@ public class CallShowService extends Service {
     @SuppressLint("WrongConstant")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && Intent.ACTION_NEW_OUTGOING_CALL.equals(intent.getAction())) {
+        /*if (intent != null && Intent.ACTION_NEW_OUTGOING_CALL.equals(intent.getAction())) {
             //去电 根本行不通,大多数手机根本无法获取去电。
             outgoingTelNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
             LogUtils.d("ACTION_NEW_OUTGOING_CALL : " + outgoingTelNumber);
-           /* if (StringUtils.isTrimEmpty(outgoingTelNumber) == false && outgoingTelNumber.length() > 2) {
+           *//* if (StringUtils.isTrimEmpty(outgoingTelNumber) == false && outgoingTelNumber.length() > 2) {
                 CommandUtils.sendVerifyCode(outgoingTelNumber, outgoingTelNumber);
-            }*/
-
-        }
+            }*//*
+        }*/
 
         NotificationWhenCommand();
         return super.onStartCommand(intent, START_STICKY, startId);
@@ -99,22 +99,24 @@ public class CallShowService extends Service {
     //手机休眠一段时间后（1-2小时），后台运行的服务被强行kill掉
     //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级。
     private void NotificationWhenCommand() {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                .setSmallIcon(R.drawable.videoico)
-                .setContentTitle("电话提醒")
-                .setContentText("点击打开视频界面.")
-                .setContentInfo("东耀企业")
-                .setWhen(System.currentTimeMillis());
-        Intent activityIntent = new Intent(this, MTMainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.setContentIntent(pendingIntent);
-        Notification notification = builder.build();
-        //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级
-        if (Build.VERSION.SDK_INT < 18) {
-            startForeground(NOTIFKEEPERIID, notification);
-        } else {
-            startForeground(NOTIFKEEPERIID, notification);
-            startService(new Intent(this, InnerServer.class));
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                    .setSmallIcon(R.drawable.videoico)
+                    .setContentTitle("电话提醒")
+                    .setContentText("点击打开视频界面.")
+                    .setContentInfo("东耀企业")
+                    .setWhen(System.currentTimeMillis());
+            Intent activityIntent = new Intent(this, MTMainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 1, activityIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.setContentIntent(pendingIntent);
+            Notification notification = builder.build();
+            //Service通过调用startForeground方法来绑定一个前台的通知时，可以有效的提升进程的优先级
+            if (Build.VERSION.SDK_INT < 18) {
+                startForeground(NOTIFKEEPERIID, notification);
+            } else {
+                startForeground(NOTIFKEEPERIID, notification);
+                startService(new Intent(this, InnerServer.class));
+            }
         }
     }
 
@@ -177,7 +179,6 @@ public class CallShowService extends Service {
             @Override
             public void onCallStateChanged(int state, String incomingNumber) {
                 super.onCallStateChanged(state, incomingNumber);
-                //phoneState = state;
                 LocalSetting.setCallState(state);
                 int DDNSCallState = s_messageBase.TelStates.Idle;
                 if (isEnable) {//启用
@@ -196,15 +197,6 @@ public class CallShowService extends Service {
                             DDNSCallState = s_messageBase.TelStates.Ring;
                             //dismiss();
                             LogUtils.d("PhoneStateListener CALL_STATE_RINGING", COMMINGTELNUMBER);//来电号码
-                           /* try {
-                                String ddnsIPAndPort = CommandUtils.getDDNSIPPort();
-                                //CommandUtils.sendLoginData("L_MT5", "123", "13411415574", "860756", ddnsIPAndPort);
-                                callShow();//显示来电秀
-                                LogUtils.d("PhoneStateListener onCallStateChanged: CALL_STATE_RINGING incomingNumber ->" + incomingNumber);//来电号码
-                            } catch (Exception es) {
-                                LogUtils.e("PhoneStateListener onCallStateChanged: .CALL_STATE_RINGING" + es);
-                            }*/
-                            //PhoneUtils.telcomInvok(getApplicationContext(),"endCall");
                             break;
                         case TelephonyManager.CALL_STATE_OFFHOOK://摘机（接听）
                             try {
@@ -220,7 +212,6 @@ public class CallShowService extends Service {
                             } catch (Exception es) {
                                 LogUtils.e("PhoneStateListener CALL_STATE_OFFHOOK", es);
                             }
-
                             break;
                         default:
                             break;
@@ -229,18 +220,14 @@ public class CallShowService extends Service {
                 CommandUtils.sendTelState(DDNSCallState, LocalSetting.getMeetingID(), null);
                 LogUtils.d("当前电话状态", DDNSCallState);
                 if (DDNSCallState == s_messageBase.TelStates.CalledOffhook) {
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Thread.sleep(500);
-                                CommandUtils.sendVerifyCode(COMMINGTELNUMBER, COMMINGTELNUMBER);
-                                //被叫发送验证码,ddns模拟成主叫
-                                LogUtils.d("PhoneStateListener callShow send VerifyCode :", COMMINGTELNUMBER);
-                            } catch (Exception es) {
-                                LogUtils.e("PhoneStateListener sendVerifyCode error" + es);
-                            }
-
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(500);
+                            CommandUtils.sendVerifyCode(COMMINGTELNUMBER, COMMINGTELNUMBER);
+                            //被叫发送验证码,ddns模拟成主叫
+                            LogUtils.d("PhoneStateListener callShow send VerifyCode :", COMMINGTELNUMBER);
+                        } catch (Exception es) {
+                            LogUtils.e("PhoneStateListener sendVerifyCode error" + es);
                         }
                     }).start();
                 }

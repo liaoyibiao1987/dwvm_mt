@@ -47,6 +47,21 @@ public final class ConvertUtils {
         return targets;
     }
 
+    /**
+     * int转小端模式发送.
+     *
+     * @param res the 目标数据
+     * @return the 返回数据
+     */
+    public static int int2LH(int res) {
+        byte[] b_res = int2byte(res);
+        byte[] b_ret = new byte[b_res.length];
+        for (int i = 0; i < b_res.length; i++) {
+            b_ret[i] = b_res[b_res.length - i - 1];
+        }
+        return byte2int(b_ret);
+    }
+
     public static int byte2int(byte[] res) {
         // 一个byte数据左移24位变成0x??000000，再右移8位变成0x00??0000
         int targets = (res[0] & 0xff) | ((res[1] << 8) & 0xff00) // | 表示安位或

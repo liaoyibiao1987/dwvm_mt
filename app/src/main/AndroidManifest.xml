@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <permission android:name=".services.CallShowService" />
 
@@ -43,12 +44,14 @@
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.media" />
 
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/appico"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+        tools:ignore="GoogleAppIndexingWarning">
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation"
@@ -74,7 +77,7 @@
             android:name=".DY_LoginActivity"
             android:configChanges="keyboardHidden|orientation"
             android:label="@string/app_name"
-            android:launchMode="singleTask"></activity>
+            android:launchMode="singleTask"/>
         <activity
             android:name=".GuideActivity"
             android:launchMode="singleTask" />
@@ -90,60 +93,25 @@
             </intent-filter>
         </activity>
 
-        <!--
-        <receiver android:name=".broadcasts.PhoneStateReceiver">
+        <!--<receiver android:name=".broadcasts.AutoStartReceiver">
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.USER_PRESENT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="dwvm_mt.autostart_action" />
+            </intent-filter>
+        </receiver>-->
+        <!--<receiver android:name=".broadcasts.PhoneStateReceiver">
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.USER_PRESENT" />
                 <action android:name="android.intent.action.PHONE_STATE" />
                 <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
-                <action android:name="dwvm_mt.autostart_action" />
             </intent-filter>
-        </receiver>
-        <receiver android:name=".broadcasts.AutoStartReceiver">
-            <intent-filter android:priority="1000">
-                <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
-                <action android:name="android.intent.action.USER_PRESENT" />
-                <action android:name="dwvm_mt.autostart_action" />
-            </intent-filter>
-        </receiver>
-        -->
-
-
-        <!--
-         <service
-             android:name=".services.ServiceCallerShow"
-             android:enabled="true">
-             <intent-filter android:priority="1000">
-                 <action android:name=".service.CallShowService" />
-             </intent-filter>
-         </service>
-
-         <receiver android:name=".broadcasts.ReceiverCaller">
-             <intent-filter android:priority="1000">
-                 <action android:name="android.intent.action.PHONE_STATE" />
-             </intent-filter>
-         </receiver>
-        -->
-        <receiver android:name=".broadcasts.AutoStartReceiver">
-            <intent-filter android:priority="1000">
-                <action android:name="android.intent.action.RECEIVE_BOOT_COMPLETED" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.USER_PRESENT" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="dwvm_mt.autostart_action" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name=".broadcasts.PhoneStateReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.PHONE_STATE" />
-            </intent-filter>
-        </receiver>
+        </receiver>-->
         <receiver android:name=".broadcasts.NetworkChangeReceiver">
             <intent-filter>
                 //检测网络变化的acton
@@ -153,20 +121,14 @@
             </intent-filter>
         </receiver>
 
-        <service
+       <!-- <service
             android:name=".services.CallShowService"
-            android:enabled="true"> <!-- android:process=":PhoneListenService" -->
+            android:enabled="true"> &lt;!&ndash; android:process=":PhoneListenService" &ndash;&gt;
             <intent-filter android:priority="1000">
                 <action android:name=".services.CallShowService" />
             </intent-filter>
-        </service>
-        <!--
-        <service android:name=".services.PollingService" android:enabled="true" android:process=":remote">&lt;!&ndash; android:process=":PhoneListenService"&ndash;&gt;
-            <intent-filter android:priority="1000">
-                <action android:name=".services.PollingService" />
-            </intent-filter>
-        </service>
-        -->
+        </service>-->
+
         <service
             android:name=".services.PollingService"
             android:enabled="true">
@@ -174,6 +136,31 @@
                 <action android:name=".services.PollingService" />
             </intent-filter>
         </service>
+        <service
+            android:name=".phonecallutil.PhoneCallService"  android:exported="true" android:process=":interim" android:directBootAware="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".services.CallListenerService"
+            android:enabled="true">
+            <intent-filter android:priority="1000">
+                <action android:name=".service.CallShowService" />
+            </intent-filter>
+        </service>
+
+        <service android:label="@string/accessibility_service_label" android:name=".accessibilities.CallShowAccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config"/>
+        </service>
     </application>
+
 
 </manifest>

@@ -1,9 +1,14 @@
 package com.dy.dwvm_mt;
 
+import android.accessibilityservice.AccessibilityService;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.accessibility.AccessibilityEvent;
 
+import com.dy.dwvm_mt.accessibilities.AccessibilityBridge;
+import com.dy.dwvm_mt.accessibilities.IAccessibilityEventHandler;
+import com.dy.dwvm_mt.services.CallShowService;
 import com.dy.dwvm_mt.utilcode.util.AppUtils;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.SPUtils;
@@ -21,6 +26,7 @@ public class SplashActivity extends AppCompatActivity {
         /**
          *如果用户不是第一次使用则直接调转到显示界面,否则调转到引导界面
          */
+
         if (isFirstUse) {
             startActivity(new Intent(this, GuideActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);

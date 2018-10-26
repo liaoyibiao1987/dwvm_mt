@@ -1,19 +1,14 @@
 package com.dy.dwvm_mt;
 
 import android.Manifest;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -26,19 +21,14 @@ import android.widget.FrameLayout;
 
 import com.dy.dwvm_mt.comlibs.BaseActivity;
 import com.dy.dwvm_mt.comlibs.EnumPageState;
-import com.dy.dwvm_mt.comlibs.I_MT_Prime;
 import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
-import com.dy.dwvm_mt.commandmanager.MTLibUtils;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventArg;
 import com.dy.dwvm_mt.commandmanager.NWCommandEventHandler;
 import com.dy.dwvm_mt.fragments.DialTabFragment;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 import com.dy.dwvm_mt.utilcode.util.ToastUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -226,7 +216,7 @@ public class MTMainActivity extends BaseActivity
         toggle.syncState();
 
         navigationView.setNavigationItemSelectedListener(this);
-        AnalysingUtils.addRecvedCommandListeners(this);
+        AnalysingUtils.addReceivedCommandListeners(this);
         try {
             Fragment fragment = DialTabFragment.class.newInstance();
             fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();

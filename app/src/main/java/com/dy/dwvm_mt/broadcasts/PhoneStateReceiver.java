@@ -9,6 +9,7 @@ import android.telephony.TelephonyManager;
 import com.dy.dwvm_mt.services.CallShowService;
 import com.dy.dwvm_mt.utilcode.util.LogUtils;
 
+@Deprecated
 public class PhoneStateReceiver extends BroadcastReceiver {
     public static final String PHONE_STATE = TelephonyManager.ACTION_PHONE_STATE_CHANGED;
     private Intent intentService = null;

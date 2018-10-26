@@ -5,8 +5,6 @@ import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
@@ -14,7 +12,6 @@ import android.widget.Button;
 import com.dy.dwvm_mt.comlibs.AvcDecoder;
 import com.dy.dwvm_mt.comlibs.AvcEncoder;
 import com.dy.dwvm_mt.comlibs.BaseActivity;
-import com.dy.dwvm_mt.comlibs.LocalSetting;
 import com.dy.dwvm_mt.commandmanager.AnalysingUtils;
 import com.dy.dwvm_mt.commandmanager.CommandUtils;
 import com.dy.dwvm_mt.commandmanager.DY_AVPacketEventHandler;
@@ -81,7 +78,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
         ButterKnife.bind(this);
-        AnalysingUtils.addRecvedCommandListeners(this);
+        AnalysingUtils.addReceivedCommandListeners(this);
         btn_testlogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -219,7 +216,7 @@ public class TestActivity extends BaseActivity implements NWCommandEventHandler,
             avcDecoder.decoderStop();
             avcDecoder = null;
         }
-        AnalysingUtils.removeRecvedCommandListeners(this);
+        AnalysingUtils.removeReceivedCommandListeners(this);
         super.onDestroy();
     }
 
